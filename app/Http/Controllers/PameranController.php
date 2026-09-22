@@ -39,6 +39,14 @@ class PameranController extends Controller
                     $query->whereRaw('1 = 0');
                 }
             })
+            ->when($user->role === UserRole::Kabag, function (Builder $query) {
+                $query->where('status', '!=', PameranStatus::MenungguSpv)
+                    ->where(function (Builder $sub) {
+                        $sub->where('status', '!=', PameranStatus::Ditolak)
+                            ->orWhereNotNull('spv_approved_by')
+                            ->orWhereNotNull('spv_approved_at');
+                    });
+            })
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $subQuery) use ($search) {
                     $subQuery->where('kode_pameran_md', 'like', "%{$search}%")
@@ -113,6 +121,7 @@ class PameranController extends Controller
 
         if ($user->role === UserRole::Dealer) {
             $data['dealer_id'] = $user->dealer_id;
+            $data['kode_pameran_ahm'] = null;
         }
 
         $data['created_by_user_id'] = $user->id;
@@ -143,6 +152,7 @@ class PameranController extends Controller
 
         if ($user->role === UserRole::Dealer) {
             $data['dealer_id'] = $user->dealer_id;
+            unset($data['kode_pameran_ahm']);
         }
 
         $pameran->update($data);
@@ -245,6 +255,14 @@ class PameranController extends Controller
 
         if (! in_array($user->role, [UserRole::Spv, UserRole::Kabag, UserRole::Superadmin], true)) {
             abort(403, 'Anda tidak memiliki hak akses untuk menolak pameran.');
+        }
+
+        if ($user->role === UserRole::Kabag && $pameran->status === PameranStatus::MenungguSpv) {
+            abort(403, 'Pameran belum disetujui oleh SPV.');
+        }
+
+        if ($user->role === UserRole::Spv && $pameran->status !== PameranStatus::MenungguSpv) {
+            abort(403, 'SPV hanya dapat menolak pameran pada tahap menunggu persetujuan SPV.');
         }
 
         $validated = $request->validate([

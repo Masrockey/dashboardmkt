@@ -256,3 +256,39 @@ test('dealer user without dealer_id cannot create pameran and sees no pameran', 
             ->has('dealers', 0)
         );
 });
+
+test('kabag does not see pameran if SPV has not approved yet', function () {
+    $kabagUser = User::factory()->create(['role' => UserRole::Kabag]);
+
+    $pameranWaitingSpv = Pameran::factory()->create([
+        'status' => PameranStatus::MenungguSpv,
+        'spv_approved_at' => null,
+    ]);
+
+    $pameranWaitingKabag = Pameran::factory()->create([
+        'status' => PameranStatus::MenungguKabag,
+        'spv_approved_at' => now(),
+    ]);
+
+    $this->actingAs($kabagUser)
+        ->get(route('pameran.index'))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('pameran/index')
+            ->has('pamerans.data', 1)
+            ->where('pamerans.data.0.id', $pameranWaitingKabag->id)
+        );
+});
+
+test('kabag cannot reject pameran that is still waiting for SPV', function () {
+    $kabagUser = User::factory()->create(['role' => UserRole::Kabag]);
+    $pameranWaitingSpv = Pameran::factory()->create([
+        'status' => PameranStatus::MenungguSpv,
+    ]);
+
+    $this->actingAs($kabagUser)
+        ->post(route('pameran.reject', $pameranWaitingSpv), [
+            'catatan_penolakan' => 'Tolak sebelum SPV',
+        ])
+        ->assertForbidden();
+});

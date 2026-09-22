@@ -1,5 +1,6 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, Building2, CalendarDays, FolderGit2, LayoutGrid, MapPin, Users } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { Building2, CalendarDays, LayoutGrid, MapPin, Users } from 'lucide-react';
+import { useMemo } from 'react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -48,10 +49,22 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
-const footerNavItems: NavItem[] = [
-];
+const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
+    const { auth } = usePage<{ auth: { user: { role?: string } } }>().props;
+    const userRole = auth?.user?.role;
+
+    const filteredNavItems = useMemo(() => {
+        if (userRole === 'dealer' || userRole === 'kabag') {
+            return mainNavItems.filter(
+                (item) => item.title === 'Dashboard' || item.title === 'Pameran',
+            );
+        }
+
+        return mainNavItems;
+    }, [userRole]);
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -67,7 +80,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={filteredNavItems} />
             </SidebarContent>
 
             <SidebarFooter>

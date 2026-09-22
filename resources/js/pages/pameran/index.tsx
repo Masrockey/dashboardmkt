@@ -132,6 +132,13 @@ export default function PameranIndex({
         catatan_penolakan: '',
     });
 
+    const selectedCreateJenis = jenisPameranList.find(
+        (j) => String(j.id) === String(createForm.data.jenis_pameran_id),
+    );
+    const selectedEditJenis = jenisPameranList.find(
+        (j) => String(j.id) === String(editForm.data.jenis_pameran_id),
+    );
+
     const applyFilters = (
         newSearch?: string,
         newDealer?: string,
@@ -469,7 +476,9 @@ export default function PameranIndex({
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua Status</SelectItem>
-                                    <SelectItem value="menunggu_spv">Menunggu SPV</SelectItem>
+                                    {currentUser.role !== 'kabag' && (
+                                        <SelectItem value="menunggu_spv">Menunggu SPV</SelectItem>
+                                    )}
                                     <SelectItem value="menunggu_kabag">Menunggu Kabag</SelectItem>
                                     <SelectItem value="disetujui">Disetujui</SelectItem>
                                     <SelectItem value="ditolak">Ditolak</SelectItem>
@@ -743,7 +752,10 @@ export default function PameranIndex({
                                                     )}
 
                                                     {/* Reject Button */}
-                                                    {canReject && (item.status === 'menunggu_spv' || item.status === 'menunggu_kabag') && (
+                                                    {((currentUser.role === 'spv' && item.status === 'menunggu_spv') ||
+                                                        (currentUser.role === 'kabag' && item.status === 'menunggu_kabag') ||
+                                                        (currentUser.role === 'superadmin' &&
+                                                            (item.status === 'menunggu_spv' || item.status === 'menunggu_kabag'))) && (
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -858,20 +870,22 @@ export default function PameranIndex({
                                 </div>
                             </div>
 
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="create_kode_pameran_ahm">Kode Pameran AHM</Label>
-                                    <span className="text-xs text-neutral-400 dark:text-neutral-500">Opsional (Manual Admin)</span>
+                            {currentUser.role !== 'dealer' && (
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="create_kode_pameran_ahm">Kode Pameran AHM</Label>
+                                        <span className="text-xs text-neutral-400 dark:text-neutral-500">Opsional (Manual Admin)</span>
+                                    </div>
+                                    <Input
+                                        id="create_kode_pameran_ahm"
+                                        placeholder="Contoh: AHM-EXH-2026-001"
+                                        value={createForm.data.kode_pameran_ahm}
+                                        onChange={(e) => createForm.setData('kode_pameran_ahm', e.target.value)}
+                                        disabled={createForm.processing}
+                                    />
+                                    <InputError message={createForm.errors.kode_pameran_ahm} />
                                 </div>
-                                <Input
-                                    id="create_kode_pameran_ahm"
-                                    placeholder="Contoh: AHM-EXH-2026-001"
-                                    value={createForm.data.kode_pameran_ahm}
-                                    onChange={(e) => createForm.setData('kode_pameran_ahm', e.target.value)}
-                                    disabled={createForm.processing}
-                                />
-                                <InputError message={createForm.errors.kode_pameran_ahm} />
-                            </div>
+                            )}
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="create_dealer_id">Nama Dealer</Label>
@@ -946,6 +960,7 @@ export default function PameranIndex({
                                 <LocationPickerMap
                                     initialLat={createForm.data.latitude}
                                     initialLng={createForm.data.longitude}
+                                    customIconUrl={selectedCreateJenis?.icon_map_url || null}
                                     onLocationSelect={(res) => {
                                         createForm.setData((prev) => ({
                                             ...prev,
@@ -1074,20 +1089,22 @@ export default function PameranIndex({
                                 </p>
                             </div>
 
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="edit_kode_pameran_ahm">Kode Pameran AHM</Label>
-                                    <span className="text-xs text-neutral-400 dark:text-neutral-500">Opsional (Manual Admin)</span>
+                            {currentUser.role !== 'dealer' && (
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="edit_kode_pameran_ahm">Kode Pameran AHM</Label>
+                                        <span className="text-xs text-neutral-400 dark:text-neutral-500">Opsional (Manual Admin)</span>
+                                    </div>
+                                    <Input
+                                        id="edit_kode_pameran_ahm"
+                                        placeholder="Contoh: AHM-EXH-2026-001"
+                                        value={editForm.data.kode_pameran_ahm}
+                                        onChange={(e) => editForm.setData('kode_pameran_ahm', e.target.value)}
+                                        disabled={editForm.processing}
+                                    />
+                                    <InputError message={editForm.errors.kode_pameran_ahm} />
                                 </div>
-                                <Input
-                                    id="edit_kode_pameran_ahm"
-                                    placeholder="Contoh: AHM-EXH-2026-001"
-                                    value={editForm.data.kode_pameran_ahm}
-                                    onChange={(e) => editForm.setData('kode_pameran_ahm', e.target.value)}
-                                    disabled={editForm.processing}
-                                />
-                                <InputError message={editForm.errors.kode_pameran_ahm} />
-                            </div>
+                            )}
 
                             <div className="space-y-1.5">
                                 <Label htmlFor="edit_dealer_id">Nama Dealer</Label>
@@ -1163,6 +1180,7 @@ export default function PameranIndex({
                                     key={selectedPameran?.id ?? 'edit-map'}
                                     initialLat={editForm.data.latitude}
                                     initialLng={editForm.data.longitude}
+                                    customIconUrl={selectedEditJenis?.icon_map_url || null}
                                     onLocationSelect={(res) => {
                                         editForm.setData((prev) => ({
                                             ...prev,
@@ -1330,6 +1348,7 @@ export default function PameranIndex({
                                     key={`preview-${selectedPameran.id}`}
                                     latitude={Number(selectedPameran.latitude)}
                                     longitude={Number(selectedPameran.longitude)}
+                                    customIconUrl={selectedPameran.jenis_pameran?.icon_map_url || null}
                                     popupText={`${selectedPameran.dealer?.nama_dealer || ''} - ${selectedPameran.kecamatan}`}
                                     height="220px"
                                 />

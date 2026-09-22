@@ -13,9 +13,12 @@ L.Icon.Default.mergeOptions({
     shadowUrl: markerShadow,
 });
 
+import { getMapMarkerIcon } from '@/components/location-picker-map';
+
 interface LocationPreviewMapProps {
     latitude: number;
     longitude: number;
+    customIconUrl?: string | null;
     popupText?: string;
     height?: string;
     className?: string;
@@ -24,12 +27,14 @@ interface LocationPreviewMapProps {
 export default function LocationPreviewMap({
     latitude,
     longitude,
+    customIconUrl,
     popupText,
     height = '200px',
     className = '',
 }: LocationPreviewMapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
+    const markerRef = useRef<L.Marker | null>(null);
 
     useEffect(() => {
         if (!mapContainerRef.current) return;
@@ -47,11 +52,14 @@ export default function LocationPreviewMap({
             maxZoom: 19,
         }).addTo(map);
 
-        const marker = L.marker([latitude, longitude]).addTo(map);
+        const marker = L.marker([latitude, longitude], {
+            icon: getMapMarkerIcon(customIconUrl),
+        }).addTo(map);
         if (popupText) {
             marker.bindPopup(popupText);
         }
 
+        markerRef.current = marker;
         mapInstanceRef.current = map;
 
         // Invalidate size repeatedly to account for dialog enter animations
@@ -71,6 +79,12 @@ export default function LocationPreviewMap({
             mapInstanceRef.current = null;
         };
     }, [latitude, longitude, popupText]);
+
+    useEffect(() => {
+        if (markerRef.current) {
+            markerRef.current.setIcon(getMapMarkerIcon(customIconUrl));
+        }
+    }, [customIconUrl]);
 
     return (
         <div

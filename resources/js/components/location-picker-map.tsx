@@ -25,9 +25,27 @@ export interface LocationSelectResult {
     displayName?: string;
 }
 
+export const getMapMarkerIcon = (customUrl?: string | null) => {
+    if (!customUrl) {
+        return new L.Icon.Default();
+    }
+
+    return L.icon({
+        iconUrl: customUrl,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+        popupAnchor: [0, -36],
+        shadowUrl: markerShadow,
+        shadowSize: [41, 41],
+        shadowAnchor: [12, 41],
+        className: 'custom-map-pin object-contain filter drop-shadow-md',
+    });
+};
+
 interface LocationPickerMapProps {
     initialLat?: number | null;
     initialLng?: number | null;
+    customIconUrl?: string | null;
     onLocationSelect: (result: LocationSelectResult) => void;
     className?: string;
     height?: string;
@@ -41,6 +59,7 @@ const DEFAULT_ZOOM = 13;
 export default function LocationPickerMap({
     initialLat,
     initialLng,
+    customIconUrl,
     onLocationSelect,
     className = '',
     height = '240px',
@@ -142,7 +161,9 @@ export default function LocationPickerMap({
         if (markerRef.current) {
             markerRef.current.setLatLng([lat, lng]);
         } else {
-            markerRef.current = L.marker([lat, lng]).addTo(map);
+            markerRef.current = L.marker([lat, lng], {
+                icon: getMapMarkerIcon(customIconUrl),
+            }).addTo(map);
         }
     };
 
@@ -227,7 +248,9 @@ export default function LocationPickerMap({
         }).addTo(map);
 
         if (initialLat && initialLng) {
-            markerRef.current = L.marker([initialLat, initialLng]).addTo(map);
+            markerRef.current = L.marker([initialLat, initialLng], {
+                icon: getMapMarkerIcon(customIconUrl),
+            }).addTo(map);
         }
 
         map.on('click', (e: L.LeafletMouseEvent) => {
@@ -256,6 +279,13 @@ export default function LocationPickerMap({
             markerRef.current = null;
         };
     }, []);
+
+    // Dynamically update marker icon if customIconUrl changes
+    useEffect(() => {
+        if (markerRef.current) {
+            markerRef.current.setIcon(getMapMarkerIcon(customIconUrl));
+        }
+    }, [customIconUrl]);
 
     // Synchronize marker & view if initialLat / initialLng change externally
     useEffect(() => {

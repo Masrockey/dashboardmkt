@@ -33,7 +33,6 @@ test('authenticated users can create a pameran with valid data and initial statu
         'tanggal_sewa_berakhir' => '2026-10-10',
         'kecamatan' => 'Cakranegara',
         'detail_alamat' => 'Depan Mall Epicentrum Lombok',
-        'kode_pameran_ahm' => 'AHM-2026-001',
     ]);
 
     $response->assertRedirect(route('pameran.index'));
@@ -46,15 +45,38 @@ test('authenticated users can create a pameran with valid data and initial statu
         'kecamatan' => 'Cakranegara',
         'detail_alamat' => 'Depan Mall Epicentrum Lombok',
         'kode_pameran_md' => null,
-        'kode_pameran_ahm' => 'AHM-2026-001',
+        'kode_pameran_ahm' => null,
         'status' => 'menunggu_spv',
         'created_by_user_id' => $user->id,
     ]);
 
     $pameran = Pameran::latest('id')->first();
     expect($pameran->kode_pameran_md)->toBeNull();
-    expect($pameran->kode_pameran_ahm)->toBe('AHM-2026-001');
+    expect($pameran->kode_pameran_ahm)->toBeNull();
     expect($pameran->status->value)->toBe('menunggu_spv');
+});
+
+test('admin can create pameran with kode_pameran_ahm', function () {
+    $dealer = Dealer::factory()->create();
+    $admin = User::factory()->create(['role' => UserRole::Superadmin]);
+    $jenisPameran = JenisPameran::factory()->create(['kode_pameran' => 'EXH-A']);
+
+    $response = $this->actingAs($admin)->post(route('pameran.store'), [
+        'dealer_id' => $dealer->id,
+        'jenis_pameran_id' => $jenisPameran->id,
+        'mulai_tanggal_sewa' => '2026-10-01',
+        'tanggal_sewa_berakhir' => '2026-10-10',
+        'kecamatan' => 'Cakranegara',
+        'detail_alamat' => 'Depan Mall Epicentrum Lombok',
+        'kode_pameran_ahm' => 'AHM-2026-001',
+    ]);
+
+    $response->assertRedirect(route('pameran.index'));
+
+    $this->assertDatabaseHas('pamerans', [
+        'dealer_id' => $dealer->id,
+        'kode_pameran_ahm' => 'AHM-2026-001',
+    ]);
 });
 
 test('creating pameran fails if required fields are missing', function () {

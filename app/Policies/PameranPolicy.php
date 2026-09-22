@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\PameranStatus;
 use App\Enums\UserRole;
 use App\Models\Pameran;
 use App\Models\User;
@@ -23,6 +24,11 @@ class PameranPolicy
     {
         if ($user->role === UserRole::Dealer) {
             return $user->dealer_id !== null && $pameran->dealer_id === $user->dealer_id;
+        }
+
+        if ($user->role === UserRole::Kabag) {
+            return $pameran->status !== PameranStatus::MenungguSpv
+                && ($pameran->status !== PameranStatus::Ditolak || $pameran->spv_approved_by !== null || $pameran->spv_approved_at !== null);
         }
 
         return true;
@@ -85,6 +91,14 @@ class PameranPolicy
      */
     public function reject(User $user, Pameran $pameran): bool
     {
-        return in_array($user->role, [UserRole::Spv, UserRole::Kabag, UserRole::Superadmin], true);
+        if ($user->role === UserRole::Kabag) {
+            return $pameran->status === PameranStatus::MenungguKabag;
+        }
+
+        if ($user->role === UserRole::Spv) {
+            return $pameran->status === PameranStatus::MenungguSpv;
+        }
+
+        return $user->role === UserRole::Superadmin;
     }
 }
