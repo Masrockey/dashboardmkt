@@ -30,6 +30,13 @@ class UserUpdateRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
+            'username' => [
+                'nullable',
+                'string',
+                'alpha_dash',
+                'max:50',
+                Rule::unique('users', 'username')->ignore($user),
+            ],
             'email' => [
                 'required',
                 'string',
@@ -53,6 +60,7 @@ class UserUpdateRequest extends FormRequest
     {
         return [
             'name' => 'nama',
+            'username' => 'username',
             'email' => 'alamat email',
             'password' => 'kata sandi',
             'role' => 'role',

@@ -10,6 +10,7 @@ export interface RoleOption {
 export interface UserItem {
     id: number;
     name: string;
+    username: string | null;
     email: string;
     role: UserRole;
     dealer_id: number | null;

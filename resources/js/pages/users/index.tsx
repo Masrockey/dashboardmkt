@@ -72,6 +72,7 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
     // Create Form
     const createForm = useForm({
         name: '',
+        username: '',
         email: '',
         password: '',
         role: 'dealer' as UserRole,
@@ -81,6 +82,7 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
     // Edit Form
     const editForm = useForm({
         name: '',
+        username: '',
         email: '',
         password: '',
         role: 'dealer' as UserRole,
@@ -157,6 +159,7 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
         setSelectedUser(user);
         editForm.setData({
             name: user.name,
+            username: user.username || '',
             email: user.email,
             password: '',
             role: user.role,
@@ -380,6 +383,11 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
                                                         <span className="font-medium text-neutral-900 dark:text-neutral-100">
                                                             {user.name}
                                                         </span>
+                                                        {user.username && (
+                                                            <span className="font-mono text-xs text-neutral-400 dark:text-neutral-500">
+                                                                @{user.username}
+                                                            </span>
+                                                        )}
                                                         {isCurrentUser && (
                                                             <Badge variant="outline" className="text-[10px] py-0 px-1.5">
                                                                 Anda
@@ -529,6 +537,20 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
                             </div>
 
                             <div className="space-y-1.5">
+                                <Label htmlFor="create_username">
+                                    Username <span className="text-xs font-normal text-muted-foreground">(opsional untuk login)</span>
+                                </Label>
+                                <Input
+                                    id="create_username"
+                                    placeholder="Contoh: budi_santoso"
+                                    value={createForm.data.username}
+                                    onChange={(e) => createForm.setData('username', e.target.value)}
+                                    disabled={createForm.processing}
+                                />
+                                <InputError message={createForm.errors.username} />
+                            </div>
+
+                            <div className="space-y-1.5">
                                 <Label htmlFor="create_email">Alamat Email</Label>
                                 <Input
                                     id="create_email"
@@ -637,6 +659,20 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
                                     autoFocus
                                 />
                                 <InputError message={editForm.errors.name} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="edit_username">
+                                    Username <span className="text-xs font-normal text-muted-foreground">(opsional untuk login)</span>
+                                </Label>
+                                <Input
+                                    id="edit_username"
+                                    placeholder="Contoh: budi_santoso"
+                                    value={editForm.data.username}
+                                    onChange={(e) => editForm.setData('username', e.target.value)}
+                                    disabled={editForm.processing}
+                                />
+                                <InputError message={editForm.errors.username} />
                             </div>
 
                             <div className="space-y-1.5">

@@ -26,6 +26,7 @@ class UserStoreRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'username' => ['nullable', 'string', 'alpha_dash', 'max:50', 'unique:users,username'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'role' => ['required', Rule::enum(UserRole::class)],
@@ -42,6 +43,7 @@ class UserStoreRequest extends FormRequest
     {
         return [
             'name' => 'nama',
+            'username' => 'username',
             'email' => 'alamat email',
             'password' => 'kata sandi',
             'role' => 'role',

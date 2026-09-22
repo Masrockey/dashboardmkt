@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'admin@dashboard.com'],
             [
                 'name' => 'admin',
+                'username' => 'admin',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Superadmin,
             ]
@@ -33,6 +34,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'kabag@dashboard.com'],
             [
                 'name' => 'kabag',
+                'username' => 'kabag',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Kabag,
             ]
@@ -42,6 +44,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'spv@dashboard.com'],
             [
                 'name' => 'spv',
+                'username' => 'spv',
                 'password' => Hash::make('password'),
                 'role' => UserRole::Spv,
             ]

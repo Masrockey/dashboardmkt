@@ -22,6 +22,21 @@ test('users can authenticate using the login screen', function () {
     $response->assertRedirect(route('dashboard', absolute: false));
 });
 
+test('users can authenticate using username', function () {
+    $user = User::factory()->create([
+        'username' => 'customuser',
+        'password' => 'password',
+    ]);
+
+    $response = $this->post(route('login.store'), [
+        'email' => 'customuser',
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('dashboard', absolute: false));
+});
+
 test('users with two factor enabled are redirected to two factor challenge', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
