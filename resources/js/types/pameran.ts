@@ -1,13 +1,15 @@
 import type { Dealer } from './dealer';
 import type { JenisPameran } from './jenis-pameran';
 
+export type PameranStatus = 'menunggu_spv' | 'menunggu_kabag' | 'disetujui' | 'ditolak';
+
 export interface PameranItem {
     id: number;
     dealer_id: number;
     dealer: Dealer;
     jenis_pameran_id: number;
     jenis_pameran: JenisPameran;
-    kode_pameran_md: string;
+    kode_pameran_md: string | null;
     kode_pameran_ahm: string | null;
     mulai_tanggal_sewa: string;
     tanggal_sewa_berakhir: string;
@@ -15,6 +17,16 @@ export interface PameranItem {
     detail_alamat: string;
     latitude: number | null;
     longitude: number | null;
+    status: PameranStatus;
+    created_by_user_id?: number | null;
+    creator?: { id: number; name: string } | null;
+    spv_approved_by?: number | null;
+    spv_approved_at?: string | null;
+    spv_approver?: { id: number; name: string } | null;
+    kabag_approved_by?: number | null;
+    kabag_approved_at?: string | null;
+    kabag_approver?: { id: number; name: string } | null;
+    catatan_penolakan?: string | null;
     created_at: string;
     updated_at: string;
 }

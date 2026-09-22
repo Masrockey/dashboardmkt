@@ -29,29 +29,35 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Dealer::create([
-            'kode_dealer' => '9226',
-            'nama_dealer' => 'PT. Astra International Tbk-Honda - Ampenan',
-        ])
-            ->create([
-                'kode_dealer' => 'N02',
-                'nama_dealer' => 'Astra Motor Mataram - Main Dealer',
-            ])
-            ->create([
-                'kode_dealer' => '9224',
-                'nama_dealer' => 'PT. Astra International Tbk-Honda - Bima',
-            ])
-            ->create([
-                'kode_dealer' => '9699',
-                'nama_dealer' => 'PT. Astra International Tbk-Honda - Brawijaya',
-            ])
-            ->create([
-                'kode_dealer' => '15583',
-                'nama_dealer' => 'PT. Astra International Tbk-Honda - Kopang',
-            ])
-            ->create([
-                'kode_dealer' => '9704',
-                'nama_dealer' => 'PT. Astra International Tbk-Honda - Masbagik',
-            ]);
+        User::firstOrCreate(
+            ['email' => 'kabag@dashboard.com'],
+            [
+                'name' => 'kabag',
+                'password' => Hash::make('password'),
+                'role' => UserRole::Kabag,
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'spv@dashboard.com'],
+            [
+                'name' => 'spv',
+                'password' => Hash::make('password'),
+                'role' => UserRole::Spv,
+            ]
+        );
+
+        $dealers = [
+            ['kode_dealer' => '9226', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Ampenan'],
+            ['kode_dealer' => 'N02', 'nama_dealer' => 'Astra Motor Mataram - Main Dealer'],
+            ['kode_dealer' => '9224', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Bima'],
+            ['kode_dealer' => '9699', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Brawijaya'],
+            ['kode_dealer' => '15583', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Kopang'],
+            ['kode_dealer' => '9704', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Masbagik'],
+        ];
+
+        foreach ($dealers as $dealer) {
+            Dealer::firstOrCreate(['kode_dealer' => $dealer['kode_dealer']], $dealer);
+        }
     }
 }

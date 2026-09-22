@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PameranStatus;
 use Database\Factories\PameranFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,13 @@ class Pameran extends Model
         'detail_alamat',
         'latitude',
         'longitude',
+        'status',
+        'created_by_user_id',
+        'spv_approved_by',
+        'spv_approved_at',
+        'kabag_approved_by',
+        'kabag_approved_at',
+        'catatan_penolakan',
     ];
 
     /**
@@ -36,12 +44,12 @@ class Pameran extends Model
     protected static function booted(): void
     {
         static::creating(function (Pameran $pameran) {
-            if (empty($pameran->kode_pameran_md)) {
-                $jenisPameran = $pameran->relationLoaded('jenisPameran') && $pameran->jenisPameran
-                    ? $pameran->jenisPameran
-                    : $pameran->jenis_pameran_id;
+            if (empty($pameran->status)) {
+                $pameran->status = PameranStatus::MenungguSpv;
+            }
 
-                $pameran->kode_pameran_md = static::generateKodePameranMd($jenisPameran);
+            if (empty($pameran->created_by_user_id) && auth()->check()) {
+                $pameran->created_by_user_id = auth()->id();
             }
         });
     }
@@ -81,6 +89,53 @@ class Pameran extends Model
     }
 
     /**
+     * Approve exhibition by SPV.
+     */
+    public function approveBySpv(User $user): bool
+    {
+        if ($this->status !== PameranStatus::MenungguSpv) {
+            return false;
+        }
+
+        $this->spv_approved_by = $user->id;
+        $this->spv_approved_at = now();
+        $this->status = PameranStatus::MenungguKabag;
+
+        return $this->save();
+    }
+
+    /**
+     * Approve exhibition by Kabag.
+     */
+    public function approveByKabag(User $user): bool
+    {
+        if ($this->status !== PameranStatus::MenungguKabag) {
+            return false;
+        }
+
+        $this->kabag_approved_by = $user->id;
+        $this->kabag_approved_at = now();
+        $this->status = PameranStatus::Disetujui;
+
+        if (empty($this->kode_pameran_md)) {
+            $this->kode_pameran_md = static::generateKodePameranMd($this->jenis_pameran_id);
+        }
+
+        return $this->save();
+    }
+
+    /**
+     * Reject exhibition with optional reason.
+     */
+    public function reject(User $user, ?string $reason = null): bool
+    {
+        $this->status = PameranStatus::Ditolak;
+        $this->catatan_penolakan = $reason;
+
+        return $this->save();
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -92,6 +147,9 @@ class Pameran extends Model
             'tanggal_sewa_berakhir' => 'date:Y-m-d',
             'latitude' => 'float',
             'longitude' => 'float',
+            'status' => PameranStatus::class,
+            'spv_approved_at' => 'datetime',
+            'kabag_approved_at' => 'datetime',
         ];
     }
 
@@ -109,5 +167,29 @@ class Pameran extends Model
     public function jenisPameran(): BelongsTo
     {
         return $this->belongsTo(JenisPameran::class, 'jenis_pameran_id');
+    }
+
+    /**
+     * Get the user who created this exhibition.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    /**
+     * Get the SPV who approved this exhibition.
+     */
+    public function spvApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'spv_approved_by');
+    }
+
+    /**
+     * Get the Kabag who approved this exhibition.
+     */
+    public function kabagApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'kabag_approved_by');
     }
 }

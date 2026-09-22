@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRole;
 use App\Models\Dealer;
 use App\Models\JenisPameran;
 use App\Models\Pameran;
@@ -20,9 +21,9 @@ test('authenticated users can view the pameran page', function () {
     $response->assertOk();
 });
 
-test('authenticated users can create a pameran with valid data and auto-generates kode_pameran_md', function () {
-    $user = User::factory()->create();
+test('authenticated users can create a pameran with valid data and initial status is menunggu_spv', function () {
     $dealer = Dealer::factory()->create();
+    $user = User::factory()->create(['role' => UserRole::Dealer, 'dealer_id' => $dealer->id]);
     $jenisPameran = JenisPameran::factory()->create(['kode_pameran' => 'EXH-A']);
 
     $response = $this->actingAs($user)->post(route('pameran.store'), [
@@ -37,8 +38,6 @@ test('authenticated users can create a pameran with valid data and auto-generate
 
     $response->assertRedirect(route('pameran.index'));
 
-    $expectedCode = 'EXH-A-'.now()->format('Ymd').'-0001';
-
     $this->assertDatabaseHas('pamerans', [
         'dealer_id' => $dealer->id,
         'jenis_pameran_id' => $jenisPameran->id,
@@ -46,31 +45,21 @@ test('authenticated users can create a pameran with valid data and auto-generate
         'tanggal_sewa_berakhir' => '2026-10-10',
         'kecamatan' => 'Cakranegara',
         'detail_alamat' => 'Depan Mall Epicentrum Lombok',
-        'kode_pameran_md' => $expectedCode,
+        'kode_pameran_md' => null,
         'kode_pameran_ahm' => 'AHM-2026-001',
+        'status' => 'menunggu_spv',
+        'created_by_user_id' => $user->id,
     ]);
 
     $pameran = Pameran::latest('id')->first();
-    expect($pameran->kode_pameran_md)->toBe($expectedCode);
+    expect($pameran->kode_pameran_md)->toBeNull();
     expect($pameran->kode_pameran_ahm)->toBe('AHM-2026-001');
-
-    // Create a second one with the same jenis pameran, sequence should be 0002
-    $this->actingAs($user)->post(route('pameran.store'), [
-        'dealer_id' => $dealer->id,
-        'jenis_pameran_id' => $jenisPameran->id,
-        'mulai_tanggal_sewa' => '2026-10-01',
-        'tanggal_sewa_berakhir' => '2026-10-10',
-        'kecamatan' => 'Mataram',
-        'detail_alamat' => 'Jl. Pejanggik',
-    ]);
-
-    $secondExpectedCode = 'EXH-A-'.now()->format('Ymd').'-0002';
-    $secondPameran = Pameran::latest('id')->first();
-    expect($secondPameran->kode_pameran_md)->toBe($secondExpectedCode);
+    expect($pameran->status->value)->toBe('menunggu_spv');
 });
 
 test('creating pameran fails if required fields are missing', function () {
-    $user = User::factory()->create();
+    $dealer = Dealer::factory()->create();
+    $user = User::factory()->create(['role' => UserRole::Dealer, 'dealer_id' => $dealer->id]);
 
     $response = $this->actingAs($user)->post(route('pameran.store'), [
         'dealer_id' => '',
@@ -92,8 +81,8 @@ test('creating pameran fails if required fields are missing', function () {
 });
 
 test('creating pameran fails if tanggal_sewa_berakhir is before mulai_tanggal_sewa', function () {
-    $user = User::factory()->create();
     $dealer = Dealer::factory()->create();
+    $user = User::factory()->create(['role' => UserRole::Dealer, 'dealer_id' => $dealer->id]);
     $jenisPameran = JenisPameran::factory()->create();
 
     $response = $this->actingAs($user)->post(route('pameran.store'), [
@@ -109,7 +98,7 @@ test('creating pameran fails if tanggal_sewa_berakhir is before mulai_tanggal_se
 });
 
 test('creating pameran fails if dealer or jenis pameran does not exist', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
 
     $response = $this->actingAs($user)->post(route('pameran.store'), [
         'dealer_id' => 999999,
@@ -124,7 +113,7 @@ test('creating pameran fails if dealer or jenis pameran does not exist', functio
 });
 
 test('authenticated users can update an existing pameran', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
     $pameran = Pameran::factory()->create(['kode_pameran_ahm' => 'OLD-AHM']);
     $originalMd = $pameran->kode_pameran_md;
     $newDealer = Dealer::factory()->create();
@@ -156,9 +145,9 @@ test('authenticated users can update an existing pameran', function () {
 });
 
 test('pameran list can be filtered by kode_pameran_md or kode_pameran_ahm', function () {
-    $user = User::factory()->create();
-    $pameran1 = Pameran::factory()->create(['kode_pameran_ahm' => 'AHM-MATCH-01']);
-    $pameran2 = Pameran::factory()->create(['kode_pameran_ahm' => 'OTHER-02']);
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+    $pameran1 = Pameran::factory()->approved()->create(['kode_pameran_ahm' => 'AHM-MATCH-01']);
+    $pameran2 = Pameran::factory()->approved()->create(['kode_pameran_ahm' => 'OTHER-02']);
 
     // Search by AHM code
     $this->actingAs($user)
@@ -184,7 +173,7 @@ test('pameran list can be filtered by kode_pameran_md or kode_pameran_ahm', func
 });
 
 test('authenticated users can delete a pameran', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
     $pameran = Pameran::factory()->create();
 
     $response = $this->actingAs($user)->delete(route('pameran.destroy', $pameran));
@@ -197,8 +186,8 @@ test('authenticated users can delete a pameran', function () {
 });
 
 test('authenticated users can create a pameran with coordinates from map', function () {
-    $user = User::factory()->create();
     $dealer = Dealer::factory()->create();
+    $user = User::factory()->create(['role' => UserRole::Dealer, 'dealer_id' => $dealer->id]);
     $jenisPameran = JenisPameran::factory()->create();
 
     $response = $this->actingAs($user)->post(route('pameran.store'), [

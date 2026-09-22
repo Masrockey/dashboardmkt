@@ -257,6 +257,16 @@ export default function LocationPickerMap({
         };
     }, []);
 
+    // Synchronize marker & view if initialLat / initialLng change externally
+    useEffect(() => {
+        if (mapInstanceRef.current && initialLat != null && initialLng != null) {
+            const currentCenter = markerRef.current ? markerRef.current.getLatLng() : null;
+            if (!currentCenter || currentCenter.lat !== initialLat || currentCenter.lng !== initialLng) {
+                setPosition(initialLat, initialLng);
+            }
+        }
+    }, [initialLat, initialLng]);
+
     return (
         <div className={`space-y-2 ${className}`}>
             <div className="flex items-center justify-between gap-2">

@@ -1,20 +1,24 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
-    Building2,
     Calendar,
     CalendarDays,
+    Check,
+    CheckCheck,
     ChevronLeft,
     ChevronRight,
+    ExternalLink,
     MapPin,
     Pencil,
     Plus,
     Search,
     Trash2,
     X,
+    XCircle,
 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import InputError from '@/components/input-error';
 import LocationPickerMap from '@/components/location-picker-map';
+import LocationPreviewMap from '@/components/location-preview-map';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -48,7 +52,15 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { dashboard } from '@/routes';
 import pameranRoute from '@/routes/pameran';
-import type { Dealer, JenisPameran, PaginatedPameran, PameranItem } from '@/types';
+import type { Dealer, JenisPameran, PaginatedPameran, PameranItem, PameranStatus, UserRole } from '@/types';
+
+interface AuthUser {
+    id: number;
+    name: string;
+    email: string;
+    role: UserRole;
+    dealer_id: number | null;
+}
 
 interface PameranIndexProps {
     pamerans: PaginatedPameran;
@@ -58,6 +70,7 @@ interface PameranIndexProps {
         search?: string;
         dealer_id?: string;
         jenis_pameran_id?: string;
+        status?: string;
     };
 }
 
@@ -67,14 +80,23 @@ export default function PameranIndex({
     jenisPameranList,
     filters,
 }: PameranIndexProps) {
+    const { auth } = usePage<{ auth: { user: AuthUser } }>().props;
+    const currentUser = auth.user;
+
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedDealerFilter, setSelectedDealerFilter] = useState(filters.dealer_id || '');
     const [selectedJenisFilter, setSelectedJenisFilter] = useState(filters.jenis_pameran_id || '');
+    const [selectedStatusFilter, setSelectedStatusFilter] = useState(filters.status || '');
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isApproveOpen, setIsApproveOpen] = useState(false);
+    const [isRejectOpen, setIsRejectOpen] = useState(false);
+
     const [selectedPameran, setSelectedPameran] = useState<PameranItem | null>(null);
+    const [approveType, setApproveType] = useState<'spv' | 'kabag' | null>(null);
+    const [isApproving, setIsApproving] = useState(false);
 
     // Create Form
     const createForm = useForm({
@@ -105,18 +127,21 @@ export default function PameranIndex({
     // Delete Form
     const deleteForm = useForm({});
 
-    const selectedCreateJenis = jenisPameranList.find(
-        (j) => String(j.id) === String(createForm.data.jenis_pameran_id),
-    );
+    // Reject Form
+    const rejectForm = useForm({
+        catatan_penolakan: '',
+    });
 
     const applyFilters = (
         newSearch?: string,
         newDealer?: string,
         newJenis?: string,
+        newStatus?: string,
     ) => {
         const search = newSearch !== undefined ? newSearch : searchQuery;
         const dealer = newDealer !== undefined ? newDealer : selectedDealerFilter;
         const jenis = newJenis !== undefined ? newJenis : selectedJenisFilter;
+        const status = newStatus !== undefined ? newStatus : selectedStatusFilter;
 
         router.get(
             pameranRoute.index.url({
@@ -124,6 +149,7 @@ export default function PameranIndex({
                     search: search || undefined,
                     dealer_id: dealer || undefined,
                     jenis_pameran_id: jenis || undefined,
+                    status: status || undefined,
                 },
             }),
             {},
@@ -136,13 +162,14 @@ export default function PameranIndex({
 
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault();
-        applyFilters(searchQuery, selectedDealerFilter, selectedJenisFilter);
+        applyFilters(searchQuery, selectedDealerFilter, selectedJenisFilter, selectedStatusFilter);
     };
 
     const handleResetFilters = () => {
         setSearchQuery('');
         setSelectedDealerFilter('');
         setSelectedJenisFilter('');
+        setSelectedStatusFilter('');
         router.get(
             pameranRoute.index.url(),
             {},
@@ -156,6 +183,9 @@ export default function PameranIndex({
     const handleOpenCreate = () => {
         createForm.reset();
         createForm.clearErrors();
+        if (currentUser.role === 'dealer' && currentUser.dealer_id) {
+            createForm.setData('dealer_id', currentUser.dealer_id);
+        }
         setIsCreateOpen(true);
     };
 
@@ -172,7 +202,6 @@ export default function PameranIndex({
 
     const handleOpenEdit = (pameran: PameranItem) => {
         setSelectedPameran(pameran);
-        // Format dates into YYYY-MM-DD for date input
         const formatForInput = (dateStr: string) => {
             if (!dateStr) return '';
             return dateStr.split('T')[0];
@@ -228,6 +257,59 @@ export default function PameranIndex({
         });
     };
 
+    // Approval handlers
+    const handleOpenApprove = (pameran: PameranItem, type: 'spv' | 'kabag') => {
+        setSelectedPameran(pameran);
+        setApproveType(type);
+        setIsApproveOpen(true);
+    };
+
+    const handleConfirmApprove = () => {
+        if (!selectedPameran || !approveType) return;
+
+        setIsApproving(true);
+        const url =
+            approveType === 'spv'
+                ? pameranRoute.approveSpv.url(selectedPameran.id)
+                : pameranRoute.approveKabag.url(selectedPameran.id);
+
+        router.post(
+            url,
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    setIsApproving(false);
+                    setIsApproveOpen(false);
+                    setSelectedPameran(null);
+                    setApproveType(null);
+                },
+            },
+        );
+    };
+
+    // Reject handlers
+    const handleOpenReject = (pameran: PameranItem) => {
+        setSelectedPameran(pameran);
+        rejectForm.reset();
+        rejectForm.clearErrors();
+        setIsRejectOpen(true);
+    };
+
+    const handleConfirmReject = (e: FormEvent) => {
+        e.preventDefault();
+        if (!selectedPameran) return;
+
+        rejectForm.post(pameranRoute.reject.url(selectedPameran.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsRejectOpen(false);
+                rejectForm.reset();
+                setSelectedPameran(null);
+            },
+        });
+    };
+
     // Calculate rental status
     const getRentalStatus = (startDateStr: string, endDateStr: string) => {
         const today = new Date();
@@ -262,6 +344,45 @@ export default function PameranIndex({
         );
     };
 
+    // Approval status badge helper
+    const getApprovalStatusBadge = (status: PameranStatus, rejectionNote?: string | null) => {
+        switch (status) {
+            case 'menunggu_spv':
+                return (
+                    <Badge className="border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                        Menunggu SPV
+                    </Badge>
+                );
+            case 'menunggu_kabag':
+                return (
+                    <Badge className="border-indigo-200 bg-indigo-100 text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
+                        Menunggu Kabag
+                    </Badge>
+                );
+            case 'disetujui':
+                return (
+                    <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        Disetujui
+                    </Badge>
+                );
+            case 'ditolak':
+                return (
+                    <div className="flex flex-col gap-0.5">
+                        <Badge className="border-rose-200 bg-rose-100 text-rose-800 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                            Ditolak
+                        </Badge>
+                        {rejectionNote && (
+                            <span className="text-[10px] text-rose-600 dark:text-rose-400 line-clamp-1" title={rejectionNote}>
+                                {rejectionNote}
+                            </span>
+                        )}
+                    </div>
+                );
+            default:
+                return <Badge variant="outline">{status}</Badge>;
+        }
+    };
+
     const formatDate = (dateStr: string) => {
         if (!dateStr) return '-';
         return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -272,7 +393,17 @@ export default function PameranIndex({
     };
 
     const isFiltered =
-        searchQuery !== '' || selectedDealerFilter !== '' || selectedJenisFilter !== '';
+        searchQuery !== '' ||
+        selectedDealerFilter !== '' ||
+        selectedJenisFilter !== '' ||
+        selectedStatusFilter !== '';
+
+    const canApproveSpv = currentUser.role === 'spv' || currentUser.role === 'superadmin';
+    const canApproveKabag = currentUser.role === 'kabag' || currentUser.role === 'superadmin';
+    const canReject =
+        currentUser.role === 'spv' ||
+        currentUser.role === 'kabag' ||
+        currentUser.role === 'superadmin';
 
     return (
         <>
@@ -286,7 +417,7 @@ export default function PameranIndex({
                             Menu Pameran
                         </h1>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            Kelola jadwal pameran, dealer, periode sewa, dan lokasi pameran.
+                            Kelola jadwal pameran, alur persetujuan SPV & Kabag, dan penerbitan Kode Pameran MD.
                         </p>
                     </div>
 
@@ -312,7 +443,7 @@ export default function PameranIndex({
                                 type="button"
                                 onClick={() => {
                                     setSearchQuery('');
-                                    applyFilters('', selectedDealerFilter, selectedJenisFilter);
+                                    applyFilters('', selectedDealerFilter, selectedJenisFilter, selectedStatusFilter);
                                 }}
                                 className="text-muted-foreground hover:text-foreground absolute right-3"
                             >
@@ -322,30 +453,56 @@ export default function PameranIndex({
                     </form>
 
                     <div className="flex flex-wrap items-center gap-2">
-                        {/* Dealer Filter */}
+                        {/* Status Filter */}
                         <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">Dealer:</span>
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400">Status:</span>
                             <Select
-                                value={selectedDealerFilter ? String(selectedDealerFilter) : 'all'}
+                                value={selectedStatusFilter ? String(selectedStatusFilter) : 'all'}
                                 onValueChange={(val) => {
                                     const nextVal = val === 'all' ? '' : val;
-                                    setSelectedDealerFilter(nextVal);
-                                    applyFilters(searchQuery, nextVal, selectedJenisFilter);
+                                    setSelectedStatusFilter(nextVal);
+                                    applyFilters(searchQuery, selectedDealerFilter, selectedJenisFilter, nextVal);
                                 }}
                             >
-                                <SelectTrigger className="h-9 w-[170px] text-xs">
-                                    <SelectValue placeholder="Semua Dealer" />
+                                <SelectTrigger className="h-9 w-[160px] text-xs">
+                                    <SelectValue placeholder="Semua Status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Semua Dealer</SelectItem>
-                                    {dealers.map((d) => (
-                                        <SelectItem key={d.id} value={String(d.id)}>
-                                            {d.nama_dealer}
-                                        </SelectItem>
-                                    ))}
+                                    <SelectItem value="all">Semua Status</SelectItem>
+                                    <SelectItem value="menunggu_spv">Menunggu SPV</SelectItem>
+                                    <SelectItem value="menunggu_kabag">Menunggu Kabag</SelectItem>
+                                    <SelectItem value="disetujui">Disetujui</SelectItem>
+                                    <SelectItem value="ditolak">Ditolak</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Dealer Filter (only show if not a restricted dealer user) */}
+                        {currentUser.role !== 'dealer' && (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-neutral-500 dark:text-neutral-400">Dealer:</span>
+                                <Select
+                                    value={selectedDealerFilter ? String(selectedDealerFilter) : 'all'}
+                                    onValueChange={(val) => {
+                                        const nextVal = val === 'all' ? '' : val;
+                                        setSelectedDealerFilter(nextVal);
+                                        applyFilters(searchQuery, nextVal, selectedJenisFilter, selectedStatusFilter);
+                                    }}
+                                >
+                                    <SelectTrigger className="h-9 w-[170px] text-xs">
+                                        <SelectValue placeholder="Semua Dealer" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Dealer</SelectItem>
+                                        {dealers.map((d) => (
+                                            <SelectItem key={d.id} value={String(d.id)}>
+                                                {d.nama_dealer}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         {/* Jenis Pameran Filter */}
                         <div className="flex items-center gap-1.5">
@@ -355,7 +512,7 @@ export default function PameranIndex({
                                 onValueChange={(val) => {
                                     const nextVal = val === 'all' ? '' : val;
                                     setSelectedJenisFilter(nextVal);
-                                    applyFilters(searchQuery, selectedDealerFilter, nextVal);
+                                    applyFilters(searchQuery, selectedDealerFilter, nextVal, selectedStatusFilter);
                                 }}
                             >
                                 <SelectTrigger className="h-9 w-[160px] text-xs">
@@ -390,7 +547,8 @@ export default function PameranIndex({
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-16 text-center">No</TableHead>
+                                <TableHead className="w-12 text-center">No</TableHead>
+                                <TableHead className="w-36">Status</TableHead>
                                 <TableHead>Kode Pameran</TableHead>
                                 <TableHead>Nama Dealer</TableHead>
                                 <TableHead>Jenis Pameran</TableHead>
@@ -402,7 +560,7 @@ export default function PameranIndex({
                         <TableBody>
                             {pamerans.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="py-12 text-center">
+                                    <TableCell colSpan={8} className="py-12 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <div className="rounded-full bg-neutral-100 p-3 dark:bg-neutral-800">
                                                 <CalendarDays className="size-6 text-neutral-500 dark:text-neutral-400" />
@@ -442,12 +600,21 @@ export default function PameranIndex({
                                                 {rowNumber}
                                             </TableCell>
                                             <TableCell>
+                                                {getApprovalStatusBadge(item.status, item.catatan_penolakan)}
+                                            </TableCell>
+                                            <TableCell>
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">MD:</span>
-                                                        <span className="font-mono text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                                                            {item.kode_pameran_md}
-                                                        </span>
+                                                        {item.kode_pameran_md ? (
+                                                            <span className="font-mono text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                                                                {item.kode_pameran_md}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[11px] italic text-amber-600 dark:text-amber-400 font-medium">
+                                                                Menunggu Approval
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">AHM:</span>
@@ -514,7 +681,7 @@ export default function PameranIndex({
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="flex flex-col max-w-xs">
+                                                <div className="flex flex-col max-w-xs gap-1">
                                                     <span className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1">
                                                         <MapPin className="size-3.5 text-neutral-500 shrink-0" />
                                                         {item.kecamatan}
@@ -522,10 +689,74 @@ export default function PameranIndex({
                                                     <span className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
                                                         {item.detail_alamat}
                                                     </span>
+                                                    {item.latitude != null && item.longitude != null ? (
+                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                            <Badge variant="outline" className="font-mono text-[10px] py-0 px-1.5 text-neutral-600 dark:text-neutral-300">
+                                                                {Number(item.latitude).toFixed(6)}, {Number(item.longitude).toFixed(6)}
+                                                            </Badge>
+                                                            <a
+                                                                href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-[11px] text-blue-600 hover:underline dark:text-blue-400 inline-flex items-center gap-0.5"
+                                                                title="Buka di Google Maps"
+                                                            >
+                                                                <ExternalLink className="size-3" />
+                                                                Maps
+                                                            </a>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-[10px] italic text-neutral-400">
+                                                            Koordinat belum diset
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex items-center justify-end gap-1.5">
+                                                    {/* SPV Approval Button */}
+                                                    {canApproveSpv && item.status === 'menunggu_spv' && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleOpenApprove(item, 'spv')}
+                                                            className="h-8 gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 text-xs"
+                                                            title="Approve SPV"
+                                                        >
+                                                            <Check className="size-3.5" />
+                                                            Approve SPV
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Kabag Approval Button */}
+                                                    {canApproveKabag && item.status === 'menunggu_kabag' && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleOpenApprove(item, 'kabag')}
+                                                            className="h-8 gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 text-xs"
+                                                            title="Approve Kabag & Terbitkan Kode MD"
+                                                        >
+                                                            <CheckCheck className="size-3.5" />
+                                                            Approve Kabag
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Reject Button */}
+                                                    {canReject && (item.status === 'menunggu_spv' || item.status === 'menunggu_kabag') && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleOpenReject(item)}
+                                                            className="h-8 gap-1 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40 text-xs"
+                                                            title="Tolak Pameran"
+                                                        >
+                                                            <XCircle className="size-3.5" />
+                                                            Tolak
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Edit Button */}
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -536,6 +767,8 @@ export default function PameranIndex({
                                                         <Pencil className="size-4" />
                                                         <span className="sr-only">Edit</span>
                                                     </Button>
+
+                                                    {/* Delete Button */}
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -614,15 +847,13 @@ export default function PameranIndex({
                         </DialogHeader>
 
                         <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
-                            <div className="rounded-lg border border-neutral-200 bg-neutral-50/70 p-3 text-xs dark:border-neutral-800 dark:bg-neutral-900/50">
-                                <div className="flex items-center justify-between gap-2">
-                                    <span className="font-medium text-neutral-700 dark:text-neutral-300">
-                                        Kode Pameran MD:
+                            <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs dark:border-amber-900/60 dark:bg-amber-950/30">
+                                <div className="flex flex-col gap-1">
+                                    <span className="font-medium text-amber-800 dark:text-amber-300">
+                                        Alur Persetujuan Pameran:
                                     </span>
-                                    <span className="font-mono text-neutral-600 dark:text-neutral-300 font-medium">
-                                        {selectedCreateJenis
-                                            ? `[Otomatis: ${selectedCreateJenis.kode_pameran}-YYYYMMDD-XXXX]`
-                                            : '[Otomatis: [kode pameran]-YYYYMMDD-XXXX]'}
+                                    <span className="text-amber-700 dark:text-amber-400">
+                                        Setelah pameran dibuat, pameran akan menunggu persetujuan dari <strong>SPV</strong> lalu <strong>Kabag</strong>. Kode Pameran MD akan otomatis terbit setelah disetujui Kabag.
                                     </span>
                                 </div>
                             </div>
@@ -647,7 +878,7 @@ export default function PameranIndex({
                                 <Select
                                     value={createForm.data.dealer_id ? String(createForm.data.dealer_id) : undefined}
                                     onValueChange={(val) => createForm.setData('dealer_id', val)}
-                                    disabled={createForm.processing}
+                                    disabled={createForm.processing || (currentUser.role === 'dealer' && !!currentUser.dealer_id)}
                                 >
                                     <SelectTrigger id="create_dealer_id" className="w-full">
                                         <SelectValue placeholder="-- Pilih Dealer --" />
@@ -752,6 +983,52 @@ export default function PameranIndex({
                                 />
                                 <InputError message={createForm.errors.detail_alamat} />
                             </div>
+
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="create_latitude">Latitude</Label>
+                                        <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
+                                    </div>
+                                    <Input
+                                        id="create_latitude"
+                                        type="number"
+                                        step="any"
+                                        placeholder="Contoh: -8.5833807"
+                                        value={createForm.data.latitude ?? ''}
+                                        onChange={(e) =>
+                                            createForm.setData(
+                                                'latitude',
+                                                e.target.value === '' ? null : parseFloat(e.target.value)
+                                            )
+                                        }
+                                        disabled={createForm.processing}
+                                    />
+                                    <InputError message={createForm.errors.latitude} />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="create_longitude">Longitude</Label>
+                                        <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
+                                    </div>
+                                    <Input
+                                        id="create_longitude"
+                                        type="number"
+                                        step="any"
+                                        placeholder="Contoh: 116.1167899"
+                                        value={createForm.data.longitude ?? ''}
+                                        onChange={(e) =>
+                                            createForm.setData(
+                                                'longitude',
+                                                e.target.value === '' ? null : parseFloat(e.target.value)
+                                            )
+                                        }
+                                        disabled={createForm.processing}
+                                    />
+                                    <InputError message={createForm.errors.longitude} />
+                                </div>
+                            </div>
                         </div>
 
                         <DialogFooter>
@@ -785,12 +1062,15 @@ export default function PameranIndex({
                                 <Label htmlFor="edit_kode_pameran_md">Kode Pameran MD</Label>
                                 <Input
                                     id="edit_kode_pameran_md"
-                                    value={selectedPameran?.kode_pameran_md || ''}
+                                    value={
+                                        selectedPameran?.kode_pameran_md ||
+                                        'Belum terbit (Menunggu persetujuan Kabag)'
+                                    }
                                     disabled
                                     className="bg-neutral-100 font-mono text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400 cursor-not-allowed"
                                 />
                                 <p className="text-[11px] text-neutral-400">
-                                    Kode pameran MD dibuat otomatis saat pameran dibuat ([kode pameran]-YYYYMMDD-XXXX) dan tidak dapat diubah.
+                                    Kode pameran MD diterbitkan secara otomatis setelah disetujui Kabag.
                                 </p>
                             </div>
 
@@ -814,7 +1094,7 @@ export default function PameranIndex({
                                 <Select
                                     value={editForm.data.dealer_id ? String(editForm.data.dealer_id) : undefined}
                                     onValueChange={(val) => editForm.setData('dealer_id', val)}
-                                    disabled={editForm.processing}
+                                    disabled={editForm.processing || (currentUser.role === 'dealer' && !!currentUser.dealer_id)}
                                 >
                                     <SelectTrigger id="edit_dealer_id" className="w-full">
                                         <SelectValue placeholder="-- Pilih Dealer --" />
@@ -918,6 +1198,52 @@ export default function PameranIndex({
                                 />
                                 <InputError message={editForm.errors.detail_alamat} />
                             </div>
+
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="edit_latitude">Latitude</Label>
+                                        <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
+                                    </div>
+                                    <Input
+                                        id="edit_latitude"
+                                        type="number"
+                                        step="any"
+                                        placeholder="Contoh: -8.5833807"
+                                        value={editForm.data.latitude ?? ''}
+                                        onChange={(e) =>
+                                            editForm.setData(
+                                                'latitude',
+                                                e.target.value === '' ? null : parseFloat(e.target.value)
+                                            )
+                                        }
+                                        disabled={editForm.processing}
+                                    />
+                                    <InputError message={editForm.errors.latitude} />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="edit_longitude">Longitude</Label>
+                                        <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
+                                    </div>
+                                    <Input
+                                        id="edit_longitude"
+                                        type="number"
+                                        step="any"
+                                        placeholder="Contoh: 116.1167899"
+                                        value={editForm.data.longitude ?? ''}
+                                        onChange={(e) =>
+                                            editForm.setData(
+                                                'longitude',
+                                                e.target.value === '' ? null : parseFloat(e.target.value)
+                                            )
+                                        }
+                                        disabled={editForm.processing}
+                                    />
+                                    <InputError message={editForm.errors.longitude} />
+                                </div>
+                            </div>
                         </div>
 
                         <DialogFooter>
@@ -929,6 +1255,166 @@ export default function PameranIndex({
                             <Button type="submit" disabled={editForm.processing}>
                                 {editForm.processing && <Spinner className="mr-2 size-4" />}
                                 Simpan Perubahan
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog Konfirmasi Approval (SPV / Kabag) */}
+            <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {approveType === 'spv' ? 'Persetujuan SPV' : 'Persetujuan Kabag'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {approveType === 'spv'
+                                ? 'Apakah Anda yakin ingin menyetujui pameran ini? Pameran akan dilanjutkan ke tahap persetujuan Kabag.'
+                                : 'Apakah Anda yakin ingin menyetujui pameran ini? Kode Pameran MD akan otomatis diterbitkan.'}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3 py-2 max-h-[75vh] overflow-y-auto px-1">
+                        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs space-y-2 dark:border-neutral-800 dark:bg-neutral-900">
+                            <div className="flex justify-between">
+                                <span className="text-neutral-500">Dealer:</span>
+                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                    {selectedPameran?.dealer?.nama_dealer}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-neutral-500">Jenis Pameran:</span>
+                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                    {selectedPameran?.jenis_pameran?.jenis_pameran}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-neutral-500">Kecamatan:</span>
+                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                    {selectedPameran?.kecamatan}
+                                </span>
+                            </div>
+                            {selectedPameran?.detail_alamat && (
+                                <div className="flex flex-col gap-0.5 border-t pt-1.5 dark:border-neutral-800">
+                                    <span className="text-neutral-500">Detail Alamat:</span>
+                                    <span className="text-neutral-800 dark:text-neutral-200">
+                                        {selectedPameran.detail_alamat}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Map Location Preview */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1">
+                                    <MapPin className="size-3.5 text-red-500" />
+                                    Lokasi Peta Pameran
+                                </span>
+                                {selectedPameran?.latitude != null && selectedPameran?.longitude != null && (
+                                    <a
+                                        href={`https://www.google.com/maps?q=${selectedPameran.latitude},${selectedPameran.longitude}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[11px] text-blue-600 hover:underline dark:text-blue-400 inline-flex items-center gap-1"
+                                    >
+                                        <ExternalLink className="size-3" />
+                                        Buka di Google Maps
+                                    </a>
+                                )}
+                            </div>
+
+                            {selectedPameran?.latitude != null && selectedPameran?.longitude != null ? (
+                                <LocationPreviewMap
+                                    key={`preview-${selectedPameran.id}`}
+                                    latitude={Number(selectedPameran.latitude)}
+                                    longitude={Number(selectedPameran.longitude)}
+                                    popupText={`${selectedPameran.dealer?.nama_dealer || ''} - ${selectedPameran.kecamatan}`}
+                                    height="220px"
+                                />
+                            ) : (
+                                <div className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-6 text-xs text-neutral-400 dark:border-neutral-700">
+                                    <MapPin className="mr-1.5 size-4 text-neutral-400" />
+                                    Titik koordinat peta belum ditentukan untuk pameran ini.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <DialogFooter className="mt-4">
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline" disabled={isApproving}>
+                                Batal
+                            </Button>
+                        </DialogClose>
+                        <Button
+                            type="button"
+                            onClick={handleConfirmApprove}
+                            disabled={isApproving}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            {isApproving && <Spinner className="mr-2 size-4" />}
+                            {approveType === 'spv' ? 'Setujui (SPV)' : 'Setujui & Terbitkan Kode MD'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog Penolakan (Reject) */}
+            <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <form onSubmit={handleConfirmReject}>
+                        <DialogHeader>
+                            <DialogTitle>Tolak Pameran</DialogTitle>
+                            <DialogDescription>
+                                Masukkan alasan atau catatan penolakan untuk pameran ini.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-3 py-3">
+                            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs space-y-1.5 dark:border-neutral-800 dark:bg-neutral-900">
+                                <div className="flex justify-between">
+                                    <span className="text-neutral-500">Dealer:</span>
+                                    <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                        {selectedPameran?.dealer?.nama_dealer}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-neutral-500">Jenis:</span>
+                                    <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                        {selectedPameran?.jenis_pameran?.jenis_pameran}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="catatan_penolakan">Alasan Penolakan</Label>
+                                <Textarea
+                                    id="catatan_penolakan"
+                                    rows={3}
+                                    placeholder="Contoh: Lokasi kurang strategis / jadwal bentrok dengan agenda lain..."
+                                    value={rejectForm.data.catatan_penolakan}
+                                    onChange={(e) => rejectForm.setData('catatan_penolakan', e.target.value)}
+                                    disabled={rejectForm.processing}
+                                />
+                                <InputError message={rejectForm.errors.catatan_penolakan} />
+                            </div>
+                        </div>
+
+                        <DialogFooter className="mt-2">
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline" disabled={rejectForm.processing}>
+                                    Batal
+                                </Button>
+                            </DialogClose>
+                            <Button
+                                type="submit"
+                                variant="destructive"
+                                disabled={rejectForm.processing}
+                            >
+                                {rejectForm.processing && <Spinner className="mr-2 size-4" />}
+                                Tolak Pameran
                             </Button>
                         </DialogFooter>
                     </form>
@@ -983,4 +1469,3 @@ PameranIndex.layout = {
         },
     ],
 };
-
