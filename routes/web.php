@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealerController;
+use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\JenisPameranController;
 use App\Http\Controllers\PameranController;
 use App\Http\Controllers\UserController;
@@ -18,6 +19,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pameran/{pameran}/approve-kabag', [PameranController::class, 'approveKabag'])->name('pameran.approve-kabag');
     Route::post('pameran/{pameran}/reject', [PameranController::class, 'reject'])->name('pameran.reject');
     Route::resource('pameran', PameranController::class)->except(['show', 'edit']);
+    Route::get('api/geocode/search', [GeocodeController::class, 'search'])->name('geocode.search');
+    Route::get('api/geocode/reverse', [GeocodeController::class, 'reverse'])->name('geocode.reverse');
 });
 
 require __DIR__.'/settings.php';

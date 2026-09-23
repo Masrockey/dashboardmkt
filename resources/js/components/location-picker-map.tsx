@@ -3,7 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { Locate, MapPin, Search } from 'lucide-react';
+import { Locate, MapPin, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,16 @@ export interface LocationSelectResult {
     latitude: number;
     longitude: number;
     displayName?: string;
+}
+
+export interface SearchResultItem {
+    place_id?: number | string;
+    name: string;
+    display_name: string;
+    latitude: number;
+    longitude: number;
+    kecamatan: string;
+    detail_alamat: string;
 }
 
 export const getMapMarkerIcon = (customUrl?: string | null) => {
@@ -65,12 +75,15 @@ export default function LocationPickerMap({
     height = '240px',
 }: LocationPickerMapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
+    const searchContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
     const markerRef = useRef<L.Marker | null>(null);
 
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
+    const [showResultsDropdown, setShowResultsDropdown] = useState(false);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
     const handleReverseGeocode = async (lat: number, lng: number) => {
@@ -78,10 +91,10 @@ export default function LocationPickerMap({
         setStatusMessage('Mengambil informasi alamat...');
 
         try {
-            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&addressdetails=1`;
+            const url = `/api/geocode/reverse?lat=${lat}&lon=${lng}`;
             const response = await fetch(url, {
                 headers: {
-                    'Accept-Language': 'id,en',
+                    Accept: 'application/json',
                 },
             });
 
@@ -90,39 +103,10 @@ export default function LocationPickerMap({
             }
 
             const data = await response.json();
-            const address = data.address || {};
-
-            // Extract Kecamatan
-            const rawKecamatan =
-                address.county ||
-                address.city_district ||
-                address.subdistrict ||
-                address.district ||
-                address.suburb ||
-                address.municipality ||
-                '';
-
-            // Clean prefix "Kecamatan " or "Kec. "
-            const cleanKecamatan = rawKecamatan
-                .replace(/^(kecamatan|kec\.)\s*/i, '')
-                .trim();
-
-            // Build detail alamat: prioritize specific road, neighborhood, and village
-            const addressParts = [
-                address.amenity || address.shop || address.building || address.office,
-                address.road,
-                address.neighbourhood,
-                address.suburb || address.village,
-            ].filter(Boolean);
-
-            const detailAlamat =
-                addressParts.length > 0
-                    ? addressParts.join(', ')
-                    : data.display_name || `Titik Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
             const result: LocationSelectResult = {
-                kecamatan: cleanKecamatan,
-                detailAlamat,
+                kecamatan: data.kecamatan || '',
+                detailAlamat: data.detail_alamat || `Titik Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
                 latitude: lat,
                 longitude: lng,
                 displayName: data.display_name,
@@ -130,13 +114,12 @@ export default function LocationPickerMap({
 
             onLocationSelect(result);
             setStatusMessage(
-                cleanKecamatan ? `Terpilih: Kec. ${cleanKecamatan}` : 'Lokasi berhasil dipilih'
+                data.kecamatan ? `Terpilih: Kec. ${data.kecamatan}` : 'Lokasi berhasil dipilih'
             );
         } catch (error) {
             console.error('Error reverse geocoding:', error);
             setStatusMessage('Gagal mengambil nama alamat otomatis. Anda dapat mengisinya manual.');
 
-            // Still provide coordinates
             onLocationSelect({
                 kecamatan: '',
                 detailAlamat: `Titik Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
@@ -167,43 +150,77 @@ export default function LocationPickerMap({
         }
     };
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!searchQuery.trim()) return;
+    const executeSearch = async () => {
+        const query = searchQuery.trim();
+        if (!query) return;
 
         setIsSearching(true);
         setStatusMessage('Mencari lokasi...');
 
         try {
-            const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(
-                searchQuery
-            )}&limit=1&countrycodes=id`;
+            let viewboxParam = '';
+            if (mapInstanceRef.current) {
+                const bounds = mapInstanceRef.current.getBounds();
+                viewboxParam = `&viewbox=${bounds.getWest().toFixed(4)},${bounds.getSouth().toFixed(4)},${bounds.getEast().toFixed(4)},${bounds.getNorth().toFixed(4)}`;
+            }
 
+            const url = `/api/geocode/search?q=${encodeURIComponent(query)}${viewboxParam}`;
             const response = await fetch(url, {
                 headers: {
-                    'Accept-Language': 'id,en',
+                    Accept: 'application/json',
                 },
             });
 
             if (!response.ok) throw new Error('Pencarian gagal');
 
-            const results = await response.json();
-            if (results && results.length > 0) {
-                const target = results[0];
-                const lat = parseFloat(target.lat);
-                const lng = parseFloat(target.lon);
+            const results: SearchResultItem[] = await response.json();
 
-                setPosition(lat, lng, 15);
-                await handleReverseGeocode(lat, lng);
+            if (results && results.length > 0) {
+                setSearchResults(results);
+                setShowResultsDropdown(true);
+
+                // Auto-select and navigate to the top result
+                const top = results[0];
+                setPosition(top.latitude, top.longitude, 16);
+
+                const locationResult: LocationSelectResult = {
+                    kecamatan: top.kecamatan,
+                    detailAlamat: top.detail_alamat || top.display_name,
+                    latitude: top.latitude,
+                    longitude: top.longitude,
+                    displayName: top.display_name,
+                };
+                onLocationSelect(locationResult);
+
+                setStatusMessage(`Ditemukan: ${top.name}${top.kecamatan ? ` (Kec. ${top.kecamatan})` : ''}`);
             } else {
-                setStatusMessage('Lokasi tidak ditemukan. Coba kata kunci lain atau klik langsung di peta.');
+                setSearchResults([]);
+                setShowResultsDropdown(false);
+                setStatusMessage(`Lokasi "${query}" tidak ditemukan. Coba kata kunci lain atau klik langsung di peta.`);
             }
         } catch (err) {
             console.error('Search error:', err);
-            setStatusMessage('Terjadi kesalahan saat mencari lokasi.');
+            setStatusMessage('Terjadi kesalahan saat mencari lokasi. Silakan coba lagi.');
         } finally {
             setIsSearching(false);
         }
+    };
+
+    const selectSearchResult = (item: SearchResultItem) => {
+        setPosition(item.latitude, item.longitude, 16);
+
+        const locationResult: LocationSelectResult = {
+            kecamatan: item.kecamatan,
+            detailAlamat: item.detail_alamat || item.display_name,
+            latitude: item.latitude,
+            longitude: item.longitude,
+            displayName: item.display_name,
+        };
+        onLocationSelect(locationResult);
+
+        setSearchQuery(item.name);
+        setShowResultsDropdown(false);
+        setStatusMessage(`Terpilih: ${item.name}${item.kecamatan ? ` (Kec. ${item.kecamatan})` : ''}`);
     };
 
     const handleCurrentLocation = () => {
@@ -227,6 +244,20 @@ export default function LocationPickerMap({
             { enableHighAccuracy: true, timeout: 8000 }
         );
     };
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+                setShowResultsDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // Initialize map
     useEffect(() => {
@@ -318,31 +349,84 @@ export default function LocationPickerMap({
             </div>
 
             {/* Quick Search */}
-            <form onSubmit={handleSearch} className="flex items-center gap-1.5">
-                <div className="relative flex-1">
-                    <Search className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 pointer-events-none" />
-                    <Input
-                        type="text"
-                        placeholder="Cari jalan / tempat (contoh: Epicentrum Mall, Mataram)..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-8 pl-8 pr-2 text-xs"
-                    />
+            <div ref={searchContainerRef} className="relative z-20">
+                <div className="flex items-center gap-1.5">
+                    <div className="relative flex-1">
+                        <Search className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 pointer-events-none" />
+                        <Input
+                            type="text"
+                            placeholder="Cari jalan / tempat (contoh: Epicentrum, Mataram)..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                if (!e.target.value) {
+                                    setSearchResults([]);
+                                    setShowResultsDropdown(false);
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    executeSearch();
+                                }
+                            }}
+                            className="h-8 pl-8 pr-7 text-xs"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setSearchResults([]);
+                                    setShowResultsDropdown(false);
+                                }}
+                                className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
+                            >
+                                <X className="size-3.5" />
+                            </button>
+                        )}
+                    </div>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={executeSearch}
+                        disabled={isSearching || !searchQuery.trim()}
+                        className="h-8 px-2.5 text-xs shrink-0"
+                    >
+                        {isSearching ? <Spinner className="size-3.5" /> : 'Cari'}
+                    </Button>
                 </div>
-                <Button
-                    type="submit"
-                    variant="secondary"
-                    size="sm"
-                    disabled={isSearching || !searchQuery.trim()}
-                    className="h-8 px-2.5 text-xs shrink-0"
-                >
-                    {isSearching ? <Spinner className="size-3.5" /> : 'Cari'}
-                </Button>
-            </form>
+
+                {/* Dropdown Suggestions */}
+                {showResultsDropdown && searchResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-md border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-800 dark:bg-neutral-950">
+                        {searchResults.map((item, idx) => (
+                            <button
+                                key={item.place_id || idx}
+                                type="button"
+                                onClick={() => selectSearchResult(item)}
+                                className="flex w-full items-start gap-2 rounded px-2.5 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+                            >
+                                <MapPin className="size-3.5 text-red-500 shrink-0 mt-0.5" />
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                                        {item.name}
+                                    </div>
+                                    <div className="text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-1">
+                                        {item.detail_alamat || item.display_name}
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             {/* Map Container */}
             <div
-                className="relative overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-xs"
+                className="relative overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-xs z-10"
                 style={{ height }}
             >
                 <div ref={mapContainerRef} className="h-full w-full z-0" />
@@ -372,4 +456,3 @@ export default function LocationPickerMap({
         </div>
     );
 }
-
