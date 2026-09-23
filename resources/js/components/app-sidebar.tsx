@@ -38,7 +38,7 @@ const mainNavItems: NavItem[] = [
         icon: Building2,
     },
     {
-        title: 'Jenis Pameran',
+        title: 'Jenis Channel',
         href: jenisPameran.index(),
         icon: MapPin,
     },

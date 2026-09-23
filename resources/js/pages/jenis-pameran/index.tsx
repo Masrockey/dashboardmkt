@@ -248,23 +248,23 @@ export default function JenisPameranIndex({
 
     return (
         <>
-            <Head title="Jenis Pameran" />
+            <Head title="Jenis Channel" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-                            Menu Jenis Pameran
+                            Menu Jenis Channel
                         </h1>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            Kelola data Kode Pameran, Jenis Pameran, dan Icon Map.
+                            Kelola data Kode Pameran, Nama Jenis Channel, dan Icon Map.
                         </p>
                     </div>
 
                     <Button onClick={handleOpenCreate} className="gap-2 self-start sm:self-auto">
                         <Plus className="size-4" />
-                        Tambah Jenis Pameran
+                        Tambah Jenis Channel
                     </Button>
                 </div>
 
@@ -274,7 +274,7 @@ export default function JenisPameranIndex({
                         <Search className="text-muted-foreground absolute left-3 size-4 pointer-events-none" />
                         <Input
                             type="text"
-                            placeholder="Cari Kode atau Jenis Pameran..."
+                            placeholder="Cari Kode atau Nama Jenis Channel..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-9 pr-9"
@@ -298,7 +298,7 @@ export default function JenisPameranIndex({
                             <TableRow>
                                 <TableHead className="w-16 text-center">No</TableHead>
                                 <TableHead>Kode Pameran</TableHead>
-                                <TableHead>Jenis Pameran</TableHead>
+                                <TableHead>Nama Jenis Channel</TableHead>
                                 <TableHead>Icon Map</TableHead>
                                 <TableHead>Tanggal Dibuat</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
@@ -313,12 +313,12 @@ export default function JenisPameranIndex({
                                                 <MapPin className="size-6 text-neutral-500 dark:text-neutral-400" />
                                             </div>
                                             <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                                                Belum ada data jenis pameran
+                                                Belum ada data jenis channel
                                             </p>
                                             <p className="text-xs text-neutral-500 dark:text-neutral-400">
                                                 {searchQuery
                                                     ? 'Tidak ditemukan data dengan kata kunci pencarian tersebut.'
-                                                    : 'Mulai dengan menambahkan data jenis pameran pertama.'}
+                                                    : 'Mulai dengan menambahkan data jenis channel pertama.'}
                                             </p>
                                             {!searchQuery && (
                                                 <Button
@@ -328,7 +328,7 @@ export default function JenisPameranIndex({
                                                     className="mt-2"
                                                 >
                                                     <Plus className="mr-1.5 size-3.5" />
-                                                    Tambah Jenis Pameran
+                                                    Tambah Jenis Channel
                                                 </Button>
                                             )}
                                         </div>
@@ -388,7 +388,7 @@ export default function JenisPameranIndex({
                                                         size="icon"
                                                         onClick={() => handleOpenEdit(item)}
                                                         className="size-8 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                                                        title="Edit Jenis Pameran"
+                                                        title="Edit Jenis Channel"
                                                     >
                                                         <Pencil className="size-4" />
                                                         <span className="sr-only">Edit</span>
@@ -398,7 +398,7 @@ export default function JenisPameranIndex({
                                                         size="icon"
                                                         onClick={() => handleOpenDelete(item)}
                                                         className="size-8 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                                                        title="Hapus Jenis Pameran"
+                                                        title="Hapus Jenis Channel"
                                                     >
                                                         <Trash2 className="size-4" />
                                                         <span className="sr-only">Hapus</span>
@@ -418,7 +418,7 @@ export default function JenisPameranIndex({
                             <p className="text-xs text-neutral-500 dark:text-neutral-400">
                                 Menampilkan <span className="font-medium">{jenisPameran.from ?? 0}</span> sampai{' '}
                                 <span className="font-medium">{jenisPameran.to ?? 0}</span> dari{' '}
-                                <span className="font-medium">{jenisPameran.total}</span> jenis pameran
+                                <span className="font-medium">{jenisPameran.total}</span> jenis channel
                             </p>
 
                             <div className="flex items-center gap-1">
@@ -459,14 +459,14 @@ export default function JenisPameranIndex({
                 </Card>
             </div>
 
-            {/* Dialog Tambah Jenis Pameran */}
+            {/* Dialog Tambah Jenis Channel */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent className="sm:max-w-md">
                     <form onSubmit={handleCreateSubmit}>
                         <DialogHeader>
-                            <DialogTitle>Tambah Jenis Pameran</DialogTitle>
+                            <DialogTitle>Tambah Jenis Channel</DialogTitle>
                             <DialogDescription>
-                                Masukkan Kode Pameran, Jenis Pameran, dan opsional Icon Map untuk marker peta.
+                                Masukkan Kode Pameran, Nama Jenis Channel, dan opsional Icon Map untuk marker peta.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -485,10 +485,10 @@ export default function JenisPameranIndex({
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="create_jenis_pameran">Jenis Pameran</Label>
+                                <Label htmlFor="create_jenis_pameran">Nama Jenis Channel</Label>
                                 <Input
                                     id="create_jenis_pameran"
-                                    placeholder="Contoh: Pameran Mall / Plaza"
+                                    placeholder="Contoh: Pameran Mall / POS / Dealer"
                                     value={createForm.data.jenis_pameran}
                                     onChange={(e) => createForm.setData('jenis_pameran', e.target.value)}
                                     disabled={createForm.processing}
@@ -557,21 +557,21 @@ export default function JenisPameranIndex({
                             </DialogClose>
                             <Button type="submit" disabled={createForm.processing}>
                                 {createForm.processing && <Spinner className="mr-2 size-4" />}
-                                Simpan Jenis Pameran
+                                Simpan Jenis Channel
                             </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog Edit Jenis Pameran */}
+            {/* Dialog Edit Jenis Channel */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="sm:max-w-md">
                     <form onSubmit={handleEditSubmit}>
                         <DialogHeader>
-                            <DialogTitle>Edit Jenis Pameran</DialogTitle>
+                            <DialogTitle>Edit Jenis Channel</DialogTitle>
                             <DialogDescription>
-                                Perbarui Kode Pameran, Jenis Pameran, atau ganti/hapus Icon Map.
+                                Perbarui Kode Pameran, Nama Jenis Channel, atau ganti/hapus Icon Map.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -589,7 +589,7 @@ export default function JenisPameranIndex({
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="edit_jenis_pameran">Jenis Pameran</Label>
+                                <Label htmlFor="edit_jenis_pameran">Nama Jenis Channel</Label>
                                 <Input
                                     id="edit_jenis_pameran"
                                     value={editForm.data.jenis_pameran}
@@ -699,9 +699,9 @@ export default function JenisPameranIndex({
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Hapus Jenis Pameran</DialogTitle>
+                        <DialogTitle>Hapus Jenis Channel</DialogTitle>
                         <DialogDescription>
-                            Apakah Anda yakin ingin menghapus jenis pameran{' '}
+                            Apakah Anda yakin ingin menghapus jenis channel{' '}
                             <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                                 {selectedPameran?.jenis_pameran} ({selectedPameran?.kode_pameran})
                             </span>
@@ -738,7 +738,7 @@ JenisPameranIndex.layout = {
             href: dashboard(),
         },
         {
-            title: 'Jenis Pameran',
+            title: 'Jenis Channel',
             href: jenisPameranRoute.index(),
         },
     ],

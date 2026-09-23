@@ -404,16 +404,16 @@ export default function DashboardMap({
                         </SelectContent>
                     </Select>
 
-                    {/* Filter Jenis Pameran */}
+                    {/* Filter Jenis Channel */}
                     <Select
                         value={selectedJenisFilter}
                         onValueChange={setSelectedJenisFilter}
                     >
                         <SelectTrigger className="h-8 w-[150px] text-xs">
-                            <SelectValue placeholder="Jenis Pameran" />
+                            <SelectValue placeholder="Jenis Channel" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Semua Jenis</SelectItem>
+                            <SelectItem value="all">Semua Channel</SelectItem>
                             {jenisPameranList.map((j) => (
                                 <SelectItem key={j.id} value={String(j.id)}>
                                     {j.jenis_pameran}

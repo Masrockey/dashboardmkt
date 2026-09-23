@@ -513,9 +513,9 @@ export default function PameranIndex({
                             </div>
                         )}
 
-                        {/* Jenis Pameran Filter */}
+                        {/* Jenis Channel Filter */}
                         <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">Jenis:</span>
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400">Channel:</span>
                             <Select
                                 value={selectedJenisFilter ? String(selectedJenisFilter) : 'all'}
                                 onValueChange={(val) => {
@@ -525,10 +525,10 @@ export default function PameranIndex({
                                 }}
                             >
                                 <SelectTrigger className="h-9 w-[160px] text-xs">
-                                    <SelectValue placeholder="Semua Jenis" />
+                                    <SelectValue placeholder="Semua Channel" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Semua Jenis</SelectItem>
+                                    <SelectItem value="all">Semua Channel</SelectItem>
                                     {jenisPameranList.map((j) => (
                                         <SelectItem key={j.id} value={String(j.id)}>
                                             {j.jenis_pameran}
@@ -560,7 +560,7 @@ export default function PameranIndex({
                                 <TableHead className="w-36">Status</TableHead>
                                 <TableHead>Kode Pameran</TableHead>
                                 <TableHead>Nama Dealer</TableHead>
-                                <TableHead>Jenis Pameran</TableHead>
+                                <TableHead>Nama Jenis Channel</TableHead>
                                 <TableHead>Periode Sewa</TableHead>
                                 <TableHead>Lokasi</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
@@ -854,7 +854,7 @@ export default function PameranIndex({
                         <DialogHeader>
                             <DialogTitle>Tambah Pameran</DialogTitle>
                             <DialogDescription>
-                                Pilih Dealer dan Jenis Pameran, lalu tentukan periode sewa dan detail lokasi.
+                                Pilih Dealer dan Jenis Channel, lalu tentukan periode sewa dan detail lokasi.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -899,7 +899,7 @@ export default function PameranIndex({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {dealers.map((d) => (
-                                            <SelectItem key={d.id} value={String(d.id)}>
+                                             <SelectItem key={d.id} value={String(d.id)}>
                                                 [{d.kode_dealer}] {d.nama_dealer}
                                             </SelectItem>
                                         ))}
@@ -909,14 +909,14 @@ export default function PameranIndex({
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="create_jenis_pameran_id">Jenis Pameran</Label>
+                                <Label htmlFor="create_jenis_pameran_id">Nama Jenis Channel</Label>
                                 <Select
                                     value={createForm.data.jenis_pameran_id ? String(createForm.data.jenis_pameran_id) : undefined}
                                     onValueChange={(val) => createForm.setData('jenis_pameran_id', val)}
                                     disabled={createForm.processing}
                                 >
                                     <SelectTrigger id="create_jenis_pameran_id" className="w-full">
-                                        <SelectValue placeholder="-- Pilih Jenis Pameran --" />
+                                        <SelectValue placeholder="-- Pilih Jenis Channel --" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {jenisPameranList.map((j) => (
@@ -1128,14 +1128,14 @@ export default function PameranIndex({
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="edit_jenis_pameran_id">Jenis Pameran</Label>
+                                <Label htmlFor="edit_jenis_pameran_id">Nama Jenis Channel</Label>
                                 <Select
                                     value={editForm.data.jenis_pameran_id ? String(editForm.data.jenis_pameran_id) : undefined}
                                     onValueChange={(val) => editForm.setData('jenis_pameran_id', val)}
                                     disabled={editForm.processing}
                                 >
                                     <SelectTrigger id="edit_jenis_pameran_id" className="w-full">
-                                        <SelectValue placeholder="-- Pilih Jenis Pameran --" />
+                                        <SelectValue placeholder="-- Pilih Jenis Channel --" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {jenisPameranList.map((j) => (
@@ -1302,7 +1302,7 @@ export default function PameranIndex({
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-neutral-500">Jenis Pameran:</span>
+                                <span className="text-neutral-500">Nama Jenis Channel:</span>
                                 <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                                     {selectedPameran?.jenis_pameran?.jenis_pameran}
                                 </span>
