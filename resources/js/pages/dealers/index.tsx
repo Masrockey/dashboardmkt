@@ -479,7 +479,7 @@ export default function DealersIndex({ dealers, filters }: DealersIndexProps) {
 DealersIndex.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard',
+            title: 'Dashboard Pameran',
             href: dashboard(),
         },
         {

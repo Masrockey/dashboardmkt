@@ -734,7 +734,7 @@ export default function JenisPameranIndex({
 JenisPameranIndex.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard',
+            title: 'Dashboard Pameran',
             href: dashboard(),
         },
         {

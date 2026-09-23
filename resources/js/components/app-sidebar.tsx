@@ -19,11 +19,11 @@ import dealers from '@/routes/dealers';
 import jenisPameran from '@/routes/jenis-pameran';
 import pameran from '@/routes/pameran';
 import users from '@/routes/users';
-import type { NavItem } from '@/types';
+import type { NavGroup, NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const pcdNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Dashboard Pameran',
         href: dashboard(),
         icon: LayoutGrid,
     },
@@ -33,14 +33,17 @@ const mainNavItems: NavItem[] = [
         icon: CalendarDays,
     },
     {
-        title: 'Dealer',
-        href: dealers.index(),
-        icon: Building2,
-    },
-    {
         title: 'Jenis Channel',
         href: jenisPameran.index(),
         icon: MapPin,
+    },
+];
+
+const managementNavItems: NavItem[] = [
+    {
+        title: 'Dealer',
+        href: dealers.index(),
+        icon: Building2,
     },
     {
         title: 'User',
@@ -55,14 +58,28 @@ export function AppSidebar() {
     const { auth } = usePage<{ auth: { user: { role?: string } } }>().props;
     const userRole = auth?.user?.role;
 
-    const filteredNavItems = useMemo(() => {
+    const navGroups: NavGroup[] = useMemo(() => {
         if (userRole === 'dealer' || userRole === 'kabag') {
-            return mainNavItems.filter(
-                (item) => item.title === 'Dashboard' || item.title === 'Pameran',
-            );
+            return [
+                {
+                    title: 'PCD',
+                    items: pcdNavItems.filter(
+                        (item) => item.title === 'Dashboard Pameran' || item.title === 'Pameran',
+                    ),
+                },
+            ];
         }
 
-        return mainNavItems;
+        return [
+            {
+                title: 'PCD',
+                items: pcdNavItems,
+            },
+            {
+                title: 'Management',
+                items: managementNavItems,
+            },
+        ];
     }, [userRole]);
 
     return (
@@ -80,7 +97,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={filteredNavItems} />
+                <NavMain groups={navGroups} />
             </SidebarContent>
 
             <SidebarFooter>

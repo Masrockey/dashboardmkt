@@ -96,7 +96,7 @@ export default function Dashboard({
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title="Dashboard Pameran" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
                 {/* Header Welcome & Role Info */}
@@ -235,7 +235,7 @@ export default function Dashboard({
 Dashboard.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard',
+            title: 'Dashboard Pameran',
             href: dashboard(),
         },
     ],

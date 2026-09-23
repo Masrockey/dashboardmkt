@@ -366,7 +366,7 @@ export default function PameranCreate({
 PameranCreate.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard',
+            title: 'Dashboard Pameran',
             href: dashboard(),
         },
         {

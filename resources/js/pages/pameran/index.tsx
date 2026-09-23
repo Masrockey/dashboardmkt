@@ -1233,7 +1233,7 @@ export default function PameranIndex({
 PameranIndex.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard',
+            title: 'Dashboard Pameran',
             href: dashboard(),
         },
         {
