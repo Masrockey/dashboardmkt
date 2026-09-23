@@ -237,30 +237,28 @@ export default function PameranCreate({
 
                                 <div className="space-y-5">
                                     {/* Peta Interaktif untuk Pilih Titik Lokasi */}
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5">
                                         <div className="flex items-center justify-between">
-                                            <Label>Peta Lokasi Pameran</Label>
+                                            <Label>Peta & Titik Lokasi Pameran</Label>
                                             <span className="text-xs text-neutral-400">
-                                                Klik sembarang titik pada peta untuk mengisi lokasi secara instan
+                                                Cari alamat atau klik titik pada peta
                                             </span>
                                         </div>
-                                        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50/60 dark:border-neutral-800 dark:bg-neutral-900/40">
-                                            <LocationPickerMap
-                                                initialLat={createForm.data.latitude}
-                                                initialLng={createForm.data.longitude}
-                                                customIconUrl={selectedJenis?.icon_map_url || null}
-                                                onLocationSelect={(res) => {
-                                                    createForm.setData((prev) => ({
-                                                        ...prev,
-                                                        kecamatan: res.kecamatan || prev.kecamatan,
-                                                        detail_alamat: res.detailAlamat || prev.detail_alamat,
-                                                        latitude: res.latitude,
-                                                        longitude: res.longitude,
-                                                    }));
-                                                }}
-                                                height="320px"
-                                            />
-                                        </div>
+                                        <LocationPickerMap
+                                            initialLat={createForm.data.latitude}
+                                            initialLng={createForm.data.longitude}
+                                            customIconUrl={selectedJenis?.icon_map_url || null}
+                                            onLocationSelect={(res) => {
+                                                createForm.setData((prev) => ({
+                                                    ...prev,
+                                                    kecamatan: res.kecamatan || prev.kecamatan,
+                                                    detail_alamat: res.detailAlamat || prev.detail_alamat,
+                                                    latitude: res.latitude,
+                                                    longitude: res.longitude,
+                                                }));
+                                            }}
+                                            height="340px"
+                                        />
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

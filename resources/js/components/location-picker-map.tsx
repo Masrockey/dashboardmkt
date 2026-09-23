@@ -72,7 +72,7 @@ export default function LocationPickerMap({
     customIconUrl,
     onLocationSelect,
     className = '',
-    height = '240px',
+    height = '280px',
 }: LocationPickerMapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -329,33 +329,15 @@ export default function LocationPickerMap({
     }, [initialLat, initialLng]);
 
     return (
-        <div className={`space-y-2 ${className}`}>
-            <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                    <MapPin className="size-3.5 text-primary shrink-0" />
-                    <span>Pilih Titik di Peta (Otomatis Isi Alamat & Kecamatan)</span>
-                </div>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCurrentLocation}
-                    className="h-7 gap-1 px-2 text-[11px]"
-                    title="Gunakan Lokasi GPS Saat Ini"
-                >
-                    <Locate className="size-3" />
-                    Lokasi Saya
-                </Button>
-            </div>
-
-            {/* Quick Search */}
-            <div ref={searchContainerRef} className="relative z-20">
-                <div className="flex items-center gap-1.5">
+        <div className={`space-y-3 ${className}`}>
+            {/* Unified Search & Control Bar */}
+            <div ref={searchContainerRef} className="relative z-30">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <div className="relative flex-1">
-                        <Search className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 pointer-events-none" />
+                        <Search className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 size-4 pointer-events-none" />
                         <Input
                             type="text"
-                            placeholder="Cari jalan / tempat (contoh: Epicentrum, Mataram)..."
+                            placeholder="Cari jalan / tempat (contoh: Epicentrum Mall, Mataram)..."
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
@@ -371,7 +353,7 @@ export default function LocationPickerMap({
                                     executeSearch();
                                 }
                             }}
-                            className="h-8 pl-8 pr-7 text-xs"
+                            className="h-9 pl-9 pr-8 text-xs bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 shadow-2xs"
                         />
                         {searchQuery && (
                             <button
@@ -381,35 +363,54 @@ export default function LocationPickerMap({
                                     setSearchResults([]);
                                     setShowResultsDropdown(false);
                                 }}
-                                className="text-muted-foreground hover:text-foreground absolute right-2 top-1/2 -translate-y-1/2"
+                                className="text-muted-foreground hover:text-foreground absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
                             >
                                 <X className="size-3.5" />
                             </button>
                         )}
                     </div>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={executeSearch}
-                        disabled={isSearching || !searchQuery.trim()}
-                        className="h-8 px-2.5 text-xs shrink-0"
-                    >
-                        {isSearching ? <Spinner className="size-3.5" /> : 'Cari'}
-                    </Button>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={executeSearch}
+                            disabled={isSearching || !searchQuery.trim()}
+                            className="h-9 px-3 text-xs"
+                        >
+                            {isSearching ? <Spinner className="size-3.5 mr-1" /> : <Search className="size-3.5 mr-1" />}
+                            Cari
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCurrentLocation}
+                            className="h-9 gap-1.5 px-3 text-xs border-neutral-200 dark:border-neutral-800"
+                            title="Gunakan Lokasi GPS Saat Ini"
+                        >
+                            <Locate className="size-3.5 text-primary" />
+                            <span>Lokasi Saya</span>
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Dropdown Suggestions */}
                 {showResultsDropdown && searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-md border border-neutral-200 bg-white p-1 shadow-lg dark:border-neutral-800 dark:bg-neutral-950">
+                    <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-neutral-200 bg-white p-1.5 shadow-xl dark:border-neutral-800 dark:bg-neutral-950">
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                            Hasil Pencarian Lokasi:
+                        </div>
                         {searchResults.map((item, idx) => (
                             <button
                                 key={item.place_id || idx}
                                 type="button"
                                 onClick={() => selectSearchResult(item)}
-                                className="flex w-full items-start gap-2 rounded px-2.5 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+                                className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer"
                             >
-                                <MapPin className="size-3.5 text-red-500 shrink-0 mt-0.5" />
+                                <MapPin className="size-4 text-red-500 shrink-0 mt-0.5" />
                                 <div className="flex-1 min-w-0">
                                     <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                                         {item.name}
@@ -424,17 +425,17 @@ export default function LocationPickerMap({
                 )}
             </div>
 
-            {/* Map Container */}
+            {/* Map Canvas Box */}
             <div
-                className="relative overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-xs z-10"
+                className="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm z-10"
                 style={{ height }}
             >
                 <div ref={mapContainerRef} className="h-full w-full z-0" />
 
                 {/* Loading overlay during reverse geocoding */}
                 {isLoadingAddress && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-xs">
-                        <div className="flex items-center gap-2 rounded-full bg-background px-3 py-1.5 text-xs font-medium shadow-md border">
+                    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/60 backdrop-blur-xs">
+                        <div className="flex items-center gap-2 rounded-full bg-background px-3.5 py-2 text-xs font-medium shadow-lg border border-neutral-200 dark:border-neutral-800">
                             <Spinner className="size-3.5 text-primary" />
                             <span>Mendeteksi alamat titik peta...</span>
                         </div>
@@ -442,14 +443,17 @@ export default function LocationPickerMap({
                 )}
             </div>
 
-            {/* Status / Instructions Bar */}
-            <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
-                <span className="truncate">
-                    {statusMessage || '💡 Klik sembarang titik pada peta untuk mengisi lokasi secara instan.'}
-                </span>
-                {initialLat && initialLng && (
-                    <span className="shrink-0 font-mono text-[10px] text-neutral-400">
-                        [{initialLat.toFixed(5)}, {initialLng.toFixed(5)}]
+            {/* Status / Instructions Footer */}
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between rounded-lg bg-neutral-50 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-900/60 dark:text-neutral-400 border border-neutral-100 dark:border-neutral-800/80">
+                <div className="flex items-center gap-1.5 min-w-0">
+                    <MapPin className="size-3.5 text-red-500 shrink-0" />
+                    <span className="truncate">
+                        {statusMessage || 'Klik titik di peta atau gunakan pencarian di atas untuk menentukan lokasi.'}
+                    </span>
+                </div>
+                {initialLat != null && initialLng != null && (
+                    <span className="shrink-0 font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
+                        [{initialLat.toFixed(6)}, {initialLng.toFixed(6)}]
                     </span>
                 )}
             </div>

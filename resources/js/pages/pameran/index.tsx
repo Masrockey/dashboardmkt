@@ -928,7 +928,8 @@ export default function PameranIndex({
                             </div>
 
                             {/* Peta Interaktif untuk Pilih Titik Lokasi */}
-                            <div className="rounded-lg border border-neutral-200 bg-neutral-50/60 p-2.5 dark:border-neutral-800 dark:bg-neutral-900/40">
+                            <div className="space-y-1.5">
+                                <Label>Peta & Titik Lokasi Pameran</Label>
                                 <LocationPickerMap
                                     key={selectedPameran?.id ?? 'edit-map'}
                                     initialLat={editForm.data.latitude}
@@ -943,7 +944,7 @@ export default function PameranIndex({
                                             longitude: res.longitude,
                                         }));
                                     }}
-                                    height="220px"
+                                    height="240px"
                                 />
                             </div>
 
