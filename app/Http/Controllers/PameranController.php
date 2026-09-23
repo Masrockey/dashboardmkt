@@ -107,6 +107,36 @@ class PameranController extends Controller
     }
 
     /**
+     * Show the form for creating a new exhibition.
+     */
+    public function create(Request $request): Response
+    {
+        $user = $request->user();
+
+        $dealers = Dealer::query()
+            ->select(['id', 'kode_dealer', 'nama_dealer'])
+            ->when($user->role === UserRole::Dealer, function (Builder $query) use ($user) {
+                if ($user->dealer_id) {
+                    $query->where('id', $user->dealer_id);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            })
+            ->orderBy('nama_dealer')
+            ->get();
+
+        $jenisPameranList = JenisPameran::query()
+            ->select(['id', 'kode_pameran', 'jenis_pameran', 'icon_map'])
+            ->orderBy('jenis_pameran')
+            ->get();
+
+        return Inertia::render('pameran/create', [
+            'dealers' => $dealers,
+            'jenisPameranList' => $jenisPameranList,
+        ]);
+    }
+
+    /**
      * Store a newly created exhibition in storage.
      */
     public function store(PameranStoreRequest $request): RedirectResponse

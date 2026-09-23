@@ -21,6 +21,19 @@ test('authenticated users can view the pameran page', function () {
     $response->assertOk();
 });
 
+test('authenticated users can view the create pameran page', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('pameran.create'));
+
+    $response->assertOk();
+    $response->assertInertia(fn (AssertableInertia $page) => $page
+        ->component('pameran/create')
+        ->has('dealers')
+        ->has('jenisPameranList')
+    );
+});
+
 test('authenticated users can create a pameran with valid data and initial status is menunggu_spv', function () {
     $dealer = Dealer::factory()->create();
     $user = User::factory()->create(['role' => UserRole::Dealer, 'dealer_id' => $dealer->id]);

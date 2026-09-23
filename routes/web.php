@@ -17,7 +17,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pameran/{pameran}/approve-spv', [PameranController::class, 'approveSpv'])->name('pameran.approve-spv');
     Route::post('pameran/{pameran}/approve-kabag', [PameranController::class, 'approveKabag'])->name('pameran.approve-kabag');
     Route::post('pameran/{pameran}/reject', [PameranController::class, 'reject'])->name('pameran.reject');
-    Route::resource('pameran', PameranController::class)->except(['create', 'show', 'edit']);
+    Route::resource('pameran', PameranController::class)->except(['show', 'edit']);
 });
 
 require __DIR__.'/settings.php';

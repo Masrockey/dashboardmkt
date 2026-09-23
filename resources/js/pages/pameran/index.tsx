@@ -88,7 +88,6 @@ export default function PameranIndex({
     const [selectedJenisFilter, setSelectedJenisFilter] = useState(filters.jenis_pameran_id || '');
     const [selectedStatusFilter, setSelectedStatusFilter] = useState(filters.status || '');
 
-    const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isApproveOpen, setIsApproveOpen] = useState(false);
@@ -97,19 +96,6 @@ export default function PameranIndex({
     const [selectedPameran, setSelectedPameran] = useState<PameranItem | null>(null);
     const [approveType, setApproveType] = useState<'spv' | 'kabag' | null>(null);
     const [isApproving, setIsApproving] = useState(false);
-
-    // Create Form
-    const createForm = useForm({
-        dealer_id: '' as string | number,
-        jenis_pameran_id: '' as string | number,
-        mulai_tanggal_sewa: '',
-        tanggal_sewa_berakhir: '',
-        kecamatan: '',
-        detail_alamat: '',
-        kode_pameran_ahm: '',
-        latitude: null as number | null,
-        longitude: null as number | null,
-    });
 
     // Edit Form
     const editForm = useForm({
@@ -132,9 +118,6 @@ export default function PameranIndex({
         catatan_penolakan: '',
     });
 
-    const selectedCreateJenis = jenisPameranList.find(
-        (j) => String(j.id) === String(createForm.data.jenis_pameran_id),
-    );
     const selectedEditJenis = jenisPameranList.find(
         (j) => String(j.id) === String(editForm.data.jenis_pameran_id),
     );
@@ -185,26 +168,6 @@ export default function PameranIndex({
                 preserveScroll: true,
             },
         );
-    };
-
-    const handleOpenCreate = () => {
-        createForm.reset();
-        createForm.clearErrors();
-        if (currentUser.role === 'dealer' && currentUser.dealer_id) {
-            createForm.setData('dealer_id', currentUser.dealer_id);
-        }
-        setIsCreateOpen(true);
-    };
-
-    const handleCreateSubmit = (e: FormEvent) => {
-        e.preventDefault();
-        createForm.post(pameranRoute.store.url(), {
-            preserveScroll: true,
-            onSuccess: () => {
-                createForm.reset();
-                setIsCreateOpen(false);
-            },
-        });
     };
 
     const handleOpenEdit = (pameran: PameranItem) => {
@@ -428,9 +391,11 @@ export default function PameranIndex({
                         </p>
                     </div>
 
-                    <Button onClick={handleOpenCreate} className="gap-2 self-start sm:self-auto">
-                        <Plus className="size-4" />
-                        Tambah Pameran
+                    <Button asChild className="gap-2 self-start sm:self-auto">
+                        <Link href={pameranRoute.create()}>
+                            <Plus className="size-4" />
+                            Tambah Pameran
+                        </Link>
                     </Button>
                 </div>
 
@@ -586,11 +551,13 @@ export default function PameranIndex({
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    onClick={handleOpenCreate}
+                                                    asChild
                                                     className="mt-2"
                                                 >
-                                                    <Plus className="mr-1.5 size-3.5" />
-                                                    Tambah Pameran
+                                                    <Link href={pameranRoute.create()}>
+                                                        <Plus className="mr-1.5 size-3.5" />
+                                                        Tambah Pameran
+                                                    </Link>
                                                 </Button>
                                             )}
                                         </div>
@@ -846,220 +813,6 @@ export default function PameranIndex({
                     )}
                 </Card>
             </div>
-
-            {/* Dialog Tambah Pameran */}
-            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent className="sm:max-w-lg">
-                    <form onSubmit={handleCreateSubmit}>
-                        <DialogHeader>
-                            <DialogTitle>Tambah Pameran</DialogTitle>
-                            <DialogDescription>
-                                Pilih Dealer dan Jenis Channel, lalu tentukan periode sewa dan detail lokasi.
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
-                            <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs dark:border-amber-900/60 dark:bg-amber-950/30">
-                                <div className="flex flex-col gap-1">
-                                    <span className="font-medium text-amber-800 dark:text-amber-300">
-                                        Alur Persetujuan Pameran:
-                                    </span>
-                                    <span className="text-amber-700 dark:text-amber-400">
-                                        Setelah pameran dibuat, pameran akan menunggu persetujuan dari <strong>SPV</strong> lalu <strong>Kabag</strong>. Kode Pameran MD akan otomatis terbit setelah disetujui Kabag.
-                                    </span>
-                                </div>
-                            </div>
-
-                            {currentUser.role !== 'dealer' && (
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="create_kode_pameran_ahm">Kode Pameran AHM</Label>
-                                        <span className="text-xs text-neutral-400 dark:text-neutral-500">Opsional (Manual Admin)</span>
-                                    </div>
-                                    <Input
-                                        id="create_kode_pameran_ahm"
-                                        placeholder="Contoh: AHM-EXH-2026-001"
-                                        value={createForm.data.kode_pameran_ahm}
-                                        onChange={(e) => createForm.setData('kode_pameran_ahm', e.target.value)}
-                                        disabled={createForm.processing}
-                                    />
-                                    <InputError message={createForm.errors.kode_pameran_ahm} />
-                                </div>
-                            )}
-
-                            <div className="space-y-1.5">
-                                <Label htmlFor="create_dealer_id">Nama Dealer</Label>
-                                <Select
-                                    value={createForm.data.dealer_id ? String(createForm.data.dealer_id) : undefined}
-                                    onValueChange={(val) => createForm.setData('dealer_id', val)}
-                                    disabled={createForm.processing || (currentUser.role === 'dealer' && !!currentUser.dealer_id)}
-                                >
-                                    <SelectTrigger id="create_dealer_id" className="w-full">
-                                        <SelectValue placeholder="-- Pilih Dealer --" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {dealers.map((d) => (
-                                             <SelectItem key={d.id} value={String(d.id)}>
-                                                [{d.kode_dealer}] {d.nama_dealer}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={createForm.errors.dealer_id} />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <Label htmlFor="create_jenis_pameran_id">Nama Jenis Channel</Label>
-                                <Select
-                                    value={createForm.data.jenis_pameran_id ? String(createForm.data.jenis_pameran_id) : undefined}
-                                    onValueChange={(val) => createForm.setData('jenis_pameran_id', val)}
-                                    disabled={createForm.processing}
-                                >
-                                    <SelectTrigger id="create_jenis_pameran_id" className="w-full">
-                                        <SelectValue placeholder="-- Pilih Jenis Channel --" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {jenisPameranList.map((j) => (
-                                            <SelectItem key={j.id} value={String(j.id)}>
-                                                [{j.kode_pameran}] {j.jenis_pameran}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={createForm.errors.jenis_pameran_id} />
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="create_mulai_tanggal_sewa">Mulai Tanggal Sewa</Label>
-                                    <Input
-                                        id="create_mulai_tanggal_sewa"
-                                        type="date"
-                                        value={createForm.data.mulai_tanggal_sewa}
-                                        onChange={(e) => createForm.setData('mulai_tanggal_sewa', e.target.value)}
-                                        disabled={createForm.processing}
-                                    />
-                                    <InputError message={createForm.errors.mulai_tanggal_sewa} />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="create_tanggal_sewa_berakhir">Tanggal Sewa Berakhir</Label>
-                                    <Input
-                                        id="create_tanggal_sewa_berakhir"
-                                        type="date"
-                                        value={createForm.data.tanggal_sewa_berakhir}
-                                        onChange={(e) => createForm.setData('tanggal_sewa_berakhir', e.target.value)}
-                                        disabled={createForm.processing}
-                                    />
-                                    <InputError message={createForm.errors.tanggal_sewa_berakhir} />
-                                </div>
-                            </div>
-
-                            {/* Peta Interaktif untuk Pilih Titik Lokasi */}
-                            <div className="rounded-lg border border-neutral-200 bg-neutral-50/60 p-2.5 dark:border-neutral-800 dark:bg-neutral-900/40">
-                                <LocationPickerMap
-                                    initialLat={createForm.data.latitude}
-                                    initialLng={createForm.data.longitude}
-                                    customIconUrl={selectedCreateJenis?.icon_map_url || null}
-                                    onLocationSelect={(res) => {
-                                        createForm.setData((prev) => ({
-                                            ...prev,
-                                            kecamatan: res.kecamatan || prev.kecamatan,
-                                            detail_alamat: res.detailAlamat || prev.detail_alamat,
-                                            latitude: res.latitude,
-                                            longitude: res.longitude,
-                                        }));
-                                    }}
-                                    height="220px"
-                                />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <Label htmlFor="create_kecamatan">Kecamatan</Label>
-                                <Input
-                                    id="create_kecamatan"
-                                    placeholder="Contoh: Mataram / Cakranegara"
-                                    value={createForm.data.kecamatan}
-                                    onChange={(e) => createForm.setData('kecamatan', e.target.value)}
-                                    disabled={createForm.processing}
-                                />
-                                <InputError message={createForm.errors.kecamatan} />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <Label htmlFor="create_detail_alamat">Detail Alamat</Label>
-                                <Textarea
-                                    id="create_detail_alamat"
-                                    rows={3}
-                                    placeholder="Contoh: Depan pintu masuk utama Mall, sebelah barat lobby..."
-                                    value={createForm.data.detail_alamat}
-                                    onChange={(e) => createForm.setData('detail_alamat', e.target.value)}
-                                    disabled={createForm.processing}
-                                />
-                                <InputError message={createForm.errors.detail_alamat} />
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="create_latitude">Latitude</Label>
-                                        <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
-                                    </div>
-                                    <Input
-                                        id="create_latitude"
-                                        type="number"
-                                        step="any"
-                                        placeholder="Contoh: -8.5833807"
-                                        value={createForm.data.latitude ?? ''}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                'latitude',
-                                                e.target.value === '' ? null : parseFloat(e.target.value)
-                                            )
-                                        }
-                                        disabled={createForm.processing}
-                                    />
-                                    <InputError message={createForm.errors.latitude} />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="create_longitude">Longitude</Label>
-                                        <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
-                                    </div>
-                                    <Input
-                                        id="create_longitude"
-                                        type="number"
-                                        step="any"
-                                        placeholder="Contoh: 116.1167899"
-                                        value={createForm.data.longitude ?? ''}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                'longitude',
-                                                e.target.value === '' ? null : parseFloat(e.target.value)
-                                            )
-                                        }
-                                        disabled={createForm.processing}
-                                    />
-                                    <InputError message={createForm.errors.longitude} />
-                                </div>
-                            </div>
-                        </div>
-
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button type="button" variant="outline" disabled={createForm.processing}>
-                                    Batal
-                                </Button>
-                            </DialogClose>
-                            <Button type="submit" disabled={createForm.processing}>
-                                {createForm.processing && <Spinner className="mr-2 size-4" />}
-                                Simpan Pameran
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
 
             {/* Dialog Edit Pameran */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
