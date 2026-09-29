@@ -25,6 +25,7 @@ class Pameran extends Model
         'jenis_pameran_id',
         'mulai_tanggal_sewa',
         'tanggal_sewa_berakhir',
+        'kabupaten',
         'kecamatan',
         'detail_alamat',
         'latitude',

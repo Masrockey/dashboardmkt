@@ -28,6 +28,7 @@ class PameranFactory extends Factory
             'jenis_pameran_id' => JenisPameran::factory(),
             'mulai_tanggal_sewa' => $startDate->format('Y-m-d'),
             'tanggal_sewa_berakhir' => $endDate->format('Y-m-d'),
+            'kabupaten' => 'Kota Mataram',
             'kecamatan' => 'Kecamatan '.fake()->city(),
             'detail_alamat' => fake()->address(),
             'kode_pameran_md' => null,

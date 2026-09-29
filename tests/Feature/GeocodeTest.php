@@ -23,6 +23,7 @@ test('authenticated users can search locations via geocode search', function () 
                 'address' => [
                     'shop' => 'Lombok Epicentrum Mall',
                     'county' => 'Kecamatan Mataram',
+                    'city' => 'Kota Mataram',
                 ],
             ],
         ], 200),
@@ -39,6 +40,7 @@ test('authenticated users can search locations via geocode search', function () 
             'name' => 'Lombok Epicentrum Mall',
             'latitude' => -8.593496,
             'longitude' => 116.104679,
+            'kabupaten' => 'Kota Mataram',
             'kecamatan' => 'Mataram',
         ]);
 });
@@ -53,6 +55,7 @@ test('authenticated users can reverse geocode coordinates', function () {
             'address' => [
                 'road' => 'Jalan Sriwijaya',
                 'county' => 'Kecamatan Mataram',
+                'city' => 'Kota Mataram',
             ],
         ], 200),
     ]);
@@ -64,6 +67,7 @@ test('authenticated users can reverse geocode coordinates', function () {
 
     $response->assertOk()
         ->assertJsonFragment([
+            'kabupaten' => 'Kota Mataram',
             'kecamatan' => 'Mataram',
             'latitude' => -8.593496,
             'longitude' => 116.104679,

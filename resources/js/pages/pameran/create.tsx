@@ -47,6 +47,7 @@ export default function PameranCreate({
         jenis_pameran_id: string;
         mulai_tanggal_sewa: string;
         tanggal_sewa_berakhir: string;
+        kabupaten: string;
         kecamatan: string;
         detail_alamat: string;
         latitude: number | null;
@@ -57,6 +58,7 @@ export default function PameranCreate({
         jenis_pameran_id: '',
         mulai_tanggal_sewa: '',
         tanggal_sewa_berakhir: '',
+        kabupaten: '',
         kecamatan: '',
         detail_alamat: '',
         latitude: null,
@@ -251,6 +253,7 @@ export default function PameranCreate({
                                             onLocationSelect={(res) => {
                                                 createForm.setData((prev) => ({
                                                     ...prev,
+                                                    kabupaten: res.kabupaten || prev.kabupaten,
                                                     kecamatan: res.kecamatan || prev.kecamatan,
                                                     detail_alamat: res.detailAlamat || prev.detail_alamat,
                                                     latitude: res.latitude,
@@ -262,8 +265,21 @@ export default function PameranCreate({
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        {/* Kabupaten / Kota */}
+                                        <div className="space-y-1.5">
+                                            <Label htmlFor="kabupaten">Kabupaten / Kota</Label>
+                                            <Input
+                                                id="kabupaten"
+                                                placeholder="Contoh: Kota Mataram / Lombok Barat"
+                                                value={createForm.data.kabupaten}
+                                                onChange={(e) => createForm.setData('kabupaten', e.target.value)}
+                                                disabled={createForm.processing}
+                                            />
+                                            <InputError message={createForm.errors.kabupaten} />
+                                        </div>
+
                                         {/* Kecamatan */}
-                                        <div className="space-y-1.5 sm:col-span-2">
+                                        <div className="space-y-1.5">
                                             <Label htmlFor="kecamatan">Kecamatan</Label>
                                             <Input
                                                 id="kecamatan"

@@ -27,6 +27,7 @@ class PameranStoreRequest extends FormRequest
             'jenis_pameran_id' => ['required', 'exists:jenis_pamerans,id'],
             'mulai_tanggal_sewa' => ['required', 'date'],
             'tanggal_sewa_berakhir' => ['required', 'date', 'after_or_equal:mulai_tanggal_sewa'],
+            'kabupaten' => ['nullable', 'string', 'max:100'],
             'kecamatan' => ['required', 'string', 'max:100'],
             'detail_alamat' => ['required', 'string', 'max:1000'],
             'kode_pameran_ahm' => ['nullable', 'string', 'max:50'],

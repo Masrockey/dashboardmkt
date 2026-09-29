@@ -59,16 +59,7 @@ class GeocodeController extends Controller
                     }
 
                     $address = $item['address'] ?? [];
-
-                    $rawKecamatan = $address['county']
-                        ?? $address['city_district']
-                        ?? $address['subdistrict']
-                        ?? $address['district']
-                        ?? $address['suburb']
-                        ?? $address['municipality']
-                        ?? '';
-
-                    $cleanKecamatan = trim(preg_replace('/^(kecamatan|kec\.)\s*/i', '', (string) $rawKecamatan));
+                    $admin = $this->parseAdministrativeDivisions($address);
 
                     $addressParts = array_filter([
                         $address['shop'] ?? $address['amenity'] ?? $address['building'] ?? $address['office'] ?? null,
@@ -84,11 +75,12 @@ class GeocodeController extends Controller
 
                     $formatted[] = [
                         'place_id' => $item['place_id'] ?? null,
-                        'name' => $item['name'] ?? ($addressParts[0] ?? $cleanKecamatan),
+                        'name' => $item['name'] ?? ($addressParts[0] ?? ($admin['kecamatan'] ?: $admin['kabupaten'])),
                         'display_name' => $item['display_name'] ?? '',
                         'latitude' => $lat,
                         'longitude' => $lon,
-                        'kecamatan' => $cleanKecamatan,
+                        'kabupaten' => $admin['kabupaten'],
+                        'kecamatan' => $admin['kecamatan'],
                         'detail_alamat' => $detailAlamat,
                     ];
                 }
@@ -105,7 +97,7 @@ class GeocodeController extends Controller
     }
 
     /**
-     * Reverse geocode coordinates to address and kecamatan.
+     * Reverse geocode coordinates to address, kabupaten, and kecamatan.
      */
     public function reverse(Request $request): JsonResponse
     {
@@ -143,16 +135,7 @@ class GeocodeController extends Controller
                 }
 
                 $address = $data['address'] ?? [];
-
-                $rawKecamatan = $address['county']
-                    ?? $address['city_district']
-                    ?? $address['subdistrict']
-                    ?? $address['district']
-                    ?? $address['suburb']
-                    ?? $address['municipality']
-                    ?? '';
-
-                $cleanKecamatan = trim(preg_replace('/^(kecamatan|kec\.)\s*/i', '', (string) $rawKecamatan));
+                $admin = $this->parseAdministrativeDivisions($address);
 
                 $addressParts = array_filter([
                     $address['shop'] ?? $address['amenity'] ?? $address['building'] ?? $address['office'] ?? null,
@@ -166,7 +149,8 @@ class GeocodeController extends Controller
                     : ($data['display_name'] ?? "Titik Koordinat: {$lat}, {$lon}");
 
                 return [
-                    'kecamatan' => $cleanKecamatan,
+                    'kabupaten' => $admin['kabupaten'],
+                    'kecamatan' => $admin['kecamatan'],
                     'detail_alamat' => $detailAlamat,
                     'latitude' => $lat,
                     'longitude' => $lon,
@@ -181,6 +165,7 @@ class GeocodeController extends Controller
 
         if (! $result) {
             return response()->json([
+                'kabupaten' => '',
                 'kecamatan' => '',
                 'detail_alamat' => "Titik Koordinat: {$lat}, {$lon}",
                 'latitude' => $lat,
@@ -189,6 +174,57 @@ class GeocodeController extends Controller
         }
 
         return response()->json($result);
+    }
+
+    /**
+     * Parse administrative divisions (kabupaten & kecamatan) from Nominatim address.
+     *
+     * @param  array<string, mixed>  $address
+     * @return array{kabupaten: string, kecamatan: string}
+     */
+    private function parseAdministrativeDivisions(array $address): array
+    {
+        $rawKabupaten = '';
+        if (! empty($address['city'])) {
+            $rawKabupaten = $address['city'];
+        } elseif (! empty($address['regency'])) {
+            $rawKabupaten = $address['regency'];
+        } elseif (! empty($address['county']) && ! preg_match('/^(kecamatan|kec\.)\s*/i', (string) $address['county'])) {
+            $rawKabupaten = $address['county'];
+        } elseif (! empty($address['state_district'])) {
+            $rawKabupaten = $address['state_district'];
+        } elseif (! empty($address['municipality']) && ! preg_match('/^(kecamatan|kec\.)\s*/i', (string) $address['municipality'])) {
+            $rawKabupaten = $address['municipality'];
+        }
+
+        $rawKecamatan = '';
+        if (! empty($address['subdistrict'])) {
+            $rawKecamatan = $address['subdistrict'];
+        } elseif (! empty($address['city_district'])) {
+            $rawKecamatan = $address['city_district'];
+        } elseif (! empty($address['district'])) {
+            $rawKecamatan = $address['district'];
+        } elseif (! empty($address['county']) && preg_match('/^(kecamatan|kec\.)\s*/i', (string) $address['county'])) {
+            $rawKecamatan = $address['county'];
+        } elseif (! empty($address['town']) && $address['town'] !== $rawKabupaten) {
+            $rawKecamatan = $address['town'];
+        } elseif (! empty($address['suburb']) && ! preg_match('/^(kelurahan|kel\.|desa)\s*/i', (string) $address['suburb'])) {
+            $rawKecamatan = $address['suburb'];
+        } elseif (! empty($address['municipality'])) {
+            $rawKecamatan = $address['municipality'];
+        } elseif (! empty($address['village'])) {
+            $rawKecamatan = $address['village'];
+        } elseif (! empty($address['county'])) {
+            $rawKecamatan = $address['county'];
+        }
+
+        $cleanKecamatan = trim(preg_replace('/^(kecamatan|kec\.)\s*/i', '', (string) $rawKecamatan));
+        $cleanKabupaten = trim(preg_replace('/^(kabupaten|kab\.)\s*/i', '', (string) $rawKabupaten));
+
+        return [
+            'kabupaten' => $cleanKabupaten,
+            'kecamatan' => $cleanKecamatan,
+        ];
     }
 }
 

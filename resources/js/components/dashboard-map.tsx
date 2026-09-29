@@ -279,7 +279,7 @@ export default function DashboardMap({
                         </div>
                         <div style="display: flex; align-items: flex-start; gap: 5px; color: #374151;">
                             <span style="color: #6b7280; font-size: 11px;">&#128205;</span>
-                            <span style="font-size: 11px; font-weight: 600;">${pameran.kecamatan}</span>
+                            <span style="font-size: 11px; font-weight: 600;">${pameran.kecamatan}${pameran.kabupaten ? `, ${pameran.kabupaten}` : ''}</span>
                         </div>
                         ${
                             pameran.detail_alamat
@@ -503,6 +503,7 @@ export default function DashboardMap({
                                 <div>
                                     <span className="font-semibold text-neutral-800 dark:text-neutral-200">
                                         {selectedPameran.kecamatan}
+                                        {selectedPameran.kabupaten ? `, ${selectedPameran.kabupaten}` : ''}
                                     </span>
                                     {selectedPameran.detail_alamat && (
                                         <p className="text-[11px] text-neutral-500">

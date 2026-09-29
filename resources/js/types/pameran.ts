@@ -13,6 +13,7 @@ export interface PameranItem {
     kode_pameran_ahm: string | null;
     mulai_tanggal_sewa: string;
     tanggal_sewa_berakhir: string;
+    kabupaten?: string | null;
     kecamatan: string;
     detail_alamat: string;
     latitude: number | null;

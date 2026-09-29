@@ -103,6 +103,7 @@ export default function PameranIndex({
         jenis_pameran_id: '' as string | number,
         mulai_tanggal_sewa: '',
         tanggal_sewa_berakhir: '',
+        kabupaten: '',
         kecamatan: '',
         detail_alamat: '',
         kode_pameran_ahm: '',
@@ -182,6 +183,7 @@ export default function PameranIndex({
             jenis_pameran_id: pameran.jenis_pameran_id,
             mulai_tanggal_sewa: formatForInput(pameran.mulai_tanggal_sewa),
             tanggal_sewa_berakhir: formatForInput(pameran.tanggal_sewa_berakhir),
+            kabupaten: pameran.kabupaten || '',
             kecamatan: pameran.kecamatan,
             detail_alamat: pameran.detail_alamat,
             kode_pameran_ahm: pameran.kode_pameran_ahm || '',
@@ -661,6 +663,7 @@ export default function PameranIndex({
                                                     <span className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1">
                                                         <MapPin className="size-3.5 text-neutral-500 shrink-0" />
                                                         {item.kecamatan}
+                                                        {item.kabupaten ? `, ${item.kabupaten}` : ''}
                                                     </span>
                                                     <span className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
                                                         {item.detail_alamat}
@@ -938,6 +941,7 @@ export default function PameranIndex({
                                     onLocationSelect={(res) => {
                                         editForm.setData((prev) => ({
                                             ...prev,
+                                            kabupaten: res.kabupaten || prev.kabupaten,
                                             kecamatan: res.kecamatan || prev.kecamatan,
                                             detail_alamat: res.detailAlamat || prev.detail_alamat,
                                             latitude: res.latitude,
@@ -948,15 +952,30 @@ export default function PameranIndex({
                                 />
                             </div>
 
-                            <div className="space-y-1.5">
-                                <Label htmlFor="edit_kecamatan">Kecamatan</Label>
-                                <Input
-                                    id="edit_kecamatan"
-                                    value={editForm.data.kecamatan}
-                                    onChange={(e) => editForm.setData('kecamatan', e.target.value)}
-                                    disabled={editForm.processing}
-                                />
-                                <InputError message={editForm.errors.kecamatan} />
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="edit_kabupaten">Kabupaten / Kota</Label>
+                                    <Input
+                                        id="edit_kabupaten"
+                                        placeholder="Contoh: Kota Mataram / Lombok Barat"
+                                        value={editForm.data.kabupaten}
+                                        onChange={(e) => editForm.setData('kabupaten', e.target.value)}
+                                        disabled={editForm.processing}
+                                    />
+                                    <InputError message={editForm.errors.kabupaten} />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="edit_kecamatan">Kecamatan</Label>
+                                    <Input
+                                        id="edit_kecamatan"
+                                        placeholder="Contoh: Mataram / Cakranegara"
+                                        value={editForm.data.kecamatan}
+                                        onChange={(e) => editForm.setData('kecamatan', e.target.value)}
+                                        disabled={editForm.processing}
+                                    />
+                                    <InputError message={editForm.errors.kecamatan} />
+                                </div>
                             </div>
 
                             <div className="space-y-1.5">
@@ -1202,7 +1221,8 @@ export default function PameranIndex({
                         <DialogDescription>
                             Apakah Anda yakin ingin menghapus data channel di{' '}
                             <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                                {selectedPameran?.kecamatan} ({selectedPameran?.dealer?.nama_dealer})
+                                {selectedPameran?.kecamatan}
+                                {selectedPameran?.kabupaten ? `, ${selectedPameran.kabupaten}` : ''} ({selectedPameran?.dealer?.nama_dealer})
                             </span>
                             ? Tindakan ini tidak dapat dibatalkan.
                         </DialogDescription>
