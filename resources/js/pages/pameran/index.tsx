@@ -66,11 +66,15 @@ interface PameranIndexProps {
     pamerans: PaginatedPameran;
     dealers: Dealer[];
     jenisPameranList: JenisPameran[];
+    kabupatenList?: string[];
+    kecamatanList?: string[];
     filters: {
         search?: string;
         dealer_id?: string;
         jenis_pameran_id?: string;
         status?: string;
+        kabupaten?: string;
+        kecamatan?: string;
     };
 }
 
@@ -78,6 +82,8 @@ export default function PameranIndex({
     pamerans,
     dealers,
     jenisPameranList,
+    kabupatenList = [],
+    kecamatanList = [],
     filters,
 }: PameranIndexProps) {
     const { auth } = usePage<{ auth: { user: AuthUser } }>().props;
@@ -87,6 +93,8 @@ export default function PameranIndex({
     const [selectedDealerFilter, setSelectedDealerFilter] = useState(filters.dealer_id || '');
     const [selectedJenisFilter, setSelectedJenisFilter] = useState(filters.jenis_pameran_id || '');
     const [selectedStatusFilter, setSelectedStatusFilter] = useState(filters.status || '');
+    const [selectedKabupatenFilter, setSelectedKabupatenFilter] = useState(filters.kabupaten || '');
+    const [selectedKecamatanFilter, setSelectedKecamatanFilter] = useState(filters.kecamatan || '');
 
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -128,11 +136,15 @@ export default function PameranIndex({
         newDealer?: string,
         newJenis?: string,
         newStatus?: string,
+        newKabupaten?: string,
+        newKecamatan?: string,
     ) => {
         const search = newSearch !== undefined ? newSearch : searchQuery;
         const dealer = newDealer !== undefined ? newDealer : selectedDealerFilter;
         const jenis = newJenis !== undefined ? newJenis : selectedJenisFilter;
         const status = newStatus !== undefined ? newStatus : selectedStatusFilter;
+        const kabupaten = newKabupaten !== undefined ? newKabupaten : selectedKabupatenFilter;
+        const kecamatan = newKecamatan !== undefined ? newKecamatan : selectedKecamatanFilter;
 
         router.get(
             pameranRoute.index.url({
@@ -141,6 +153,8 @@ export default function PameranIndex({
                     dealer_id: dealer || undefined,
                     jenis_pameran_id: jenis || undefined,
                     status: status || undefined,
+                    kabupaten: kabupaten || undefined,
+                    kecamatan: kecamatan || undefined,
                 },
             }),
             {},
@@ -153,7 +167,14 @@ export default function PameranIndex({
 
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault();
-        applyFilters(searchQuery, selectedDealerFilter, selectedJenisFilter, selectedStatusFilter);
+        applyFilters(
+            searchQuery,
+            selectedDealerFilter,
+            selectedJenisFilter,
+            selectedStatusFilter,
+            selectedKabupatenFilter,
+            selectedKecamatanFilter,
+        );
     };
 
     const handleResetFilters = () => {
@@ -161,6 +182,8 @@ export default function PameranIndex({
         setSelectedDealerFilter('');
         setSelectedJenisFilter('');
         setSelectedStatusFilter('');
+        setSelectedKabupatenFilter('');
+        setSelectedKecamatanFilter('');
         router.get(
             pameranRoute.index.url(),
             {},
@@ -368,7 +391,9 @@ export default function PameranIndex({
         searchQuery !== '' ||
         selectedDealerFilter !== '' ||
         selectedJenisFilter !== '' ||
-        selectedStatusFilter !== '';
+        selectedStatusFilter !== '' ||
+        selectedKabupatenFilter !== '' ||
+        selectedKecamatanFilter !== '';
 
     const canApproveSpv = currentUser.role === 'spv' || currentUser.role === 'superadmin';
     const canApproveKabag = currentUser.role === 'kabag' || currentUser.role === 'superadmin';
@@ -407,7 +432,7 @@ export default function PameranIndex({
                         <Search className="text-muted-foreground absolute left-3 size-4 pointer-events-none" />
                         <Input
                             type="text"
-                            placeholder="Cari dealer, channel, kecamatan..."
+                            placeholder="Cari dealer, channel, kecamatan, kabupaten..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-9 pr-9"
@@ -417,7 +442,14 @@ export default function PameranIndex({
                                 type="button"
                                 onClick={() => {
                                     setSearchQuery('');
-                                    applyFilters('', selectedDealerFilter, selectedJenisFilter, selectedStatusFilter);
+                                    applyFilters(
+                                        '',
+                                        selectedDealerFilter,
+                                        selectedJenisFilter,
+                                        selectedStatusFilter,
+                                        selectedKabupatenFilter,
+                                        selectedKecamatanFilter,
+                                    );
                                 }}
                                 className="text-muted-foreground hover:text-foreground absolute right-3"
                             >
@@ -435,10 +467,17 @@ export default function PameranIndex({
                                 onValueChange={(val) => {
                                     const nextVal = val === 'all' ? '' : val;
                                     setSelectedStatusFilter(nextVal);
-                                    applyFilters(searchQuery, selectedDealerFilter, selectedJenisFilter, nextVal);
+                                    applyFilters(
+                                        searchQuery,
+                                        selectedDealerFilter,
+                                        selectedJenisFilter,
+                                        nextVal,
+                                        selectedKabupatenFilter,
+                                        selectedKecamatanFilter,
+                                    );
                                 }}
                             >
-                                <SelectTrigger className="h-9 w-[160px] text-xs">
+                                <SelectTrigger className="h-9 w-[150px] text-xs">
                                     <SelectValue placeholder="Semua Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -462,10 +501,17 @@ export default function PameranIndex({
                                     onValueChange={(val) => {
                                         const nextVal = val === 'all' ? '' : val;
                                         setSelectedDealerFilter(nextVal);
-                                        applyFilters(searchQuery, nextVal, selectedJenisFilter, selectedStatusFilter);
+                                        applyFilters(
+                                            searchQuery,
+                                            nextVal,
+                                            selectedJenisFilter,
+                                            selectedStatusFilter,
+                                            selectedKabupatenFilter,
+                                            selectedKecamatanFilter,
+                                        );
                                     }}
                                 >
-                                    <SelectTrigger className="h-9 w-[170px] text-xs">
+                                    <SelectTrigger className="h-9 w-[160px] text-xs">
                                         <SelectValue placeholder="Semua Dealer" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -488,10 +534,17 @@ export default function PameranIndex({
                                 onValueChange={(val) => {
                                     const nextVal = val === 'all' ? '' : val;
                                     setSelectedJenisFilter(nextVal);
-                                    applyFilters(searchQuery, selectedDealerFilter, nextVal, selectedStatusFilter);
+                                    applyFilters(
+                                        searchQuery,
+                                        selectedDealerFilter,
+                                        nextVal,
+                                        selectedStatusFilter,
+                                        selectedKabupatenFilter,
+                                        selectedKecamatanFilter,
+                                    );
                                 }}
                             >
-                                <SelectTrigger className="h-9 w-[160px] text-xs">
+                                <SelectTrigger className="h-9 w-[150px] text-xs">
                                     <SelectValue placeholder="Semua Channel" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -504,6 +557,74 @@ export default function PameranIndex({
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Kabupaten Filter */}
+                        {kabupatenList.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-neutral-500 dark:text-neutral-400">Kabupaten:</span>
+                                <Select
+                                    value={selectedKabupatenFilter ? String(selectedKabupatenFilter) : 'all'}
+                                    onValueChange={(val) => {
+                                        const nextVal = val === 'all' ? '' : val;
+                                        setSelectedKabupatenFilter(nextVal);
+                                        applyFilters(
+                                            searchQuery,
+                                            selectedDealerFilter,
+                                            selectedJenisFilter,
+                                            selectedStatusFilter,
+                                            nextVal,
+                                            selectedKecamatanFilter,
+                                        );
+                                    }}
+                                >
+                                    <SelectTrigger className="h-9 w-[160px] text-xs">
+                                        <SelectValue placeholder="Semua Kabupaten" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Kabupaten</SelectItem>
+                                        {kabupatenList.map((kab) => (
+                                            <SelectItem key={kab} value={kab}>
+                                                {kab}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        {/* Kecamatan Filter */}
+                        {kecamatanList.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-neutral-500 dark:text-neutral-400">Kecamatan:</span>
+                                <Select
+                                    value={selectedKecamatanFilter ? String(selectedKecamatanFilter) : 'all'}
+                                    onValueChange={(val) => {
+                                        const nextVal = val === 'all' ? '' : val;
+                                        setSelectedKecamatanFilter(nextVal);
+                                        applyFilters(
+                                            searchQuery,
+                                            selectedDealerFilter,
+                                            selectedJenisFilter,
+                                            selectedStatusFilter,
+                                            selectedKabupatenFilter,
+                                            nextVal,
+                                        );
+                                    }}
+                                >
+                                    <SelectTrigger className="h-9 w-[160px] text-xs">
+                                        <SelectValue placeholder="Semua Kecamatan" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Kecamatan</SelectItem>
+                                        {kecamatanList.map((kec) => (
+                                            <SelectItem key={kec} value={kec}>
+                                                {kec}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         {isFiltered && (
                             <Button
@@ -529,14 +650,16 @@ export default function PameranIndex({
                                 <TableHead>Nama Dealer</TableHead>
                                 <TableHead>Nama Jenis Channel</TableHead>
                                 <TableHead>Periode Sewa</TableHead>
-                                <TableHead>Lokasi</TableHead>
+                                <TableHead>Kabupaten / Kota</TableHead>
+                                <TableHead>Kecamatan</TableHead>
+                                <TableHead>Detail Alamat & Peta</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {pamerans.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="py-12 text-center">
+                                    <TableCell colSpan={10} className="py-12 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <div className="rounded-full bg-neutral-100 p-3 dark:bg-neutral-800">
                                                 <CalendarDays className="size-6 text-neutral-500 dark:text-neutral-400" />
@@ -659,14 +782,19 @@ export default function PameranIndex({
                                                 </div>
                                             </TableCell>
                                             <TableCell>
+                                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                                    {item.kabupaten || '-'}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                                                    {item.kecamatan || '-'}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell>
                                                 <div className="flex flex-col max-w-xs gap-1">
-                                                    <span className="font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1">
-                                                        <MapPin className="size-3.5 text-neutral-500 shrink-0" />
-                                                        {item.kecamatan}
-                                                        {item.kabupaten ? `, ${item.kabupaten}` : ''}
-                                                    </span>
-                                                    <span className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
-                                                        {item.detail_alamat}
+                                                    <span className="text-xs text-neutral-600 dark:text-neutral-300 line-clamp-2">
+                                                        {item.detail_alamat || '-'}
                                                     </span>
                                                     {item.latitude != null && item.longitude != null ? (
                                                         <div className="flex items-center gap-1.5 mt-0.5">

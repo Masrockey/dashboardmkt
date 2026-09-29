@@ -29,6 +29,8 @@ class PameranController extends Controller
             : $request->string('dealer_id')->toString();
         $jenisFilter = $request->string('jenis_pameran_id')->toString();
         $statusFilter = $request->string('status')->toString();
+        $kabupatenFilter = $request->string('kabupaten')->toString();
+        $kecamatanFilter = $request->string('kecamatan')->toString();
 
         $pamerans = Pameran::query()
             ->with(['dealer', 'jenisPameran', 'creator', 'spvApprover', 'kabagApprover'])
@@ -51,6 +53,7 @@ class PameranController extends Controller
                 $query->where(function (Builder $subQuery) use ($search) {
                     $subQuery->where('kode_pameran_md', 'like', "%{$search}%")
                         ->orWhere('kode_pameran_ahm', 'like', "%{$search}%")
+                        ->orWhere('kabupaten', 'like', "%{$search}%")
                         ->orWhere('kecamatan', 'like', "%{$search}%")
                         ->orWhere('detail_alamat', 'like', "%{$search}%")
                         ->orWhereHas('dealer', function (Builder $dealerQuery) use ($search) {
@@ -71,6 +74,12 @@ class PameranController extends Controller
             })
             ->when($statusFilter !== '', function (Builder $query) use ($statusFilter) {
                 $query->where('status', $statusFilter);
+            })
+            ->when($kabupatenFilter !== '', function (Builder $query) use ($kabupatenFilter) {
+                $query->where('kabupaten', $kabupatenFilter);
+            })
+            ->when($kecamatanFilter !== '', function (Builder $query) use ($kecamatanFilter) {
+                $query->where('kecamatan', $kecamatanFilter);
             })
             ->latest('id')
             ->paginate(10)
@@ -93,15 +102,35 @@ class PameranController extends Controller
             ->orderBy('jenis_pameran')
             ->get();
 
+        $kabupatenList = Pameran::query()
+            ->whereNotNull('kabupaten')
+            ->where('kabupaten', '!=', '')
+            ->distinct()
+            ->pluck('kabupaten')
+            ->sort()
+            ->values();
+
+        $kecamatanList = Pameran::query()
+            ->whereNotNull('kecamatan')
+            ->where('kecamatan', '!=', '')
+            ->distinct()
+            ->pluck('kecamatan')
+            ->sort()
+            ->values();
+
         return Inertia::render('pameran/index', [
             'pamerans' => $pamerans,
             'dealers' => $dealers,
             'jenisPameranList' => $jenisPameranList,
+            'kabupatenList' => $kabupatenList,
+            'kecamatanList' => $kecamatanList,
             'filters' => [
                 'search' => $search,
                 'dealer_id' => $dealerFilter,
                 'jenis_pameran_id' => $jenisFilter,
                 'status' => $statusFilter,
+                'kabupaten' => $kabupatenFilter,
+                'kecamatan' => $kecamatanFilter,
             ],
         ]);
     }
