@@ -23,12 +23,12 @@ import type { NavGroup, NavItem } from '@/types';
 
 const pcdNavItems: NavItem[] = [
     {
-        title: 'Dashboard Pameran',
+        title: 'Dashboard Channel',
         href: dashboard(),
         icon: LayoutGrid,
     },
     {
-        title: 'Pameran',
+        title: 'Channel',
         href: pameran.index(),
         icon: CalendarDays,
     },
@@ -64,7 +64,7 @@ export function AppSidebar() {
                 {
                     title: 'PCD',
                     items: pcdNavItems.filter(
-                        (item) => item.title === 'Dashboard Pameran' || item.title === 'Pameran',
+                        (item) => item.title === 'Dashboard Channel' || item.title === 'Channel',
                     ),
                 },
             ];

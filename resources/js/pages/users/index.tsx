@@ -802,7 +802,7 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
 UsersIndex.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard Pameran',
+            title: 'Dashboard Channel',
             href: dashboard(),
         },
         {

@@ -258,7 +258,7 @@ export default function JenisPameranIndex({
                             Menu Jenis Channel
                         </h1>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            Kelola data Kode Pameran, Nama Jenis Channel, dan Icon Map.
+                            Kelola data Kode Channel, Nama Jenis Channel, dan Icon Map.
                         </p>
                     </div>
 
@@ -297,7 +297,7 @@ export default function JenisPameranIndex({
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-16 text-center">No</TableHead>
-                                <TableHead>Kode Pameran</TableHead>
+                                <TableHead>Kode Channel</TableHead>
                                 <TableHead>Nama Jenis Channel</TableHead>
                                 <TableHead>Icon Map</TableHead>
                                 <TableHead>Tanggal Dibuat</TableHead>
@@ -466,16 +466,16 @@ export default function JenisPameranIndex({
                         <DialogHeader>
                             <DialogTitle>Tambah Jenis Channel</DialogTitle>
                             <DialogDescription>
-                                Masukkan Kode Pameran, Nama Jenis Channel, dan opsional Icon Map untuk marker peta.
+                                Masukkan Kode Channel, Nama Jenis Channel, dan opsional Icon Map untuk marker peta.
                             </DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 py-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="create_kode_pameran">Kode Pameran</Label>
+                                <Label htmlFor="create_kode_pameran">Kode Channel</Label>
                                 <Input
                                     id="create_kode_pameran"
-                                    placeholder="Contoh: PMR01"
+                                    placeholder="Contoh: CH01"
                                     value={createForm.data.kode_pameran}
                                     onChange={(e) => createForm.setData('kode_pameran', e.target.value)}
                                     disabled={createForm.processing}
@@ -488,7 +488,7 @@ export default function JenisPameranIndex({
                                 <Label htmlFor="create_jenis_pameran">Nama Jenis Channel</Label>
                                 <Input
                                     id="create_jenis_pameran"
-                                    placeholder="Contoh: Pameran Mall / POS / Dealer"
+                                    placeholder="Contoh: POS / Reguler / Booth"
                                     value={createForm.data.jenis_pameran}
                                     onChange={(e) => createForm.setData('jenis_pameran', e.target.value)}
                                     disabled={createForm.processing}
@@ -571,13 +571,13 @@ export default function JenisPameranIndex({
                         <DialogHeader>
                             <DialogTitle>Edit Jenis Channel</DialogTitle>
                             <DialogDescription>
-                                Perbarui Kode Pameran, Nama Jenis Channel, atau ganti/hapus Icon Map.
+                                Perbarui Kode Channel, Nama Jenis Channel, atau ganti/hapus Icon Map.
                             </DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 py-4">
                             <div className="space-y-1.5">
-                                <Label htmlFor="edit_kode_pameran">Kode Pameran</Label>
+                                <Label htmlFor="edit_kode_pameran">Kode Channel</Label>
                                 <Input
                                     id="edit_kode_pameran"
                                     value={editForm.data.kode_pameran}
@@ -734,7 +734,7 @@ export default function JenisPameranIndex({
 JenisPameranIndex.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard Pameran',
+            title: 'Dashboard Channel',
             href: dashboard(),
         },
         {

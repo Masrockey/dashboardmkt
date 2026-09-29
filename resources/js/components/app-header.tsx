@@ -41,7 +41,7 @@ type Props = {
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard Pameran',
+        title: 'Dashboard Channel',
         href: dashboard(),
         icon: LayoutGrid,
     },

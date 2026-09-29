@@ -377,24 +377,24 @@ export default function PameranIndex({
 
     return (
         <>
-            <Head title="Pameran" />
+            <Head title="Channel" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-                            Menu Pameran
+                            Menu Channel
                         </h1>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            Kelola jadwal pameran, alur persetujuan SPV & Kabag, dan penerbitan Kode Pameran MD.
+                            Kelola jadwal channel, alur persetujuan SPV & Kabag, dan penerbitan Kode Channel MD.
                         </p>
                     </div>
 
                     <Button asChild className="gap-2 self-start sm:self-auto">
                         <Link href={pameranRoute.create()}>
                             <Plus className="size-4" />
-                            Tambah Pameran
+                            Tambah Channel
                         </Link>
                     </Button>
                 </div>
@@ -405,7 +405,7 @@ export default function PameranIndex({
                         <Search className="text-muted-foreground absolute left-3 size-4 pointer-events-none" />
                         <Input
                             type="text"
-                            placeholder="Cari dealer, pameran, kecamatan..."
+                            placeholder="Cari dealer, channel, kecamatan..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-9 pr-9"
@@ -523,7 +523,7 @@ export default function PameranIndex({
                             <TableRow>
                                 <TableHead className="w-12 text-center">No</TableHead>
                                 <TableHead className="w-36">Status</TableHead>
-                                <TableHead>Kode Pameran</TableHead>
+                                <TableHead>Kode Channel</TableHead>
                                 <TableHead>Nama Dealer</TableHead>
                                 <TableHead>Nama Jenis Channel</TableHead>
                                 <TableHead>Periode Sewa</TableHead>
@@ -540,12 +540,12 @@ export default function PameranIndex({
                                                 <CalendarDays className="size-6 text-neutral-500 dark:text-neutral-400" />
                                             </div>
                                             <p className="font-medium text-neutral-900 dark:text-neutral-100">
-                                                Belum ada data pameran
+                                                 Belum ada data channel
                                             </p>
                                             <p className="text-xs text-neutral-500 dark:text-neutral-400">
                                                 {isFiltered
                                                     ? 'Tidak ditemukan data dengan filter pencarian tersebut.'
-                                                    : 'Mulai dengan menambahkan jadwal pameran pertama.'}
+                                                    : 'Mulai dengan menambahkan jadwal channel pertama.'}
                                             </p>
                                             {!isFiltered && (
                                                 <Button
@@ -556,7 +556,7 @@ export default function PameranIndex({
                                                 >
                                                     <Link href={pameranRoute.create()}>
                                                         <Plus className="mr-1.5 size-3.5" />
-                                                        Tambah Pameran
+                                                        Tambah Channel
                                                     </Link>
                                                 </Button>
                                             )}
@@ -728,7 +728,7 @@ export default function PameranIndex({
                                                             size="sm"
                                                             onClick={() => handleOpenReject(item)}
                                                             className="h-8 gap-1 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40 text-xs"
-                                                            title="Tolak Pameran"
+                                                            title="Tolak Channel"
                                                         >
                                                             <XCircle className="size-3.5" />
                                                             Tolak
@@ -741,7 +741,7 @@ export default function PameranIndex({
                                                         size="icon"
                                                         onClick={() => handleOpenEdit(item)}
                                                         className="size-8 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-                                                        title="Edit Pameran"
+                                                        title="Edit Channel"
                                                     >
                                                         <Pencil className="size-4" />
                                                         <span className="sr-only">Edit</span>
@@ -753,7 +753,7 @@ export default function PameranIndex({
                                                         size="icon"
                                                         onClick={() => handleOpenDelete(item)}
                                                         className="size-8 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                                                        title="Hapus Pameran"
+                                                        title="Hapus Channel"
                                                     >
                                                         <Trash2 className="size-4" />
                                                         <span className="sr-only">Hapus</span>
@@ -773,7 +773,7 @@ export default function PameranIndex({
                             <p className="text-xs text-neutral-500 dark:text-neutral-400">
                                 Menampilkan <span className="font-medium">{pamerans.from ?? 0}</span> sampai{' '}
                                 <span className="font-medium">{pamerans.to ?? 0}</span> dari{' '}
-                                <span className="font-medium">{pamerans.total}</span> data pameran
+                                <span className="font-medium">{pamerans.total}</span> data channel
                             </p>
 
                             <div className="flex items-center gap-1">
@@ -819,15 +819,15 @@ export default function PameranIndex({
                 <DialogContent className="sm:max-w-lg">
                     <form onSubmit={handleEditSubmit}>
                         <DialogHeader>
-                            <DialogTitle>Edit Pameran</DialogTitle>
+                            <DialogTitle>Edit Channel</DialogTitle>
                             <DialogDescription>
-                                Perbarui informasi dealer, jenis pameran, tanggal sewa, atau lokasi pameran.
+                                Perbarui informasi dealer, jenis channel, tanggal sewa, atau lokasi channel.
                             </DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
                             <div className="space-y-1.5">
-                                <Label htmlFor="edit_kode_pameran_md">Kode Pameran MD</Label>
+                                <Label htmlFor="edit_kode_pameran_md">Kode Channel MD</Label>
                                 <Input
                                     id="edit_kode_pameran_md"
                                     value={
@@ -838,14 +838,14 @@ export default function PameranIndex({
                                     className="bg-neutral-100 font-mono text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400 cursor-not-allowed"
                                 />
                                 <p className="text-[11px] text-neutral-400">
-                                    Kode pameran MD diterbitkan secara otomatis setelah disetujui Kabag.
+                                    Kode channel MD diterbitkan secara otomatis setelah disetujui Kabag.
                                 </p>
                             </div>
 
                             {currentUser.role !== 'dealer' && (
                                 <div className="space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="edit_kode_pameran_ahm">Kode Pameran AHM</Label>
+                                        <Label htmlFor="edit_kode_pameran_ahm">Kode Channel AHM</Label>
                                         <span className="text-xs text-neutral-400 dark:text-neutral-500">Opsional (Manual Admin)</span>
                                     </div>
                                     <Input
@@ -929,7 +929,7 @@ export default function PameranIndex({
 
                             {/* Peta Interaktif untuk Pilih Titik Lokasi */}
                             <div className="space-y-1.5">
-                                <Label>Peta & Titik Lokasi Pameran</Label>
+                                <Label>Peta & Titik Lokasi Channel</Label>
                                 <LocationPickerMap
                                     key={selectedPameran?.id ?? 'edit-map'}
                                     initialLat={editForm.data.latitude}
@@ -1042,8 +1042,8 @@ export default function PameranIndex({
                         </DialogTitle>
                         <DialogDescription>
                             {approveType === 'spv'
-                                ? 'Apakah Anda yakin ingin menyetujui pameran ini? Pameran akan dilanjutkan ke tahap persetujuan Kabag.'
-                                : 'Apakah Anda yakin ingin menyetujui pameran ini? Kode Pameran MD akan otomatis diterbitkan.'}
+                                ? 'Apakah Anda yakin ingin menyetujui channel ini? Channel akan dilanjutkan ke tahap persetujuan Kabag.'
+                                : 'Apakah Anda yakin ingin menyetujui channel ini? Kode Channel MD akan otomatis diterbitkan.'}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -1082,7 +1082,7 @@ export default function PameranIndex({
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1">
                                     <MapPin className="size-3.5 text-red-500" />
-                                    Lokasi Peta Pameran
+                                    Lokasi Peta Channel
                                 </span>
                                 {selectedPameran?.latitude != null && selectedPameran?.longitude != null && (
                                     <a
@@ -1109,7 +1109,7 @@ export default function PameranIndex({
                             ) : (
                                 <div className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-6 text-xs text-neutral-400 dark:border-neutral-700">
                                     <MapPin className="mr-1.5 size-4 text-neutral-400" />
-                                    Titik koordinat peta belum ditentukan untuk pameran ini.
+                                    Titik koordinat peta belum ditentukan untuk channel ini.
                                 </div>
                             )}
                         </div>
@@ -1139,9 +1139,9 @@ export default function PameranIndex({
                 <DialogContent className="sm:max-w-md">
                     <form onSubmit={handleConfirmReject}>
                         <DialogHeader>
-                            <DialogTitle>Tolak Pameran</DialogTitle>
+                            <DialogTitle>Tolak Channel</DialogTitle>
                             <DialogDescription>
-                                Masukkan alasan atau catatan penolakan untuk pameran ini.
+                                Masukkan alasan atau catatan penolakan untuk channel ini.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -1187,7 +1187,7 @@ export default function PameranIndex({
                                 disabled={rejectForm.processing}
                             >
                                 {rejectForm.processing && <Spinner className="mr-2 size-4" />}
-                                Tolak Pameran
+                                Tolak Channel
                             </Button>
                         </DialogFooter>
                     </form>
@@ -1198,9 +1198,9 @@ export default function PameranIndex({
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Hapus Pameran</DialogTitle>
+                        <DialogTitle>Hapus Channel</DialogTitle>
                         <DialogDescription>
-                            Apakah Anda yakin ingin menghapus data pameran di{' '}
+                            Apakah Anda yakin ingin menghapus data channel di{' '}
                             <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                                 {selectedPameran?.kecamatan} ({selectedPameran?.dealer?.nama_dealer})
                             </span>
@@ -1233,11 +1233,11 @@ export default function PameranIndex({
 PameranIndex.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard Pameran',
+            title: 'Dashboard Channel',
             href: dashboard(),
         },
         {
-            title: 'Pameran',
+            title: 'Channel',
             href: pameranRoute.index(),
         },
     ],

@@ -79,7 +79,7 @@ export default function PameranCreate({
 
     return (
         <>
-            <Head title="Tambah Pameran" />
+            <Head title="Tambah Channel" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
                 {/* Header with back button */}
@@ -90,7 +90,7 @@ export default function PameranCreate({
                             size="icon"
                             asChild
                             className="size-9 shrink-0"
-                            title="Kembali ke Daftar Pameran"
+                            title="Kembali ke Daftar Channel"
                         >
                             <Link href={pameranRoute.index()}>
                                 <ArrowLeft className="size-4" />
@@ -98,7 +98,7 @@ export default function PameranCreate({
                         </Button>
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-                                Tambah Pameran
+                                Tambah Channel
                             </h1>
                             <p className="text-sm text-neutral-500 dark:text-neutral-400">
                                 Pilih Dealer dan Jenis Channel, lalu tentukan periode sewa dan detail lokasi.
@@ -113,31 +113,31 @@ export default function PameranCreate({
                     <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4 text-xs dark:border-amber-900/60 dark:bg-amber-950/30">
                         <div className="flex flex-col gap-1">
                             <span className="font-semibold text-amber-800 dark:text-amber-300">
-                                Alur Persetujuan Pameran:
+                                Alur Persetujuan Channel:
                             </span>
                             <span className="text-amber-700 dark:text-amber-400 leading-relaxed">
-                                Setelah pameran dibuat, pameran akan menunggu persetujuan dari <strong>SPV</strong> lalu <strong>Kabag</strong>. Kode Pameran MD akan otomatis terbit setelah disetujui Kabag.
+                                Setelah channel dibuat, channel akan menunggu persetujuan dari <strong>SPV</strong> lalu <strong>Kabag</strong>. Kode Channel MD akan otomatis terbit setelah disetujui Kabag.
                             </span>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                        {/* Kolom Kiri: Data Pokok Pameran */}
+                        {/* Kolom Kiri: Data Pokok Channel */}
                         <div className="flex flex-col gap-6 lg:col-span-5">
                             <Card className="p-5 md:p-6 border-sidebar-border/70 dark:border-sidebar-border">
                                 <div className="mb-4 flex items-center gap-2 border-b pb-3 dark:border-neutral-800">
                                     <Store className="size-4 text-neutral-500" />
                                     <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                                        Data Pokok Pameran
+                                        Data Pokok Channel
                                     </h2>
                                 </div>
 
                                 <div className="space-y-4">
-                                    {/* Kode Pameran AHM (Admin Only) */}
+                                    {/* Kode Channel AHM (Admin Only) */}
                                     {currentUser.role !== 'dealer' && (
                                         <div className="space-y-1.5">
                                             <div className="flex items-center justify-between">
-                                                <Label htmlFor="kode_pameran_ahm">Kode Pameran AHM</Label>
+                                                <Label htmlFor="kode_pameran_ahm">Kode Channel AHM</Label>
                                                 <span className="text-xs text-neutral-400 dark:text-neutral-500">Opsional (Manual Admin)</span>
                                             </div>
                                             <Input
@@ -239,7 +239,7 @@ export default function PameranCreate({
                                     {/* Peta Interaktif untuk Pilih Titik Lokasi */}
                                     <div className="space-y-1.5">
                                         <div className="flex items-center justify-between">
-                                            <Label>Peta & Titik Lokasi Pameran</Label>
+                                            <Label>Peta & Titik Lokasi Channel</Label>
                                             <span className="text-xs text-neutral-400">
                                                 Cari alamat atau klik titik pada peta
                                             </span>
@@ -354,7 +354,7 @@ export default function PameranCreate({
                         </Button>
                         <Button type="submit" disabled={createForm.processing} className="min-w-[140px]">
                             {createForm.processing && <Spinner className="mr-2 size-4" />}
-                            Simpan Pameran
+                            Simpan Channel
                         </Button>
                     </div>
                 </form>
@@ -366,15 +366,15 @@ export default function PameranCreate({
 PameranCreate.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard Pameran',
+            title: 'Dashboard Channel',
             href: dashboard(),
         },
         {
-            title: 'Pameran',
+            title: 'Channel',
             href: pameranRoute.index(),
         },
         {
-            title: 'Tambah Pameran',
+            title: 'Tambah Channel',
             href: pameranRoute.create(),
         },
     ],

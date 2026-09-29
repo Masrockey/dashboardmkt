@@ -268,7 +268,7 @@ export default function DashboardMap({
                     </div>
 
                     <div style="font-size: 11px; color: #4b5563; margin-bottom: 6px;">
-                        <span style="font-weight: 600; color: #1f2937;">${pameran.jenis_pameran?.jenis_pameran || 'Pameran'}</span>
+                        <span style="font-weight: 600; color: #1f2937;">${pameran.jenis_pameran?.jenis_pameran || 'Channel'}</span>
                         ${pameran.dealer?.kode_dealer ? ` &bull; <span style="font-family: monospace;">${pameran.dealer.kode_dealer}</span>` : ''}
                     </div>
 
@@ -429,7 +429,7 @@ export default function DashboardMap({
                         <span className="font-semibold text-neutral-900 dark:text-neutral-100">
                             {filteredPamerans.length}
                         </span>
-                        <span className="ml-1 text-neutral-500">titik pameran</span>
+                        <span className="ml-1 text-neutral-500">titik channel</span>
                     </Badge>
 
                     <Button
@@ -536,7 +536,7 @@ export default function DashboardMap({
                 {/* Petunjuk Interaksi */}
                 <div className="absolute top-3 right-3 z-[400] rounded-md bg-background/85 px-2.5 py-1 text-[11px] text-neutral-600 shadow-xs backdrop-blur-xs dark:text-neutral-300 border border-neutral-200/60 dark:border-neutral-800/60 pointer-events-none hidden sm:flex items-center gap-1.5">
                     <Compass className="size-3 text-neutral-400" />
-                    <span>Arahkan kursor ke titik pin untuk detail pameran</span>
+                    <span>Arahkan kursor ke titik pin untuk detail channel</span>
                 </div>
             </div>
         </Card>

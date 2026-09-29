@@ -161,7 +161,7 @@ class PameranController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Pameran berhasil ditambahkan dan menunggu persetujuan SPV.',
+            'message' => 'Channel berhasil ditambahkan dan menunggu persetujuan SPV.',
         ]);
 
         return to_route('pameran.index');
@@ -175,7 +175,7 @@ class PameranController extends Controller
         $user = $request->user();
 
         if ($user->cannot('update', $pameran)) {
-            abort(403, 'Anda tidak memiliki akses untuk mengubah pameran dealer lain.');
+            abort(403, 'Anda tidak memiliki akses untuk mengubah channel dealer lain.');
         }
 
         $data = $request->validated();
@@ -189,7 +189,7 @@ class PameranController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Pameran berhasil diperbarui.',
+            'message' => 'Channel berhasil diperbarui.',
         ]);
 
         return to_route('pameran.index');
@@ -203,14 +203,14 @@ class PameranController extends Controller
         $user = $request->user();
 
         if ($user->cannot('delete', $pameran)) {
-            abort(403, 'Anda tidak memiliki akses untuk menghapus pameran dealer lain.');
+            abort(403, 'Anda tidak memiliki akses untuk menghapus channel dealer lain.');
         }
 
         $pameran->delete();
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Pameran berhasil dihapus.',
+            'message' => 'Channel berhasil dihapus.',
         ]);
 
         return to_route('pameran.index');
@@ -230,7 +230,7 @@ class PameranController extends Controller
         if ($pameran->status !== PameranStatus::MenungguSpv) {
             Inertia::flash('toast', [
                 'type' => 'error',
-                'message' => 'Status pameran tidak valid untuk disetujui SPV.',
+                'message' => 'Status channel tidak valid untuk disetujui SPV.',
             ]);
 
             return back();
@@ -240,7 +240,7 @@ class PameranController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Pameran berhasil disetujui oleh SPV dan dilanjutkan ke Kabag.',
+            'message' => 'Channel berhasil disetujui oleh SPV dan dilanjutkan ke Kabag.',
         ]);
 
         return back();
@@ -260,7 +260,7 @@ class PameranController extends Controller
         if ($pameran->status !== PameranStatus::MenungguKabag) {
             Inertia::flash('toast', [
                 'type' => 'error',
-                'message' => 'Status pameran tidak valid untuk disetujui Kabag.',
+                'message' => 'Status channel tidak valid untuk disetujui Kabag.',
             ]);
 
             return back();
@@ -270,7 +270,7 @@ class PameranController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => "Pameran berhasil disetujui oleh Kabag. Kode Pameran MD ({$pameran->kode_pameran_md}) telah diterbitkan.",
+            'message' => "Channel berhasil disetujui oleh Kabag. Kode Channel MD ({$pameran->kode_pameran_md}) telah diterbitkan.",
         ]);
 
         return back();
@@ -284,15 +284,15 @@ class PameranController extends Controller
         $user = $request->user();
 
         if (! in_array($user->role, [UserRole::Spv, UserRole::Kabag, UserRole::Superadmin], true)) {
-            abort(403, 'Anda tidak memiliki hak akses untuk menolak pameran.');
+            abort(403, 'Anda tidak memiliki hak akses untuk menolak channel.');
         }
 
         if ($user->role === UserRole::Kabag && $pameran->status === PameranStatus::MenungguSpv) {
-            abort(403, 'Pameran belum disetujui oleh SPV.');
+            abort(403, 'Channel belum disetujui oleh SPV.');
         }
 
         if ($user->role === UserRole::Spv && $pameran->status !== PameranStatus::MenungguSpv) {
-            abort(403, 'SPV hanya dapat menolak pameran pada tahap menunggu persetujuan SPV.');
+            abort(403, 'SPV hanya dapat menolak channel pada tahap menunggu persetujuan SPV.');
         }
 
         $validated = $request->validate([
@@ -303,7 +303,7 @@ class PameranController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Pameran telah ditolak.',
+            'message' => 'Channel telah ditolak.',
         ]);
 
         return back();

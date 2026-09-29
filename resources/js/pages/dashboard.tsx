@@ -96,7 +96,7 @@ export default function Dashboard({
 
     return (
         <>
-            <Head title="Dashboard Pameran" />
+            <Head title="Dashboard Channel" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
                 {/* Header Welcome & Role Info */}
@@ -109,7 +109,7 @@ export default function Dashboard({
                             {getRoleBadge(currentUser.role)}
                         </div>
                         <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                            Pantau persebaran titik lokasi pameran dan jadwal sewa secara real-time di wilayah Anda.
+                            Pantau persebaran titik lokasi channel dan jadwal sewa secara real-time di wilayah Anda.
                         </p>
                     </div>
 
@@ -117,7 +117,7 @@ export default function Dashboard({
                         <Button asChild variant="outline" size="sm" className="gap-1.5 text-xs">
                             <Link href={pameranRoute.index.url()}>
                                 <Store className="size-3.5" />
-                                Kelola Pameran
+                                Kelola Channel
                                 <ArrowUpRight className="size-3 text-neutral-400" />
                             </Link>
                         </Button>
@@ -126,11 +126,11 @@ export default function Dashboard({
 
                 {/* Kartu Statistik Ringkasan */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {/* Total Pameran */}
+                    {/* Total Channel */}
                     <Card className="border-sidebar-border/70 shadow-xs dark:border-sidebar-border">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                Total Pameran
+                                Total Channel
                             </CardTitle>
                             <div className="rounded-lg bg-neutral-100 p-2 dark:bg-neutral-800">
                                 <Store className="size-4 text-neutral-600 dark:text-neutral-300" />
@@ -141,7 +141,7 @@ export default function Dashboard({
                                 {stats.total}
                             </div>
                             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                                Seluruh jadwal pameran terdaftar
+                                Seluruh jadwal channel terdaftar
                             </p>
                         </CardContent>
                     </Card>
@@ -207,16 +207,16 @@ export default function Dashboard({
                     </Card>
                 </div>
 
-                {/* Section Peta Persebaran Pameran */}
+                {/* Section Peta Persebaran Channel */}
                 <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                         <div>
                             <h2 className="text-base font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                                 <MapPin className="size-4 text-neutral-700 dark:text-neutral-300" />
-                                Peta Titik Lokasi Pameran
+                                Peta Titik Lokasi Channel
                             </h2>
                             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                Arahkan kursor pada pinpoint pameran untuk melihat detail dealer, kecamatan, dan periode sewa.
+                                Arahkan kursor pada pinpoint channel untuk melihat detail dealer, kecamatan, dan periode sewa.
                             </p>
                         </div>
                     </div>
@@ -235,7 +235,7 @@ export default function Dashboard({
 Dashboard.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard Pameran',
+            title: 'Dashboard Channel',
             href: dashboard(),
         },
     ],
