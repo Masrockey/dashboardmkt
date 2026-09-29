@@ -947,16 +947,16 @@ export default function PameranIndex({
 
             {/* Dialog Edit Pameran */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="sm:max-w-lg">
-                    <form onSubmit={handleEditSubmit}>
-                        <DialogHeader>
+                <DialogContent className="sm:max-w-xl md:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                    <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <DialogHeader className="px-6 pt-6 pb-4 border-b">
                             <DialogTitle>Edit Channel</DialogTitle>
                             <DialogDescription>
                                 Perbarui informasi dealer, jenis channel, tanggal sewa, atau lokasi channel.
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto px-1">
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
                             <div className="space-y-1.5">
                                 <Label htmlFor="edit_kode_pameran_md">Kode Channel MD</Label>
                                 <Input
@@ -1165,7 +1165,7 @@ export default function PameranIndex({
                             </div>
                         </div>
 
-                        <DialogFooter>
+                        <DialogFooter className="px-6 py-4 border-t bg-neutral-50 dark:bg-neutral-900/50">
                             <DialogClose asChild>
                                 <Button type="button" variant="outline" disabled={editForm.processing}>
                                     Batal
@@ -1182,8 +1182,8 @@ export default function PameranIndex({
 
             {/* Dialog Konfirmasi Approval (SPV / Kabag) */}
             <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                    <DialogHeader className="px-6 pt-6 pb-4 border-b">
                         <DialogTitle>
                             {approveType === 'spv' ? 'Persetujuan SPV' : 'Persetujuan Kabag'}
                         </DialogTitle>
@@ -1194,7 +1194,7 @@ export default function PameranIndex({
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-3 py-2 max-h-[75vh] overflow-y-auto px-1">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-3">
                         <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs space-y-2 dark:border-neutral-800 dark:bg-neutral-900">
                             <div className="flex justify-between">
                                 <span className="text-neutral-500">Dealer:</span>
@@ -1262,7 +1262,7 @@ export default function PameranIndex({
                         </div>
                     </div>
 
-                    <DialogFooter className="mt-4">
+                    <DialogFooter className="px-6 py-4 border-t bg-neutral-50 dark:bg-neutral-900/50">
                         <DialogClose asChild>
                             <Button type="button" variant="outline" disabled={isApproving}>
                                 Batal
