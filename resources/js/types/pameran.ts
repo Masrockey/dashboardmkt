@@ -30,6 +30,7 @@ export interface PameranItem {
     catatan_penolakan?: string | null;
     created_at: string;
     updated_at: string;
+    is_other_dealer?: boolean;
 }
 
 export interface PaginatedPameran {

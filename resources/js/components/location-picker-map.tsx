@@ -319,6 +319,24 @@ export default function LocationPickerMap({
                 zIndexOffset: 100,
             });
 
+            // Jika merupakan channel dari dealer lain:
+            // Hanya muncul pin saja, tidak bisa dicek detail (tanpa popup, tanpa info detail sensitif)
+            if (item.is_other_dealer) {
+                marker.bindTooltip(
+                    `<b>Channel Terdaftar</b>${item.jenis_pameran?.jenis_pameran ? `<br/><span style="font-size: 10px; color: #4b5563;">${item.jenis_pameran.jenis_pameran}</span>` : ''}`,
+                    { direction: 'top', offset: [0, -10] },
+                );
+
+                marker.on('click', (e: L.LeafletMouseEvent) => {
+                    if (e.originalEvent) {
+                        e.originalEvent.stopPropagation();
+                    }
+                });
+
+                marker.addTo(layer);
+                return;
+            }
+
             const statusText =
                 item.status === 'disetujui'
                     ? 'Disetujui'

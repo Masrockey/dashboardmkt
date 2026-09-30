@@ -226,6 +226,25 @@ export default function DashboardMap({
             const icon = getMapMarkerIcon(pameran.jenis_pameran?.icon_map_url);
             const marker = L.marker([lat, lng], { icon });
 
+            if (pameran.is_other_dealer) {
+                marker.bindTooltip(
+                    `<b>Channel Terdaftar</b>${pameran.jenis_pameran?.jenis_pameran ? `<br/><span style="font-size: 10px; color: #4b5563;">${pameran.jenis_pameran.jenis_pameran}</span>` : ''}`,
+                    {
+                        direction: 'top',
+                        offset: [0, -32],
+                        opacity: 0.98,
+                        className: 'custom-dashboard-map-tooltip',
+                    },
+                );
+
+                marker.on('click', () => {
+                    map.panTo([lat, lng], { animate: true, duration: 0.5 });
+                });
+
+                markersLayer.addLayer(marker);
+                return;
+            }
+
             const rental = getRentalPeriodStatus(
                 pameran.mulai_tanggal_sewa,
                 pameran.tanggal_sewa_berakhir,

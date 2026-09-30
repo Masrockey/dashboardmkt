@@ -166,15 +166,28 @@ class PameranController extends Controller
             ])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->when($user->role === UserRole::Dealer, function (Builder $query) use ($user) {
-                if ($user->dealer_id) {
-                    $query->where('dealer_id', $user->dealer_id);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-            })
             ->latest('id')
             ->get();
+
+        if ($user->role === UserRole::Dealer) {
+            $existingPamerans = $existingPamerans->map(function (Pameran $pameran) use ($user) {
+                if ($pameran->dealer_id !== $user->dealer_id) {
+                    $masked = new Pameran;
+                    $masked->id = $pameran->id;
+                    $masked->latitude = $pameran->latitude;
+                    $masked->longitude = $pameran->longitude;
+                    $masked->jenis_pameran_id = $pameran->jenis_pameran_id;
+                    $masked->setRelation('jenisPameran', $pameran->jenisPameran);
+                    $masked->setAttribute('is_other_dealer', true);
+
+                    return $masked;
+                }
+
+                $pameran->setAttribute('is_other_dealer', false);
+
+                return $pameran;
+            });
+        }
 
         return Inertia::render('pameran/create', [
             'dealers' => $dealers,

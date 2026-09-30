@@ -35,6 +35,40 @@ test('authenticated users can view the create pameran page', function () {
     );
 });
 
+test('dealer can see all channel pins on create page but other dealers channels are masked with is_other_dealer flag', function () {
+    $dealerA = Dealer::factory()->create();
+    $dealerB = Dealer::factory()->create();
+
+    $dealerUser = User::factory()->create([
+        'role' => UserRole::Dealer,
+        'dealer_id' => $dealerA->id,
+    ]);
+
+    $pameranA = Pameran::factory()->create([
+        'dealer_id' => $dealerA->id,
+        'latitude' => -8.5833,
+        'longitude' => 116.1167,
+    ]);
+
+    $pameranB = Pameran::factory()->create([
+        'dealer_id' => $dealerB->id,
+        'latitude' => -8.6000,
+        'longitude' => 116.1500,
+    ]);
+
+    $response = $this->actingAs($dealerUser)->get(route('pameran.create'));
+
+    $response->assertOk();
+    $response->assertInertia(fn (AssertableInertia $page) => $page
+        ->component('pameran/create')
+        ->has('existingPamerans', 2)
+        ->where('existingPamerans.0.id', $pameranB->id)
+        ->where('existingPamerans.0.is_other_dealer', true)
+        ->where('existingPamerans.1.id', $pameranA->id)
+        ->where('existingPamerans.1.is_other_dealer', false)
+    );
+});
+
 test('authenticated users can create a pameran with valid data and initial status is menunggu_spv', function () {
     $dealer = Dealer::factory()->create();
     $user = User::factory()->create(['role' => UserRole::Dealer, 'dealer_id' => $dealer->id]);
