@@ -227,4 +227,3 @@ class GeocodeController extends Controller
         ];
     }
 }
-

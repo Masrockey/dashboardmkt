@@ -249,6 +249,7 @@ export default function PameranCreate({
                                         initialLng={createForm.data.longitude}
                                         customIconUrl={selectedJenis?.icon_map_url || null}
                                         existingChannels={existingPamerans}
+                                        isDealer={currentUser.role === 'dealer'}
                                         onLocationSelect={(res) => {
                                             createForm.setData((prev) => ({
                                                 ...prev,

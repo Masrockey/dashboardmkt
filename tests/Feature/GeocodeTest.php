@@ -83,4 +83,3 @@ test('geocode search returns empty array for queries shorter than 2 chars', func
     $response->assertOk()
         ->assertExactJson([]);
 });
-

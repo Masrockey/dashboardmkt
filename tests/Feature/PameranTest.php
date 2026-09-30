@@ -13,12 +13,21 @@ test('guests are redirected to the login page when visiting pameran', function (
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users can view the pameran page', function () {
-    $user = User::factory()->create();
+test('authenticated users can view the pameran page with mapPamerans for approval and edit maps', function () {
+    $user = User::factory()->create(['role' => UserRole::Spv]);
+    Pameran::factory()->create([
+        'latitude' => -8.5833,
+        'longitude' => 116.1167,
+    ]);
 
     $response = $this->actingAs($user)->get(route('pameran.index'));
 
     $response->assertOk();
+    $response->assertInertia(fn (AssertableInertia $page) => $page
+        ->component('pameran/index')
+        ->has('pamerans')
+        ->has('mapPamerans')
+    );
 });
 
 test('authenticated users can view the create pameran page', function () {

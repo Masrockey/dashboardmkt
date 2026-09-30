@@ -64,6 +64,7 @@ interface AuthUser {
 
 interface PameranIndexProps {
     pamerans: PaginatedPameran;
+    mapPamerans?: PameranItem[];
     dealers: Dealer[];
     jenisPameranList: JenisPameran[];
     kabupatenList?: string[];
@@ -80,6 +81,7 @@ interface PameranIndexProps {
 
 export default function PameranIndex({
     pamerans,
+    mapPamerans = [],
     dealers,
     jenisPameranList,
     kabupatenList = [],
@@ -1066,7 +1068,9 @@ export default function PameranIndex({
                                     initialLat={editForm.data.latitude}
                                     initialLng={editForm.data.longitude}
                                     customIconUrl={selectedEditJenis?.icon_map_url || null}
-                                    existingChannels={pamerans.data.filter((p) => p.id !== selectedPameran?.id)}
+                                    existingChannels={mapPamerans.filter((p) => p.id !== selectedPameran?.id)}
+                                    channelId={selectedPameran?.id}
+                                    isDealer={currentUser.role === 'dealer'}
                                     onLocationSelect={(res) => {
                                         editForm.setData((prev) => ({
                                             ...prev,
@@ -1252,7 +1256,10 @@ export default function PameranIndex({
                                     longitude={Number(selectedPameran.longitude)}
                                     customIconUrl={selectedPameran.jenis_pameran?.icon_map_url || null}
                                     popupText={`${selectedPameran.dealer?.nama_dealer || ''} - ${selectedPameran.kecamatan}`}
-                                    height="220px"
+                                    otherChannels={mapPamerans}
+                                    currentChannelId={selectedPameran.id}
+                                    isDealer={currentUser.role === 'dealer'}
+                                    height="240px"
                                 />
                             ) : (
                                 <div className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-6 text-xs text-neutral-400 dark:border-neutral-700">
