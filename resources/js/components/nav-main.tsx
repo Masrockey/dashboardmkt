@@ -28,9 +28,18 @@ export function NavMain({ groups, items }: NavMainProps) {
 
     return (
         <>
-            {navGroups
-                .filter((group) => group.items.length > 0)
-                .map((group) => (
+            {navGroups.map((group) => {
+                if (group.items.length === 0) {
+                    return (
+                        <SidebarGroup key={group.title} className="px-2 py-1">
+                            <SidebarGroupLabel className="select-none text-[11px] font-semibold tracking-wider uppercase text-neutral-400 dark:text-neutral-500">
+                                <span>{group.title}</span>
+                            </SidebarGroupLabel>
+                        </SidebarGroup>
+                    );
+                }
+
+                return (
                     <Collapsible
                         key={group.title}
                         defaultOpen
@@ -68,8 +77,8 @@ export function NavMain({ groups, items }: NavMainProps) {
                             </CollapsibleContent>
                         </SidebarGroup>
                     </Collapsible>
-                ))}
+                );
+            })}
         </>
     );
 }
-

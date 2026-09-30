@@ -10,3 +10,4 @@ export type * from './segment';
 export type * from './type-model';
 export type * from './ui';
 export type * from './user';
+export type * from './r2';

@@ -8,6 +8,7 @@ use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\JenisPameranController;
 use App\Http\Controllers\KabupatenController;
 use App\Http\Controllers\PameranController;
+use App\Http\Controllers\R2Controller;
 use App\Http\Controllers\SegmentController;
 use App\Http\Controllers\TypeController;
 use App\Http\Controllers\UserController;
@@ -21,6 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('dealers', DealerController::class)->except(['create', 'show', 'edit']);
     Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
+    Route::post('r2/import', [R2Controller::class, 'import'])->name('r2.import');
+    Route::resource('r2', R2Controller::class)->except(['create', 'show', 'edit']);
     // Master Data (Hanya untuk Superadmin & SPV)
     Route::middleware(EnsureMasterDataAccess::class)->group(function () {
         Route::resource('jenis-pameran', JenisPameranController::class)->except(['create', 'show', 'edit']);

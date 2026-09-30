@@ -1,5 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
+import r2 from '@/routes/r2';
 import {
+    Bike,
     BookmarkCheck,
     Building2,
     CalendarDays,
@@ -83,6 +85,15 @@ const masterDataNavItems: NavItem[] = [
     },
 ];
 
+const marketingNavItems: NavItem[] = [
+    {
+        title: 'R2',
+        href: r2.index(),
+        icon: Bike,
+    },
+];
+
+
 const managementNavItems: NavItem[] = [
     {
         title: 'Dealer',
@@ -114,11 +125,16 @@ export function AppSidebar() {
                 title: 'PCD',
                 items: isDealerOrKabagOnly
                     ? pcdNavItems.filter(
-                          (item) => item.title === 'Dashboard Channel' || item.title === 'Channel',
-                      )
+                        (item) => item.title === 'Dashboard Channel' || item.title === 'Channel',
+                    )
                     : pcdNavItems,
             },
         ];
+
+        groups.push({
+            title: 'Marketing',
+            items: marketingNavItems,
+        });
 
         if (canAccessMasterData) {
             groups.push({
