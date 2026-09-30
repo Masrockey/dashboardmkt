@@ -22,11 +22,11 @@ class PameranPolicy
      */
     public function view(User $user, Pameran $pameran): bool
     {
-        if ($user->role === UserRole::Dealer) {
+        if ($user->isDealerOnly()) {
             return $user->dealer_id !== null && $pameran->dealer_id === $user->dealer_id;
         }
 
-        if ($user->role === UserRole::Kabag) {
+        if ($user->hasRole(UserRole::Kabag) && ! $user->hasRole(UserRole::Superadmin)) {
             return $pameran->status !== PameranStatus::MenungguSpv
                 && ($pameran->status !== PameranStatus::Ditolak || $pameran->spv_approved_by !== null || $pameran->spv_approved_at !== null);
         }
@@ -39,7 +39,7 @@ class PameranPolicy
      */
     public function create(User $user): bool
     {
-        if ($user->role === UserRole::Dealer) {
+        if ($user->isDealerOnly()) {
             return $user->dealer_id !== null;
         }
 
@@ -51,7 +51,7 @@ class PameranPolicy
      */
     public function update(User $user, Pameran $pameran): bool
     {
-        if ($user->role === UserRole::Dealer) {
+        if ($user->isDealerOnly()) {
             return $user->dealer_id !== null && $pameran->dealer_id === $user->dealer_id;
         }
 
@@ -63,7 +63,7 @@ class PameranPolicy
      */
     public function delete(User $user, Pameran $pameran): bool
     {
-        if ($user->role === UserRole::Dealer) {
+        if ($user->isDealerOnly()) {
             return $user->dealer_id !== null && $pameran->dealer_id === $user->dealer_id;
         }
 
@@ -75,7 +75,7 @@ class PameranPolicy
      */
     public function approveSpv(User $user, Pameran $pameran): bool
     {
-        return in_array($user->role, [UserRole::Spv, UserRole::Superadmin], true);
+        return $user->hasAnyRole([UserRole::Spv, UserRole::Superadmin]);
     }
 
     /**
@@ -83,7 +83,7 @@ class PameranPolicy
      */
     public function approveKabag(User $user, Pameran $pameran): bool
     {
-        return in_array($user->role, [UserRole::Kabag, UserRole::Superadmin], true);
+        return $user->hasAnyRole([UserRole::Kabag, UserRole::Superadmin]);
     }
 
     /**
@@ -91,14 +91,18 @@ class PameranPolicy
      */
     public function reject(User $user, Pameran $pameran): bool
     {
-        if ($user->role === UserRole::Kabag) {
-            return $pameran->status === PameranStatus::MenungguKabag;
+        if ($user->hasRole(UserRole::Superadmin)) {
+            return true;
         }
 
-        if ($user->role === UserRole::Spv) {
-            return $pameran->status === PameranStatus::MenungguSpv;
+        if ($user->hasRole(UserRole::Kabag) && $pameran->status === PameranStatus::MenungguKabag) {
+            return true;
         }
 
-        return $user->role === UserRole::Superadmin;
+        if ($user->hasRole(UserRole::Spv) && $pameran->status === PameranStatus::MenungguSpv) {
+            return true;
+        }
+
+        return false;
     }
 }

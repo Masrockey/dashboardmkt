@@ -29,8 +29,8 @@ class DashboardController extends Controller
         // Stats query
         $statsQuery = Pameran::query();
 
-        // Role dealer hanya melihat pameran miliknya
-        if ($user->role === UserRole::Dealer) {
+        // Role dealer hanya melihat pameran miliknya jika user hanya memiliki role dealer saja
+        if ($user->isDealerOnly()) {
             if ($user->dealer_id) {
                 $mapQuery->where('dealer_id', $user->dealer_id);
                 $statsQuery->where('dealer_id', $user->dealer_id);

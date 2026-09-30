@@ -1,27 +1,16 @@
-import type { Dealer } from './dealer';
+import type { Category } from './category';
 
-export type UserRole = 'superadmin' | 'spv' | 'kabag' | 'dealer';
-
-export interface RoleOption {
-    value: UserRole;
-    label: string;
-}
-
-export interface UserItem {
+export interface Brand {
     id: number;
-    name: string;
-    username: string | null;
-    email: string;
-    role: UserRole;
-    roles: UserRole[];
-    dealer_id: number | null;
-    dealer?: Dealer | null;
+    nama_brand: string;
+    category_id: number | null;
+    category?: Category | null;
     created_at: string;
     updated_at: string;
 }
 
-export interface PaginatedUsers {
-    data: UserItem[];
+export interface PaginatedBrands {
+    data: Brand[];
     current_page: number;
     first_page_url: string;
     from: number | null;

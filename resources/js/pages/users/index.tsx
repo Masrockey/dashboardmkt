@@ -18,6 +18,7 @@ import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
@@ -75,7 +76,7 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
         username: '',
         email: '',
         password: '',
-        role: 'dealer' as UserRole,
+        roles: ['dealer'] as UserRole[],
         dealer_id: '' as string | number,
     });
 
@@ -85,7 +86,7 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
         username: '',
         email: '',
         password: '',
-        role: 'dealer' as UserRole,
+        roles: ['dealer'] as UserRole[],
         dealer_id: '' as string | number,
     });
 
@@ -157,12 +158,16 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
 
     const handleOpenEdit = (user: UserItem) => {
         setSelectedUser(user);
+        const userRoles: UserRole[] =
+            Array.isArray(user.roles) && user.roles.length > 0
+                ? user.roles
+                : [user.role || 'dealer'];
         editForm.setData({
             name: user.name,
             username: user.username || '',
             email: user.email,
             password: '',
-            role: user.role,
+            roles: userRoles,
             dealer_id: user.dealer_id ?? '',
         });
         editForm.clearErrors();
@@ -400,7 +405,11 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                {getRoleBadge(user.role)}
+                                                <div className="flex flex-wrap gap-1">
+                                                    {(user.roles && user.roles.length > 0 ? user.roles : [user.role]).map((r) => (
+                                                        <span key={r}>{getRoleBadge(r)}</span>
+                                                    ))}
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 {user.dealer ? (
@@ -576,49 +585,61 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
                                 <InputError message={createForm.errors.password} />
                             </div>
 
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="create_role">Role</Label>
-                                    <Select
-                                        value={createForm.data.role}
-                                        onValueChange={(val) => createForm.setData('role', val as UserRole)}
-                                        disabled={createForm.processing}
-                                    >
-                                        <SelectTrigger id="create_role" className="w-full">
-                                            <SelectValue placeholder="Pilih Role" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {roles.map((r) => (
-                                                <SelectItem key={r.value} value={r.value}>
-                                                    {r.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError message={createForm.errors.role} />
+                            <div className="space-y-1.5">
+                                <Label>Role (Bisa Pilih Lebih Dari 1)</Label>
+                                <div className="grid grid-cols-2 gap-2.5 rounded-lg border border-neutral-200 bg-neutral-50/50 p-3 dark:border-neutral-800 dark:bg-neutral-900/50">
+                                    {roles.map((r) => {
+                                        const isChecked = createForm.data.roles.includes(r.value as UserRole);
+                                        return (
+                                            <label
+                                                key={r.value}
+                                                className="flex cursor-pointer items-center gap-2 text-xs font-medium text-neutral-800 dark:text-neutral-200 select-none"
+                                            >
+                                                <Checkbox
+                                                    checked={isChecked}
+                                                    onCheckedChange={(checked) => {
+                                                        if (checked) {
+                                                            createForm.setData('roles', [
+                                                                ...createForm.data.roles,
+                                                                r.value as UserRole,
+                                                            ]);
+                                                        } else {
+                                                            createForm.setData(
+                                                                'roles',
+                                                                createForm.data.roles.filter((v) => v !== r.value),
+                                                            );
+                                                        }
+                                                    }}
+                                                    disabled={createForm.processing}
+                                                />
+                                                <span>{r.label}</span>
+                                            </label>
+                                        );
+                                    })}
                                 </div>
+                                <InputError message={createForm.errors.roles} />
+                            </div>
 
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="create_dealer_id">Dealer Terkait</Label>
-                                    <Select
-                                        value={createForm.data.dealer_id ? String(createForm.data.dealer_id) : 'none'}
-                                        onValueChange={(val) => createForm.setData('dealer_id', val === 'none' ? '' : val)}
-                                        disabled={createForm.processing}
-                                    >
-                                        <SelectTrigger id="create_dealer_id" className="w-full">
-                                            <SelectValue placeholder="Pilih Dealer" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">-- Tanpa Dealer (Pusat) --</SelectItem>
-                                            {dealers.map((d) => (
-                                                <SelectItem key={d.id} value={String(d.id)}>
-                                                    [{d.kode_dealer}] {d.nama_dealer}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError message={createForm.errors.dealer_id} />
-                                </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="create_dealer_id">Dealer Terkait</Label>
+                                <Select
+                                    value={createForm.data.dealer_id ? String(createForm.data.dealer_id) : 'none'}
+                                    onValueChange={(val) => createForm.setData('dealer_id', val === 'none' ? '' : val)}
+                                    disabled={createForm.processing}
+                                >
+                                    <SelectTrigger id="create_dealer_id" className="w-full">
+                                        <SelectValue placeholder="Pilih Dealer" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Tanpa Dealer (Pusat) --</SelectItem>
+                                        {dealers.map((d) => (
+                                            <SelectItem key={d.id} value={String(d.id)}>
+                                                [{d.kode_dealer}] {d.nama_dealer}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={createForm.errors.dealer_id} />
                             </div>
                         </div>
 
@@ -702,49 +723,61 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
                                 <InputError message={editForm.errors.password} />
                             </div>
 
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                 <div className="space-y-1.5">
-                                     <Label htmlFor="edit_role">Role</Label>
-                                     <Select
-                                         value={editForm.data.role}
-                                         onValueChange={(val) => editForm.setData('role', val as UserRole)}
-                                         disabled={editForm.processing}
-                                     >
-                                         <SelectTrigger id="edit_role" className="w-full">
-                                             <SelectValue placeholder="Pilih Role" />
-                                         </SelectTrigger>
-                                         <SelectContent>
-                                             {roles.map((r) => (
-                                                 <SelectItem key={r.value} value={r.value}>
-                                                     {r.label}
-                                                 </SelectItem>
-                                             ))}
-                                         </SelectContent>
-                                     </Select>
-                                     <InputError message={editForm.errors.role} />
-                                 </div>
-
-                                 <div className="space-y-1.5">
-                                     <Label htmlFor="edit_dealer_id">Dealer Terkait</Label>
-                                     <Select
-                                         value={editForm.data.dealer_id ? String(editForm.data.dealer_id) : 'none'}
-                                         onValueChange={(val) => editForm.setData('dealer_id', val === 'none' ? '' : val)}
-                                         disabled={editForm.processing}
-                                     >
-                                         <SelectTrigger id="edit_dealer_id" className="w-full">
-                                             <SelectValue placeholder="Pilih Dealer" />
-                                         </SelectTrigger>
-                                         <SelectContent>
-                                             <SelectItem value="none">-- Tanpa Dealer (Pusat) --</SelectItem>
-                                             {dealers.map((d) => (
-                                                <SelectItem key={d.id} value={String(d.id)}>
-                                                    [{d.kode_dealer}] {d.nama_dealer}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError message={editForm.errors.dealer_id} />
+                            <div className="space-y-1.5">
+                                <Label>Role (bisa pilih lebih dari satu)</Label>
+                                <div className="grid grid-cols-2 gap-2 rounded-md border p-3">
+                                    {roles.map((r) => {
+                                        const isChecked = editForm.data.roles.includes(r.value as UserRole);
+                                        return (
+                                            <label
+                                                key={r.value}
+                                                className="flex items-center space-x-2 text-sm cursor-pointer"
+                                            >
+                                                <Checkbox
+                                                    checked={isChecked}
+                                                    onCheckedChange={(checked) => {
+                                                        if (checked) {
+                                                            editForm.setData('roles', [
+                                                                ...editForm.data.roles,
+                                                                r.value as UserRole,
+                                                            ]);
+                                                        } else {
+                                                            editForm.setData(
+                                                                'roles',
+                                                                editForm.data.roles.filter((v) => v !== r.value),
+                                                            );
+                                                        }
+                                                    }}
+                                                    disabled={editForm.processing}
+                                                />
+                                                <span>{r.label}</span>
+                                            </label>
+                                        );
+                                    })}
                                 </div>
+                                <InputError message={editForm.errors.roles} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="edit_dealer_id">Dealer Terkait</Label>
+                                <Select
+                                    value={editForm.data.dealer_id ? String(editForm.data.dealer_id) : 'none'}
+                                    onValueChange={(val) => editForm.setData('dealer_id', val === 'none' ? '' : val)}
+                                    disabled={editForm.processing}
+                                >
+                                    <SelectTrigger id="edit_dealer_id" className="w-full">
+                                        <SelectValue placeholder="Pilih Dealer" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Tanpa Dealer (Pusat) --</SelectItem>
+                                        {dealers.map((d) => (
+                                            <SelectItem key={d.id} value={String(d.id)}>
+                                                [{d.kode_dealer}] {d.nama_dealer}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={editForm.errors.dealer_id} />
                             </div>
                         </div>
 

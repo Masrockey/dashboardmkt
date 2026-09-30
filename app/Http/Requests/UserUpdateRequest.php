@@ -46,9 +46,23 @@ class UserUpdateRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($user),
             ],
             'password' => ['nullable', 'string', 'min:8'],
-            'role' => ['required', Rule::enum(UserRole::class)],
+            'roles' => ['nullable', 'array', 'min:1'],
+            'roles.*' => [Rule::enum(UserRole::class)],
+            'role' => ['nullable', Rule::enum(UserRole::class)],
             'dealer_id' => ['nullable', 'exists:dealers,id'],
         ];
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if (empty($this->roles) && empty($this->role)) {
+                $validator->errors()->add('roles', 'Role wajib dipilih.');
+            }
+        });
     }
 
     /**
@@ -63,6 +77,7 @@ class UserUpdateRequest extends FormRequest
             'username' => 'username',
             'email' => 'alamat email',
             'password' => 'kata sandi',
+            'roles' => 'role',
             'role' => 'role',
             'dealer_id' => 'dealer',
         ];

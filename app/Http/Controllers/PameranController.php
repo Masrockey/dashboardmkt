@@ -24,24 +24,37 @@ class PameranController extends Controller
     {
         $user = $request->user();
         $search = $request->string('search')->toString();
-        $dealerFilter = $user->role === UserRole::Dealer
-            ? (string) ($user->dealer_id ?? '')
-            : $request->string('dealer_id')->toString();
-        $jenisFilter = $request->string('jenis_pameran_id')->toString();
-        $statusFilter = $request->string('status')->toString();
-        $kabupatenFilter = $request->string('kabupaten')->toString();
-        $kecamatanFilter = $request->string('kecamatan')->toString();
+
+        $parseFilter = function (string $key) use ($request): array {
+            $raw = $request->input($key);
+            if (is_array($raw)) {
+                return array_values(array_filter(array_map('strval', $raw), fn ($v) => trim($v) !== ''));
+            }
+            if (is_string($raw) && trim($raw) !== '') {
+                return array_values(array_filter(array_map('trim', explode(',', $raw)), fn ($v) => $v !== ''));
+            }
+
+            return [];
+        };
+
+        $dealerFilter = $user->isDealerOnly()
+            ? ($user->dealer_id ? [(string) $user->dealer_id] : [])
+            : $parseFilter('dealer_id');
+        $jenisFilter = $parseFilter('jenis_pameran_id');
+        $statusFilter = $parseFilter('status');
+        $kabupatenFilter = $parseFilter('kabupaten');
+        $kecamatanFilter = $parseFilter('kecamatan');
 
         $pamerans = Pameran::query()
             ->with(['dealer', 'jenisPameran', 'creator', 'spvApprover', 'kabagApprover'])
-            ->when($user->role === UserRole::Dealer, function (Builder $query) use ($user) {
+            ->when($user->isDealerOnly(), function (Builder $query) use ($user) {
                 if ($user->dealer_id) {
                     $query->where('dealer_id', $user->dealer_id);
                 } else {
                     $query->whereRaw('1 = 0');
                 }
             })
-            ->when($user->role === UserRole::Kabag, function (Builder $query) {
+            ->when($user->hasRole(UserRole::Kabag) && ! $user->hasRole(UserRole::Superadmin), function (Builder $query) {
                 $query->where('status', '!=', PameranStatus::MenungguSpv)
                     ->where(function (Builder $sub) {
                         $sub->where('status', '!=', PameranStatus::Ditolak)
@@ -66,20 +79,20 @@ class PameranController extends Controller
                         });
                 });
             })
-            ->when($dealerFilter !== '', function (Builder $query) use ($dealerFilter) {
-                $query->where('dealer_id', $dealerFilter);
+            ->when(! empty($dealerFilter), function (Builder $query) use ($dealerFilter) {
+                $query->whereIn('dealer_id', $dealerFilter);
             })
-            ->when($jenisFilter !== '', function (Builder $query) use ($jenisFilter) {
-                $query->where('jenis_pameran_id', $jenisFilter);
+            ->when(! empty($jenisFilter), function (Builder $query) use ($jenisFilter) {
+                $query->whereIn('jenis_pameran_id', $jenisFilter);
             })
-            ->when($statusFilter !== '', function (Builder $query) use ($statusFilter) {
-                $query->where('status', $statusFilter);
+            ->when(! empty($statusFilter), function (Builder $query) use ($statusFilter) {
+                $query->whereIn('status', $statusFilter);
             })
-            ->when($kabupatenFilter !== '', function (Builder $query) use ($kabupatenFilter) {
-                $query->where('kabupaten', $kabupatenFilter);
+            ->when(! empty($kabupatenFilter), function (Builder $query) use ($kabupatenFilter) {
+                $query->whereIn('kabupaten', $kabupatenFilter);
             })
-            ->when($kecamatanFilter !== '', function (Builder $query) use ($kecamatanFilter) {
-                $query->where('kecamatan', $kecamatanFilter);
+            ->when(! empty($kecamatanFilter), function (Builder $query) use ($kecamatanFilter) {
+                $query->whereIn('kecamatan', $kecamatanFilter);
             })
             ->latest('id')
             ->paginate(10)
@@ -87,7 +100,7 @@ class PameranController extends Controller
 
         $dealers = Dealer::query()
             ->select(['id', 'kode_dealer', 'nama_dealer'])
-            ->when($user->role === UserRole::Dealer, function (Builder $query) use ($user) {
+            ->when($user->isDealerOnly(), function (Builder $query) use ($user) {
                 if ($user->dealer_id) {
                     $query->where('id', $user->dealer_id);
                 } else {
@@ -128,7 +141,7 @@ class PameranController extends Controller
             ->latest('id')
             ->get();
 
-        if ($user->role === UserRole::Dealer) {
+        if ($user->isDealerOnly()) {
             $mapPamerans = $mapPamerans->map(function (Pameran $pameran) use ($user) {
                 if ($pameran->dealer_id !== $user->dealer_id) {
                     $masked = new Pameran;
@@ -175,7 +188,7 @@ class PameranController extends Controller
 
         $dealers = Dealer::query()
             ->select(['id', 'kode_dealer', 'nama_dealer'])
-            ->when($user->role === UserRole::Dealer, function (Builder $query) use ($user) {
+            ->when($user->isDealerOnly(), function (Builder $query) use ($user) {
                 if ($user->dealer_id) {
                     $query->where('id', $user->dealer_id);
                 } else {
@@ -200,7 +213,7 @@ class PameranController extends Controller
             ->latest('id')
             ->get();
 
-        if ($user->role === UserRole::Dealer) {
+        if ($user->isDealerOnly()) {
             $existingPamerans = $existingPamerans->map(function (Pameran $pameran) use ($user) {
                 if ($pameran->dealer_id !== $user->dealer_id) {
                     $masked = new Pameran;
@@ -240,7 +253,7 @@ class PameranController extends Controller
 
         $data = $request->validated();
 
-        if ($user->role === UserRole::Dealer) {
+        if ($user->isDealerOnly()) {
             $data['dealer_id'] = $user->dealer_id;
             $data['kode_pameran_ahm'] = null;
         }

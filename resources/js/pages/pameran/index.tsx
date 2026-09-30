@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MultiSelectFilter, type Option } from '@/components/ui/multi-select-filter';
 import {
     Select,
     SelectContent,
@@ -71,13 +72,19 @@ interface PameranIndexProps {
     kecamatanList?: string[];
     filters: {
         search?: string;
-        dealer_id?: string;
-        jenis_pameran_id?: string;
-        status?: string;
-        kabupaten?: string;
-        kecamatan?: string;
+        dealer_id?: string | string[];
+        jenis_pameran_id?: string | string[];
+        status?: string | string[];
+        kabupaten?: string | string[];
+        kecamatan?: string | string[];
     };
 }
+
+const parseFilterArray = (val?: string | string[]): string[] => {
+    if (Array.isArray(val)) return val.filter(Boolean);
+    if (typeof val === 'string' && val.trim() !== '') return val.split(',').filter(Boolean);
+    return [];
+};
 
 export default function PameranIndex({
     pamerans,
@@ -92,11 +99,21 @@ export default function PameranIndex({
     const currentUser = auth.user;
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
-    const [selectedDealerFilter, setSelectedDealerFilter] = useState(filters.dealer_id || '');
-    const [selectedJenisFilter, setSelectedJenisFilter] = useState(filters.jenis_pameran_id || '');
-    const [selectedStatusFilter, setSelectedStatusFilter] = useState(filters.status || '');
-    const [selectedKabupatenFilter, setSelectedKabupatenFilter] = useState(filters.kabupaten || '');
-    const [selectedKecamatanFilter, setSelectedKecamatanFilter] = useState(filters.kecamatan || '');
+    const [selectedDealerFilter, setSelectedDealerFilter] = useState<string[]>(
+        parseFilterArray(filters.dealer_id),
+    );
+    const [selectedJenisFilter, setSelectedJenisFilter] = useState<string[]>(
+        parseFilterArray(filters.jenis_pameran_id),
+    );
+    const [selectedStatusFilter, setSelectedStatusFilter] = useState<string[]>(
+        parseFilterArray(filters.status),
+    );
+    const [selectedKabupatenFilter, setSelectedKabupatenFilter] = useState<string[]>(
+        parseFilterArray(filters.kabupaten),
+    );
+    const [selectedKecamatanFilter, setSelectedKecamatanFilter] = useState<string[]>(
+        parseFilterArray(filters.kecamatan),
+    );
 
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -135,11 +152,11 @@ export default function PameranIndex({
 
     const applyFilters = (
         newSearch?: string,
-        newDealer?: string,
-        newJenis?: string,
-        newStatus?: string,
-        newKabupaten?: string,
-        newKecamatan?: string,
+        newDealer?: string[],
+        newJenis?: string[],
+        newStatus?: string[],
+        newKabupaten?: string[],
+        newKecamatan?: string[],
     ) => {
         const search = newSearch !== undefined ? newSearch : searchQuery;
         const dealer = newDealer !== undefined ? newDealer : selectedDealerFilter;
@@ -152,11 +169,11 @@ export default function PameranIndex({
             pameranRoute.index.url({
                 query: {
                     search: search || undefined,
-                    dealer_id: dealer || undefined,
-                    jenis_pameran_id: jenis || undefined,
-                    status: status || undefined,
-                    kabupaten: kabupaten || undefined,
-                    kecamatan: kecamatan || undefined,
+                    dealer_id: dealer.length > 0 ? dealer.join(',') : undefined,
+                    jenis_pameran_id: jenis.length > 0 ? jenis.join(',') : undefined,
+                    status: status.length > 0 ? status.join(',') : undefined,
+                    kabupaten: kabupaten.length > 0 ? kabupaten.join(',') : undefined,
+                    kecamatan: kecamatan.length > 0 ? kecamatan.join(',') : undefined,
                 },
             }),
             {},
@@ -181,11 +198,11 @@ export default function PameranIndex({
 
     const handleResetFilters = () => {
         setSearchQuery('');
-        setSelectedDealerFilter('');
-        setSelectedJenisFilter('');
-        setSelectedStatusFilter('');
-        setSelectedKabupatenFilter('');
-        setSelectedKecamatanFilter('');
+        setSelectedDealerFilter([]);
+        setSelectedJenisFilter([]);
+        setSelectedStatusFilter([]);
+        setSelectedKabupatenFilter([]);
+        setSelectedKecamatanFilter([]);
         router.get(
             pameranRoute.index.url(),
             {},
@@ -390,12 +407,39 @@ export default function PameranIndex({
     };
 
     const isFiltered =
-        searchQuery !== '' ||
-        selectedDealerFilter !== '' ||
-        selectedJenisFilter !== '' ||
-        selectedStatusFilter !== '' ||
-        selectedKabupatenFilter !== '' ||
-        selectedKecamatanFilter !== '';
+        Boolean(searchQuery) ||
+        selectedDealerFilter.length > 0 ||
+        selectedJenisFilter.length > 0 ||
+        selectedStatusFilter.length > 0 ||
+        selectedKabupatenFilter.length > 0 ||
+        selectedKecamatanFilter.length > 0;
+
+    const statusOptions: Option[] = [
+        ...(currentUser.role !== 'kabag' ? [{ label: 'Menunggu SPV', value: 'menunggu_spv' }] : []),
+        { label: 'Menunggu Kabag', value: 'menunggu_kabag' },
+        { label: 'Disetujui', value: 'disetujui' },
+        { label: 'Ditolak', value: 'ditolak' },
+    ];
+
+    const dealerOptions: Option[] = dealers.map((d) => ({
+        label: d.nama_dealer,
+        value: String(d.id),
+    }));
+
+    const jenisOptions: Option[] = jenisPameranList.map((j) => ({
+        label: j.jenis_pameran,
+        value: String(j.id),
+    }));
+
+    const kabupatenOptions: Option[] = kabupatenList.map((kab) => ({
+        label: kab,
+        value: kab,
+    }));
+
+    const kecamatanOptions: Option[] = kecamatanList.map((kec) => ({
+        label: kec,
+        value: kec,
+    }));
 
     const canApproveSpv = currentUser.role === 'spv' || currentUser.role === 'superadmin';
     const canApproveKabag = currentUser.role === 'kabag' || currentUser.role === 'superadmin';
@@ -464,167 +508,124 @@ export default function PameranIndex({
                         {/* Status Filter */}
                         <div className="flex items-center gap-1.5">
                             <span className="text-xs text-neutral-500 dark:text-neutral-400">Status:</span>
-                            <Select
-                                value={selectedStatusFilter ? String(selectedStatusFilter) : 'all'}
-                                onValueChange={(val) => {
-                                    const nextVal = val === 'all' ? '' : val;
-                                    setSelectedStatusFilter(nextVal);
+                            <MultiSelectFilter
+                                label="Status"
+                                placeholder="Semua Status"
+                                options={statusOptions}
+                                selectedValues={selectedStatusFilter}
+                                onChange={(nextVals) => {
+                                    setSelectedStatusFilter(nextVals);
                                     applyFilters(
                                         searchQuery,
                                         selectedDealerFilter,
                                         selectedJenisFilter,
-                                        nextVal,
+                                        nextVals,
                                         selectedKabupatenFilter,
                                         selectedKecamatanFilter,
                                     );
                                 }}
-                            >
-                                <SelectTrigger className="h-9 w-[150px] text-xs">
-                                    <SelectValue placeholder="Semua Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Semua Status</SelectItem>
-                                    {currentUser.role !== 'kabag' && (
-                                        <SelectItem value="menunggu_spv">Menunggu SPV</SelectItem>
-                                    )}
-                                    <SelectItem value="menunggu_kabag">Menunggu Kabag</SelectItem>
-                                    <SelectItem value="disetujui">Disetujui</SelectItem>
-                                    <SelectItem value="ditolak">Ditolak</SelectItem>
-                                </SelectContent>
-                            </Select>
+                                className="w-[150px]"
+                            />
                         </div>
 
                         {/* Dealer Filter (only show if not a restricted dealer user) */}
                         {currentUser.role !== 'dealer' && (
                             <div className="flex items-center gap-1.5">
                                 <span className="text-xs text-neutral-500 dark:text-neutral-400">Dealer:</span>
-                                <Select
-                                    value={selectedDealerFilter ? String(selectedDealerFilter) : 'all'}
-                                    onValueChange={(val) => {
-                                        const nextVal = val === 'all' ? '' : val;
-                                        setSelectedDealerFilter(nextVal);
+                                <MultiSelectFilter
+                                    label="Dealer"
+                                    placeholder="Semua Dealer"
+                                    options={dealerOptions}
+                                    selectedValues={selectedDealerFilter}
+                                    onChange={(nextVals) => {
+                                        setSelectedDealerFilter(nextVals);
                                         applyFilters(
                                             searchQuery,
-                                            nextVal,
+                                            nextVals,
                                             selectedJenisFilter,
                                             selectedStatusFilter,
                                             selectedKabupatenFilter,
                                             selectedKecamatanFilter,
                                         );
                                     }}
-                                >
-                                    <SelectTrigger className="h-9 w-[160px] text-xs">
-                                        <SelectValue placeholder="Semua Dealer" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Semua Dealer</SelectItem>
-                                        {dealers.map((d) => (
-                                            <SelectItem key={d.id} value={String(d.id)}>
-                                                {d.nama_dealer}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    className="w-[170px]"
+                                    showSearch={dealerOptions.length > 5}
+                                />
                             </div>
                         )}
 
                         {/* Jenis Channel Filter */}
                         <div className="flex items-center gap-1.5">
                             <span className="text-xs text-neutral-500 dark:text-neutral-400">Channel:</span>
-                            <Select
-                                value={selectedJenisFilter ? String(selectedJenisFilter) : 'all'}
-                                onValueChange={(val) => {
-                                    const nextVal = val === 'all' ? '' : val;
-                                    setSelectedJenisFilter(nextVal);
+                            <MultiSelectFilter
+                                label="Channel"
+                                placeholder="Semua Channel"
+                                options={jenisOptions}
+                                selectedValues={selectedJenisFilter}
+                                onChange={(nextVals) => {
+                                    setSelectedJenisFilter(nextVals);
                                     applyFilters(
                                         searchQuery,
                                         selectedDealerFilter,
-                                        nextVal,
+                                        nextVals,
                                         selectedStatusFilter,
                                         selectedKabupatenFilter,
                                         selectedKecamatanFilter,
                                     );
                                 }}
-                            >
-                                <SelectTrigger className="h-9 w-[150px] text-xs">
-                                    <SelectValue placeholder="Semua Channel" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Semua Channel</SelectItem>
-                                    {jenisPameranList.map((j) => (
-                                        <SelectItem key={j.id} value={String(j.id)}>
-                                            {j.jenis_pameran}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                className="w-[160px]"
+                            />
                         </div>
 
                         {/* Kabupaten Filter */}
-                        {kabupatenList.length > 0 && (
+                        {kabupatenOptions.length > 0 && (
                             <div className="flex items-center gap-1.5">
                                 <span className="text-xs text-neutral-500 dark:text-neutral-400">Kabupaten:</span>
-                                <Select
-                                    value={selectedKabupatenFilter ? String(selectedKabupatenFilter) : 'all'}
-                                    onValueChange={(val) => {
-                                        const nextVal = val === 'all' ? '' : val;
-                                        setSelectedKabupatenFilter(nextVal);
+                                <MultiSelectFilter
+                                    label="Kabupaten"
+                                    placeholder="Semua Kabupaten"
+                                    options={kabupatenOptions}
+                                    selectedValues={selectedKabupatenFilter}
+                                    onChange={(nextVals) => {
+                                        setSelectedKabupatenFilter(nextVals);
                                         applyFilters(
                                             searchQuery,
                                             selectedDealerFilter,
                                             selectedJenisFilter,
                                             selectedStatusFilter,
-                                            nextVal,
+                                            nextVals,
                                             selectedKecamatanFilter,
                                         );
                                     }}
-                                >
-                                    <SelectTrigger className="h-9 w-[160px] text-xs">
-                                        <SelectValue placeholder="Semua Kabupaten" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Semua Kabupaten</SelectItem>
-                                        {kabupatenList.map((kab) => (
-                                            <SelectItem key={kab} value={kab}>
-                                                {kab}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    className="w-[170px]"
+                                    showSearch={kabupatenOptions.length > 5}
+                                />
                             </div>
                         )}
 
                         {/* Kecamatan Filter */}
-                        {kecamatanList.length > 0 && (
+                        {kecamatanOptions.length > 0 && (
                             <div className="flex items-center gap-1.5">
                                 <span className="text-xs text-neutral-500 dark:text-neutral-400">Kecamatan:</span>
-                                <Select
-                                    value={selectedKecamatanFilter ? String(selectedKecamatanFilter) : 'all'}
-                                    onValueChange={(val) => {
-                                        const nextVal = val === 'all' ? '' : val;
-                                        setSelectedKecamatanFilter(nextVal);
+                                <MultiSelectFilter
+                                    label="Kecamatan"
+                                    placeholder="Semua Kecamatan"
+                                    options={kecamatanOptions}
+                                    selectedValues={selectedKecamatanFilter}
+                                    onChange={(nextVals) => {
+                                        setSelectedKecamatanFilter(nextVals);
                                         applyFilters(
                                             searchQuery,
                                             selectedDealerFilter,
                                             selectedJenisFilter,
                                             selectedStatusFilter,
                                             selectedKabupatenFilter,
-                                            nextVal,
+                                            nextVals,
                                         );
                                     }}
-                                >
-                                    <SelectTrigger className="h-9 w-[160px] text-xs">
-                                        <SelectValue placeholder="Semua Kecamatan" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Semua Kecamatan</SelectItem>
-                                        {kecamatanList.map((kec) => (
-                                            <SelectItem key={kec} value={kec}>
-                                                {kec}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    className="w-[170px]"
+                                    showSearch={kecamatanOptions.length > 5}
+                                />
                             </div>
                         )}
 

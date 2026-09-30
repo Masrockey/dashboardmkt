@@ -62,5 +62,13 @@ class DatabaseSeeder extends Seeder
         foreach ($dealers as $dealer) {
             Dealer::firstOrCreate(['kode_dealer' => $dealer['kode_dealer']], $dealer);
         }
+
+        $this->call([
+            SegmentSeeder::class,
+            CategorySeeder::class,
+            BrandSeeder::class,
+            KabupatenSeeder::class,
+            TypeSeeder::class,
+        ]);
     }
 }

@@ -37,7 +37,10 @@ class UserController extends Controller
                 });
             })
             ->when($roleFilter !== '', function (Builder $query) use ($roleFilter) {
-                $query->where('role', $roleFilter);
+                $query->where(function (Builder $subQuery) use ($roleFilter) {
+                    $subQuery->whereJsonContains('roles', $roleFilter)
+                        ->orWhere('role', $roleFilter);
+                });
             })
             ->latest('id')
             ->paginate(10)
@@ -72,6 +75,10 @@ class UserController extends Controller
         $validated = $request->validated();
         $validated['password'] = Hash::make($validated['password']);
 
+        if (! isset($validated['roles']) && isset($validated['role'])) {
+            $validated['roles'] = [$validated['role']];
+        }
+
         User::create($validated);
 
         Inertia::flash('toast', [
@@ -93,6 +100,10 @@ class UserController extends Controller
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
+        }
+
+        if (! isset($validated['roles']) && isset($validated['role'])) {
+            $validated['roles'] = [$validated['role']];
         }
 
         $user->update($validated);
