@@ -647,6 +647,7 @@ export default function PameranIndex({
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-12 text-center">No</TableHead>
+                                <TableHead className="w-56 text-center">Approval</TableHead>
                                 <TableHead className="w-36">Status</TableHead>
                                 <TableHead>Kode Channel</TableHead>
                                 <TableHead>Nama Dealer</TableHead>
@@ -655,13 +656,13 @@ export default function PameranIndex({
                                 <TableHead>Kabupaten / Kota</TableHead>
                                 <TableHead>Kecamatan</TableHead>
                                 <TableHead>Detail Alamat & Peta</TableHead>
-                                <TableHead className="text-right">Aksi</TableHead>
+                                <TableHead className="w-20 text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {pamerans.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={10} className="py-12 text-center">
+                                    <TableCell colSpan={11} className="py-12 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <div className="rounded-full bg-neutral-100 p-3 dark:bg-neutral-800">
                                                 <CalendarDays className="size-6 text-neutral-500 dark:text-neutral-400" />
@@ -701,6 +702,57 @@ export default function PameranIndex({
                                         <TableRow key={item.id}>
                                             <TableCell className="text-center font-medium text-neutral-500 dark:text-neutral-400">
                                                 {rowNumber}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                {canApproveSpv && item.status === 'menunggu_spv' ? (
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleOpenApprove(item, 'spv')}
+                                                            className="h-8 gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 text-xs shrink-0"
+                                                            title="Approve SPV"
+                                                        >
+                                                            <Check className="size-3.5" />
+                                                            Approve SPV
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleOpenReject(item)}
+                                                            className="h-8 gap-1 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40 text-xs shrink-0"
+                                                            title="Tolak Channel"
+                                                        >
+                                                            <XCircle className="size-3.5" />
+                                                            Tolak
+                                                        </Button>
+                                                    </div>
+                                                ) : canApproveKabag && item.status === 'menunggu_kabag' ? (
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleOpenApprove(item, 'kabag')}
+                                                            className="h-8 gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 text-xs shrink-0"
+                                                            title="Approve Kabag & Terbitkan Kode MD"
+                                                        >
+                                                            <CheckCheck className="size-3.5" />
+                                                            Approve Kabag
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleOpenReject(item)}
+                                                            className="h-8 gap-1 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40 text-xs shrink-0"
+                                                            title="Tolak Channel"
+                                                        >
+                                                            <XCircle className="size-3.5" />
+                                                            Tolak
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-neutral-400 font-medium">-</span>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 {getApprovalStatusBadge(item.status, item.catatan_penolakan)}
@@ -822,52 +874,7 @@ export default function PameranIndex({
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="flex items-center justify-end gap-1.5">
-                                                    {/* SPV Approval Button */}
-                                                    {canApproveSpv && item.status === 'menunggu_spv' && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleOpenApprove(item, 'spv')}
-                                                            className="h-8 gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 text-xs"
-                                                            title="Approve SPV"
-                                                        >
-                                                            <Check className="size-3.5" />
-                                                            Approve SPV
-                                                        </Button>
-                                                    )}
-
-                                                    {/* Kabag Approval Button */}
-                                                    {canApproveKabag && item.status === 'menunggu_kabag' && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleOpenApprove(item, 'kabag')}
-                                                            className="h-8 gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 text-xs"
-                                                            title="Approve Kabag & Terbitkan Kode MD"
-                                                        >
-                                                            <CheckCheck className="size-3.5" />
-                                                            Approve Kabag
-                                                        </Button>
-                                                    )}
-
-                                                    {/* Reject Button */}
-                                                    {((currentUser.role === 'spv' && item.status === 'menunggu_spv') ||
-                                                        (currentUser.role === 'kabag' && item.status === 'menunggu_kabag') ||
-                                                        (currentUser.role === 'superadmin' &&
-                                                            (item.status === 'menunggu_spv' || item.status === 'menunggu_kabag'))) && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleOpenReject(item)}
-                                                            className="h-8 gap-1 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40 text-xs"
-                                                            title="Tolak Channel"
-                                                        >
-                                                            <XCircle className="size-3.5" />
-                                                            Tolak
-                                                        </Button>
-                                                    )}
-
+                                                <div className="flex items-center justify-end gap-1">
                                                     {/* Edit Button */}
                                                     <Button
                                                         variant="ghost"
