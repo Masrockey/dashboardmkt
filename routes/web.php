@@ -14,6 +14,7 @@ use App\Http\Controllers\TypeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Middleware\EnsureMarketingAccess;
 use App\Http\Middleware\EnsureMasterDataAccess;
 
 Route::redirect('/', 'login')->name('home');
@@ -22,9 +23,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('dealers', DealerController::class)->except(['create', 'show', 'edit']);
     Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
-    Route::post('r2/import', [R2Controller::class, 'import'])->name('r2.import');
-    Route::resource('r2', R2Controller::class)->except(['create', 'show', 'edit']);
+
+    // Marketing (Hanya untuk Superadmin, SPV, & Kabag)
+    Route::middleware(EnsureMarketingAccess::class)->group(function () {
+        Route::post('r2/import', [R2Controller::class, 'import'])->name('r2.import');
+        Route::resource('r2', R2Controller::class)->except(['create', 'show', 'edit']);
+    });
+
     // Master Data (Hanya untuk Superadmin & SPV)
+
     Route::middleware(EnsureMasterDataAccess::class)->group(function () {
         Route::resource('jenis-pameran', JenisPameranController::class)->except(['create', 'show', 'edit']);
         Route::resource('segments', SegmentController::class)->except(['create', 'show', 'edit']);

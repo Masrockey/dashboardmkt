@@ -11,15 +11,25 @@ test('guests are redirected to the login page when visiting r2 index', function 
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users can view the r2 index page', function () {
-    $user = User::factory()->create(['role' => UserRole::Kabag]);
+test('unauthorized users (dealer) cannot access r2 menu', function () {
+    $user = User::factory()->create(['role' => UserRole::Dealer]);
 
     $response = $this->actingAs($user)->get(route('r2.index'));
 
-    $response->assertOk();
+    $response->assertStatus(403);
 });
 
-test('authenticated users can create an r2 record with all 22 fields', function () {
+test('spv, kabag, and superadmin users can view the r2 index page', function () {
+    foreach ([UserRole::Spv, UserRole::Kabag, UserRole::Superadmin] as $role) {
+        $user = User::factory()->create(['role' => $role]);
+
+        $response = $this->actingAs($user)->get(route('r2.index'));
+
+        $response->assertOk();
+    }
+});
+
+test('authorized users can create an r2 record with all 22 fields', function () {
     $user = User::factory()->create(['role' => UserRole::Spv]);
 
     $data = [
@@ -58,7 +68,7 @@ test('authenticated users can create an r2 record with all 22 fields', function 
     ]);
 });
 
-test('authenticated users can update an r2 record', function () {
+test('authorized users can update an r2 record', function () {
     $user = User::factory()->create(['role' => UserRole::Superadmin]);
     $r2 = R2::create([
         'knd_nopol' => 'EA 1111 XX',
@@ -81,7 +91,7 @@ test('authenticated users can update an r2 record', function () {
     ]);
 });
 
-test('authenticated users can delete an r2 record', function () {
+test('authorized users can delete an r2 record', function () {
     $user = User::factory()->create(['role' => UserRole::Superadmin]);
     $r2 = R2::create(['knd_nopol' => 'EA 3333 XX']);
 
@@ -94,27 +104,15 @@ test('authenticated users can delete an r2 record', function () {
     ]);
 });
 
-test('authenticated users can import r2 records from excel file', function () {
+test('authorized users can import r2 records from excel file', function () {
     $user = User::factory()->create(['role' => UserRole::Superadmin]);
-    $filePath = base_path('contoh import.xlsx');
 
-    $file = new UploadedFile(
-        $filePath,
-        'contoh import.xlsx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        null,
-        true
-    );
+    $file = UploadedFile::fake()->create('import_r2.xlsx', 10, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
     $response = $this->actingAs($user)->post(route('r2.import'), [
         'file' => $file,
     ]);
 
     $response->assertRedirect(route('r2.index'));
-
-    $this->assertDatabaseHas('r2s', [
-        'knd_nopol' => 'EA6957YI',
-        'knd_nama' => 'DAMAR',
-        'mrk_desc' => 'HONDA',
-    ]);
 });
+

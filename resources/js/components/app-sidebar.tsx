@@ -116,6 +116,10 @@ export function AppSidebar() {
 
     const isDealerOrKabagOnly =
         userRoles.every((r) => r === 'dealer' || r === 'kabag') && userRoles.length > 0;
+    const canAccessMarketing = userRoles.some(
+        (r) => r === 'superadmin' || r === 'spv' || r === 'kabag',
+    );
+
     const canAccessMasterData = userRoles.some((r) => r === 'superadmin' || r === 'spv');
     const canAccessManagement = userRoles.some((r) => r === 'superadmin' || r === 'spv');
 
@@ -131,10 +135,12 @@ export function AppSidebar() {
             },
         ];
 
-        groups.push({
-            title: 'Marketing',
-            items: marketingNavItems,
-        });
+        if (canAccessMarketing) {
+            groups.push({
+                title: 'Marketing',
+                items: marketingNavItems,
+            });
+        }
 
         if (canAccessMasterData) {
             groups.push({
@@ -151,7 +157,8 @@ export function AppSidebar() {
         }
 
         return groups;
-    }, [isDealerOrKabagOnly, canAccessMasterData, canAccessManagement]);
+    }, [isDealerOrKabagOnly, canAccessMarketing, canAccessMasterData, canAccessManagement]);
+
 
     return (
         <Sidebar collapsible="icon" variant="inset">
