@@ -159,9 +159,27 @@ class PameranController extends Controller
             ->orderBy('jenis_pameran')
             ->get();
 
+        $existingPamerans = Pameran::query()
+            ->with([
+                'dealer:id,kode_dealer,nama_dealer',
+                'jenisPameran:id,kode_pameran,jenis_pameran,icon_map',
+            ])
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->when($user->role === UserRole::Dealer, function (Builder $query) use ($user) {
+                if ($user->dealer_id) {
+                    $query->where('dealer_id', $user->dealer_id);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            })
+            ->latest('id')
+            ->get();
+
         return Inertia::render('pameran/create', [
             'dealers' => $dealers,
             'jenisPameranList' => $jenisPameranList,
+            'existingPamerans' => $existingPamerans,
         ]);
     }
 

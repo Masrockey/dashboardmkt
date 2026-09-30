@@ -1066,6 +1066,7 @@ export default function PameranIndex({
                                     initialLat={editForm.data.latitude}
                                     initialLng={editForm.data.longitude}
                                     customIconUrl={selectedEditJenis?.icon_map_url || null}
+                                    existingChannels={pamerans.data.filter((p) => p.id !== selectedPameran?.id)}
                                     onLocationSelect={(res) => {
                                         editForm.setData((prev) => ({
                                             ...prev,

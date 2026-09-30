@@ -31,6 +31,7 @@ test('authenticated users can view the create pameran page', function () {
         ->component('pameran/create')
         ->has('dealers')
         ->has('jenisPameranList')
+        ->has('existingPamerans')
     );
 });
 

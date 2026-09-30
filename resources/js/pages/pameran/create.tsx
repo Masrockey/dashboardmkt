@@ -18,16 +18,18 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { dashboard } from '@/routes';
 import pameranRoute from '@/routes/pameran';
-import type { Dealer, JenisPameran } from '@/types';
+import type { Dealer, JenisPameran, PameranItem } from '@/types';
 
 interface PameranCreateProps {
     dealers: Dealer[];
     jenisPameranList: JenisPameran[];
+    existingPamerans?: PameranItem[];
 }
 
 export default function PameranCreate({
     dealers,
     jenisPameranList,
+    existingPamerans = [],
 }: PameranCreateProps) {
     const { auth } = usePage<{
         auth: {
@@ -123,237 +125,233 @@ export default function PameranCreate({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                        {/* Kolom Kiri: Data Pokok Channel */}
-                        <div className="flex flex-col gap-6 lg:col-span-5">
-                            <Card className="p-5 md:p-6 border-sidebar-border/70 dark:border-sidebar-border">
-                                <div className="mb-4 flex items-center gap-2 border-b pb-3 dark:border-neutral-800">
-                                    <Store className="size-4 text-neutral-500" />
-                                    <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                                        Data Pokok Channel
-                                    </h2>
-                                </div>
+                    <div className="flex flex-col gap-6">
+                        {/* Card 1: Data Pokok Channel */}
+                        <Card className="p-5 md:p-6 border-sidebar-border/70 dark:border-sidebar-border">
+                            <div className="mb-4 flex items-center gap-2 border-b pb-3 dark:border-neutral-800">
+                                <Store className="size-4 text-neutral-500" />
+                                <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                                    Data Pokok Channel
+                                </h2>
+                            </div>
 
-                                <div className="space-y-4">
-                                    {/* Kode Channel AHM (Admin Only) */}
-                                    {currentUser.role !== 'dealer' && (
-                                        <div className="space-y-1.5">
-                                            <div className="flex items-center justify-between">
-                                                <Label htmlFor="kode_pameran_ahm">Kode Channel AHM</Label>
-                                                <span className="text-xs text-neutral-400 dark:text-neutral-500">Opsional (Manual Admin)</span>
-                                            </div>
-                                            <Input
-                                                id="kode_pameran_ahm"
-                                                placeholder="Contoh: AHM-EXH-2026-001"
-                                                value={createForm.data.kode_pameran_ahm}
-                                                onChange={(e) => createForm.setData('kode_pameran_ahm', e.target.value)}
-                                                disabled={createForm.processing}
-                                            />
-                                            <InputError message={createForm.errors.kode_pameran_ahm} />
+                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                {/* Kode Channel AHM (Admin Only) */}
+                                {currentUser.role !== 'dealer' && (
+                                    <div className="space-y-1.5 md:col-span-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="kode_pameran_ahm">Kode Channel AHM</Label>
+                                            <span className="text-xs text-neutral-400 dark:text-neutral-500">Opsional (Manual Admin)</span>
                                         </div>
-                                    )}
-
-                                    {/* Nama Dealer */}
-                                    <div className="space-y-1.5">
-                                        <Label htmlFor="dealer_id">Nama Dealer</Label>
-                                        <Select
-                                            value={createForm.data.dealer_id ? String(createForm.data.dealer_id) : undefined}
-                                            onValueChange={(val) => createForm.setData('dealer_id', val)}
-                                            disabled={createForm.processing || (currentUser.role === 'dealer' && !!currentUser.dealer_id)}
-                                        >
-                                            <SelectTrigger id="dealer_id" className="w-full">
-                                                <SelectValue placeholder="-- Pilih Dealer --" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {dealers.map((d) => (
-                                                    <SelectItem key={d.id} value={String(d.id)}>
-                                                        [{d.kode_dealer}] {d.nama_dealer}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <InputError message={createForm.errors.dealer_id} />
-                                    </div>
-
-                                    {/* Nama Jenis Channel */}
-                                    <div className="space-y-1.5">
-                                        <Label htmlFor="jenis_pameran_id">Nama Jenis Channel</Label>
-                                        <Select
-                                            value={createForm.data.jenis_pameran_id ? String(createForm.data.jenis_pameran_id) : undefined}
-                                            onValueChange={(val) => createForm.setData('jenis_pameran_id', val)}
+                                        <Input
+                                            id="kode_pameran_ahm"
+                                            placeholder="Contoh: AHM-EXH-2026-001"
+                                            value={createForm.data.kode_pameran_ahm}
+                                            onChange={(e) => createForm.setData('kode_pameran_ahm', e.target.value)}
                                             disabled={createForm.processing}
-                                        >
-                                            <SelectTrigger id="jenis_pameran_id" className="w-full">
-                                                <SelectValue placeholder="-- Pilih Jenis Channel --" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {jenisPameranList.map((j) => (
-                                                    <SelectItem key={j.id} value={String(j.id)}>
-                                                        [{j.kode_pameran}] {j.jenis_pameran}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <InputError message={createForm.errors.jenis_pameran_id} />
+                                        />
+                                        <InputError message={createForm.errors.kode_pameran_ahm} />
                                     </div>
+                                )}
 
-                                    {/* Periode Sewa */}
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="mulai_tanggal_sewa">Mulai Tanggal Sewa</Label>
-                                            <Input
-                                                id="mulai_tanggal_sewa"
-                                                type="date"
-                                                value={createForm.data.mulai_tanggal_sewa}
-                                                onChange={(e) => createForm.setData('mulai_tanggal_sewa', e.target.value)}
-                                                disabled={createForm.processing}
-                                            />
-                                            <InputError message={createForm.errors.mulai_tanggal_sewa} />
-                                        </div>
-
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="tanggal_sewa_berakhir">Tanggal Sewa Berakhir</Label>
-                                            <Input
-                                                id="tanggal_sewa_berakhir"
-                                                type="date"
-                                                value={createForm.data.tanggal_sewa_berakhir}
-                                                onChange={(e) => createForm.setData('tanggal_sewa_berakhir', e.target.value)}
-                                                disabled={createForm.processing}
-                                            />
-                                            <InputError message={createForm.errors.tanggal_sewa_berakhir} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-
-                        {/* Kolom Kanan: Lokasi & Titik Koordinat Peta */}
-                        <div className="flex flex-col gap-6 lg:col-span-7">
-                            <Card className="p-5 md:p-6 border-sidebar-border/70 dark:border-sidebar-border">
-                                <div className="mb-4 flex items-center gap-2 border-b pb-3 dark:border-neutral-800">
-                                    <MapPin className="size-4 text-red-500" />
-                                    <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                                        Lokasi & Titik Koordinat Peta
-                                    </h2>
+                                {/* Nama Dealer */}
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="dealer_id">Nama Dealer</Label>
+                                    <Select
+                                        value={createForm.data.dealer_id ? String(createForm.data.dealer_id) : undefined}
+                                        onValueChange={(val) => createForm.setData('dealer_id', val)}
+                                        disabled={createForm.processing || (currentUser.role === 'dealer' && !!currentUser.dealer_id)}
+                                    >
+                                        <SelectTrigger id="dealer_id" className="w-full">
+                                            <SelectValue placeholder="-- Pilih Dealer --" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {dealers.map((d) => (
+                                                <SelectItem key={d.id} value={String(d.id)}>
+                                                    [{d.kode_dealer}] {d.nama_dealer}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={createForm.errors.dealer_id} />
                                 </div>
 
-                                <div className="space-y-5">
-                                    {/* Peta Interaktif untuk Pilih Titik Lokasi */}
+                                {/* Nama Jenis Channel */}
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="jenis_pameran_id">Nama Jenis Channel</Label>
+                                    <Select
+                                        value={createForm.data.jenis_pameran_id ? String(createForm.data.jenis_pameran_id) : undefined}
+                                        onValueChange={(val) => createForm.setData('jenis_pameran_id', val)}
+                                        disabled={createForm.processing}
+                                    >
+                                        <SelectTrigger id="jenis_pameran_id" className="w-full">
+                                            <SelectValue placeholder="-- Pilih Jenis Channel --" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {jenisPameranList.map((j) => (
+                                                <SelectItem key={j.id} value={String(j.id)}>
+                                                    [{j.kode_pameran}] {j.jenis_pameran}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={createForm.errors.jenis_pameran_id} />
+                                </div>
+
+                                {/* Mulai Tanggal Sewa */}
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="mulai_tanggal_sewa">Mulai Tanggal Sewa</Label>
+                                    <Input
+                                        id="mulai_tanggal_sewa"
+                                        type="date"
+                                        value={createForm.data.mulai_tanggal_sewa}
+                                        onChange={(e) => createForm.setData('mulai_tanggal_sewa', e.target.value)}
+                                        disabled={createForm.processing}
+                                    />
+                                    <InputError message={createForm.errors.mulai_tanggal_sewa} />
+                                </div>
+
+                                {/* Tanggal Sewa Berakhir */}
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="tanggal_sewa_berakhir">Tanggal Sewa Berakhir</Label>
+                                    <Input
+                                        id="tanggal_sewa_berakhir"
+                                        type="date"
+                                        value={createForm.data.tanggal_sewa_berakhir}
+                                        onChange={(e) => createForm.setData('tanggal_sewa_berakhir', e.target.value)}
+                                        disabled={createForm.processing}
+                                    />
+                                    <InputError message={createForm.errors.tanggal_sewa_berakhir} />
+                                </div>
+                            </div>
+                        </Card>
+
+                        {/* Card 2: Lokasi & Titik Koordinat Peta */}
+                        <Card className="p-5 md:p-6 border-sidebar-border/70 dark:border-sidebar-border">
+                            <div className="mb-4 flex items-center gap-2 border-b pb-3 dark:border-neutral-800">
+                                <MapPin className="size-4 text-red-500" />
+                                <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                                    Lokasi & Titik Koordinat Peta
+                                </h2>
+                            </div>
+
+                            <div className="space-y-5">
+                                {/* Peta Interaktif untuk Pilih Titik Lokasi */}
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label>Peta & Titik Lokasi Channel</Label>
+                                        <span className="text-xs text-neutral-400">
+                                            Cari alamat atau klik titik pada peta
+                                        </span>
+                                    </div>
+                                    <LocationPickerMap
+                                        initialLat={createForm.data.latitude}
+                                        initialLng={createForm.data.longitude}
+                                        customIconUrl={selectedJenis?.icon_map_url || null}
+                                        existingChannels={existingPamerans}
+                                        onLocationSelect={(res) => {
+                                            createForm.setData((prev) => ({
+                                                ...prev,
+                                                kabupaten: res.kabupaten || prev.kabupaten,
+                                                kecamatan: res.kecamatan || prev.kecamatan,
+                                                detail_alamat: res.detailAlamat || prev.detail_alamat,
+                                                latitude: res.latitude,
+                                                longitude: res.longitude,
+                                            }));
+                                        }}
+                                        height="380px"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    {/* Kabupaten / Kota */}
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="kabupaten">Kabupaten / Kota</Label>
+                                        <Input
+                                            id="kabupaten"
+                                            placeholder="Contoh: Kota Mataram / Lombok Barat"
+                                            value={createForm.data.kabupaten}
+                                            onChange={(e) => createForm.setData('kabupaten', e.target.value)}
+                                            disabled={createForm.processing}
+                                        />
+                                        <InputError message={createForm.errors.kabupaten} />
+                                    </div>
+
+                                    {/* Kecamatan */}
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="kecamatan">Kecamatan</Label>
+                                        <Input
+                                            id="kecamatan"
+                                            placeholder="Contoh: Mataram / Cakranegara"
+                                            value={createForm.data.kecamatan}
+                                            onChange={(e) => createForm.setData('kecamatan', e.target.value)}
+                                            disabled={createForm.processing}
+                                        />
+                                        <InputError message={createForm.errors.kecamatan} />
+                                    </div>
+
+                                    {/* Detail Alamat */}
+                                    <div className="space-y-1.5 sm:col-span-2">
+                                        <Label htmlFor="detail_alamat">Detail Alamat</Label>
+                                        <Textarea
+                                            id="detail_alamat"
+                                            rows={3}
+                                            placeholder="Contoh: Depan pintu masuk utama Mall, sebelah barat lobby..."
+                                            value={createForm.data.detail_alamat}
+                                            onChange={(e) => createForm.setData('detail_alamat', e.target.value)}
+                                            disabled={createForm.processing}
+                                        />
+                                        <InputError message={createForm.errors.detail_alamat} />
+                                    </div>
+
+                                    {/* Latitude */}
                                     <div className="space-y-1.5">
                                         <div className="flex items-center justify-between">
-                                            <Label>Peta & Titik Lokasi Channel</Label>
-                                            <span className="text-xs text-neutral-400">
-                                                Cari alamat atau klik titik pada peta
-                                            </span>
+                                            <Label htmlFor="latitude">Latitude</Label>
+                                            <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
                                         </div>
-                                        <LocationPickerMap
-                                            initialLat={createForm.data.latitude}
-                                            initialLng={createForm.data.longitude}
-                                            customIconUrl={selectedJenis?.icon_map_url || null}
-                                            onLocationSelect={(res) => {
-                                                createForm.setData((prev) => ({
-                                                    ...prev,
-                                                    kabupaten: res.kabupaten || prev.kabupaten,
-                                                    kecamatan: res.kecamatan || prev.kecamatan,
-                                                    detail_alamat: res.detailAlamat || prev.detail_alamat,
-                                                    latitude: res.latitude,
-                                                    longitude: res.longitude,
-                                                }));
-                                            }}
-                                            height="340px"
+                                        <Input
+                                            id="latitude"
+                                            type="number"
+                                            step="any"
+                                            placeholder="Contoh: -8.5833807"
+                                            value={createForm.data.latitude ?? ''}
+                                            onChange={(e) =>
+                                                createForm.setData(
+                                                    'latitude',
+                                                    e.target.value === '' ? null : parseFloat(e.target.value),
+                                                )
+                                            }
+                                            disabled={createForm.processing}
                                         />
+                                        <InputError message={createForm.errors.latitude} />
                                     </div>
 
-                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        {/* Kabupaten / Kota */}
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="kabupaten">Kabupaten / Kota</Label>
-                                            <Input
-                                                id="kabupaten"
-                                                placeholder="Contoh: Kota Mataram / Lombok Barat"
-                                                value={createForm.data.kabupaten}
-                                                onChange={(e) => createForm.setData('kabupaten', e.target.value)}
-                                                disabled={createForm.processing}
-                                            />
-                                            <InputError message={createForm.errors.kabupaten} />
+                                    {/* Longitude */}
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="longitude">Longitude</Label>
+                                            <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
                                         </div>
-
-                                        {/* Kecamatan */}
-                                        <div className="space-y-1.5">
-                                            <Label htmlFor="kecamatan">Kecamatan</Label>
-                                            <Input
-                                                id="kecamatan"
-                                                placeholder="Contoh: Mataram / Cakranegara"
-                                                value={createForm.data.kecamatan}
-                                                onChange={(e) => createForm.setData('kecamatan', e.target.value)}
-                                                disabled={createForm.processing}
-                                            />
-                                            <InputError message={createForm.errors.kecamatan} />
-                                        </div>
-
-                                        {/* Detail Alamat */}
-                                        <div className="space-y-1.5 sm:col-span-2">
-                                            <Label htmlFor="detail_alamat">Detail Alamat</Label>
-                                            <Textarea
-                                                id="detail_alamat"
-                                                rows={3}
-                                                placeholder="Contoh: Depan pintu masuk utama Mall, sebelah barat lobby..."
-                                                value={createForm.data.detail_alamat}
-                                                onChange={(e) => createForm.setData('detail_alamat', e.target.value)}
-                                                disabled={createForm.processing}
-                                            />
-                                            <InputError message={createForm.errors.detail_alamat} />
-                                        </div>
-
-                                        {/* Latitude */}
-                                        <div className="space-y-1.5">
-                                            <div className="flex items-center justify-between">
-                                                <Label htmlFor="latitude">Latitude</Label>
-                                                <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
-                                            </div>
-                                            <Input
-                                                id="latitude"
-                                                type="number"
-                                                step="any"
-                                                placeholder="Contoh: -8.5833807"
-                                                value={createForm.data.latitude ?? ''}
-                                                onChange={(e) =>
-                                                    createForm.setData(
-                                                        'latitude',
-                                                        e.target.value === '' ? null : parseFloat(e.target.value),
-                                                    )
-                                                }
-                                                disabled={createForm.processing}
-                                            />
-                                            <InputError message={createForm.errors.latitude} />
-                                        </div>
-
-                                        {/* Longitude */}
-                                        <div className="space-y-1.5">
-                                            <div className="flex items-center justify-between">
-                                                <Label htmlFor="longitude">Longitude</Label>
-                                                <span className="text-[11px] text-neutral-400">Otomatis / Manual</span>
-                                            </div>
-                                            <Input
-                                                id="longitude"
-                                                type="number"
-                                                step="any"
-                                                placeholder="Contoh: 116.1167899"
-                                                value={createForm.data.longitude ?? ''}
-                                                onChange={(e) =>
-                                                    createForm.setData(
-                                                        'longitude',
-                                                        e.target.value === '' ? null : parseFloat(e.target.value),
-                                                    )
-                                                }
-                                                disabled={createForm.processing}
-                                            />
-                                            <InputError message={createForm.errors.longitude} />
-                                        </div>
+                                        <Input
+                                            id="longitude"
+                                            type="number"
+                                            step="any"
+                                            placeholder="Contoh: 116.1167899"
+                                            value={createForm.data.longitude ?? ''}
+                                            onChange={(e) =>
+                                                createForm.setData(
+                                                    'longitude',
+                                                    e.target.value === '' ? null : parseFloat(e.target.value),
+                                                )
+                                            }
+                                            disabled={createForm.processing}
+                                        />
+                                        <InputError message={createForm.errors.longitude} />
                                     </div>
                                 </div>
-                            </Card>
-                        </div>
+                            </div>
+                        </Card>
                     </div>
 
                     {/* Action Buttons */}

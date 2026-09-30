@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { createMapMarkerIcon, loadLeaflet } from '@/lib/leaflet-utils';
+import type { PameranItem } from '@/types';
 
 export interface LocationSelectResult {
     kabupaten: string;
@@ -36,6 +37,7 @@ interface LocationPickerMapProps {
     onLocationSelect: (result: LocationSelectResult) => void;
     className?: string;
     height?: string;
+    existingChannels?: PameranItem[];
 }
 
 // Default center: Mataram, Nusa Tenggara Barat (-8.5833, 116.1167)
@@ -50,11 +52,13 @@ export default function LocationPickerMap({
     onLocationSelect,
     className = '',
     height = '280px',
+    existingChannels = [],
 }: LocationPickerMapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const searchContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
     const markerRef = useRef<L.Marker | null>(null);
+    const existingMarkersLayerRef = useRef<L.LayerGroup | null>(null);
     const leafletRef = useRef<typeof L | null>(null);
 
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
@@ -135,11 +139,18 @@ export default function LocationPickerMap({
 
         if (markerRef.current) {
             markerRef.current.setLatLng([lat, lng]);
+            markerRef.current.setZIndexOffset(1000);
         } else if (leafletRef.current) {
             const L = leafletRef.current;
             markerRef.current = L.marker([lat, lng], {
                 icon: createMapMarkerIcon(L, customIconUrl),
+                zIndexOffset: 1000,
             }).addTo(map);
+
+            markerRef.current.bindTooltip('Titik Lokasi Baru (Dipilih)', {
+                direction: 'top',
+                offset: [0, -12],
+            });
 
             markerRef.current.on('click', (e: L.LeafletMouseEvent) => {
                 if (e.originalEvent) {
@@ -288,6 +299,116 @@ export default function LocationPickerMap({
         };
     }, []);
 
+    // Helper to render existing channels
+    const renderExistingChannels = (
+        L: typeof import('leaflet'),
+        layer: L.LayerGroup,
+        channels: PameranItem[],
+    ) => {
+        layer.clearLayers();
+        if (!channels || channels.length === 0) return;
+
+        channels.forEach((item) => {
+            const lat = Number(item.latitude);
+            const lng = Number(item.longitude);
+            if (isNaN(lat) || isNaN(lng)) return;
+
+            const icon = createMapMarkerIcon(L, item.jenis_pameran?.icon_map_url);
+            const marker = L.marker([lat, lng], {
+                icon,
+                zIndexOffset: 100,
+            });
+
+            const statusText =
+                item.status === 'disetujui'
+                    ? 'Disetujui'
+                    : item.status === 'menunggu_kabag'
+                      ? 'Menunggu Kabag'
+                      : item.status === 'ditolak'
+                        ? 'Ditolak'
+                        : 'Menunggu SPV';
+
+            const statusColor =
+                item.status === 'disetujui'
+                    ? 'background:#dcfce7;color:#166534;border:1px solid #bbf7d0;'
+                    : item.status === 'menunggu_kabag'
+                      ? 'background:#e0f2fe;color:#075985;border:1px solid #bae6fd;'
+                      : item.status === 'ditolak'
+                        ? 'background:#ffe4e6;color:#9f1239;border:1px solid #fecdd3;'
+                        : 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;';
+
+            const popupEl = document.createElement('div');
+            popupEl.style.cssText =
+                'font-family: inherit; font-size: 12px; line-height: 1.4; min-width: 220px; max-width: 270px; padding: 2px;';
+            popupEl.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 5px;">
+                    <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; ${statusColor}">
+                        ${statusText}
+                    </span>
+                    <span style="font-size: 10px; color: #6b7280; font-weight: 500;">Channel Terdaftar</span>
+                </div>
+                <div style="font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 2px;">
+                    ${item.dealer?.nama_dealer || 'Dealer'}
+                </div>
+                <div style="font-size: 11px; color: #4b5563; margin-bottom: 5px;">
+                    <span style="font-weight: 600; color: #1f2937;">${item.jenis_pameran?.jenis_pameran || 'Channel'}</span>
+                    ${item.dealer?.kode_dealer ? ` &bull; <span style="font-family: monospace;">${item.dealer.kode_dealer}</span>` : ''}
+                </div>
+                <div style="border-top: 1px dashed #e5e7eb; padding-top: 5px; margin-top: 5px; font-size: 11px; color: #4b5563;">
+                    <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 3px;">
+                        <span>&#128197;</span>
+                        <span>${item.mulai_tanggal_sewa} s/d ${item.tanggal_sewa_berakhir}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span>&#128205;</span>
+                        <span style="font-weight: 600;">${item.kecamatan}${item.kabupaten ? `, ${item.kabupaten}` : ''}</span>
+                    </div>
+                    ${item.detail_alamat ? `<div style="font-size: 10px; color: #6b7280; margin-top: 2px; padding-left: 15px;">${item.detail_alamat}</div>` : ''}
+                </div>
+                <div style="margin-top: 8px; border-top: 1px solid #f3f4f6; padding-top: 6px;">
+                    <button type="button" class="use-location-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 600; color: #0f172a; cursor: pointer;">
+                        <span>&#128205;</span> Salin / Gunakan Lokasi Ini
+                    </button>
+                </div>
+            `;
+
+            const useBtn = popupEl.querySelector('.use-location-btn');
+            if (useBtn) {
+                useBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setPosition(lat, lng, 16);
+                    const locationResult: LocationSelectResult = {
+                        kabupaten: item.kabupaten || '',
+                        kecamatan: item.kecamatan || '',
+                        detailAlamat: item.detail_alamat || '',
+                        latitude: lat,
+                        longitude: lng,
+                    };
+                    onLocationSelect(locationResult);
+                    setStatusMessage(
+                        `Lokasi disalin dari channel: ${item.dealer?.nama_dealer || 'Channel'} (${item.kecamatan})`,
+                    );
+                    marker.closePopup();
+                });
+            }
+
+            marker.bindPopup(popupEl);
+            marker.bindTooltip(
+                `<b>${item.dealer?.nama_dealer || 'Channel'}</b><br/><span style="font-size: 10px;">${item.jenis_pameran?.jenis_pameran || ''} &bull; ${item.kecamatan}</span>`,
+                { direction: 'top', offset: [0, -10] },
+            );
+
+            marker.on('click', (e: L.LeafletMouseEvent) => {
+                if (e.originalEvent) {
+                    e.originalEvent.stopPropagation();
+                }
+            });
+
+            marker.addTo(layer);
+        });
+    };
+
     // Initialize map
     useEffect(() => {
         let isCancelled = false;
@@ -322,10 +443,37 @@ export default function LocationPickerMap({
                 maxZoom: 19,
             }).addTo(map);
 
+            // Layer for existing registered channels
+            const existingLayer = L.layerGroup().addTo(map);
+            existingMarkersLayerRef.current = existingLayer;
+            renderExistingChannels(L, existingLayer, existingChannels);
+
+            // Fit bounds if existing channels are available and no initial coordinate is selected
+            if (
+                initialLat == null &&
+                initialLng == null &&
+                existingChannels &&
+                existingChannels.length > 0
+            ) {
+                const validCoords = existingChannels
+                    .map((c) => [Number(c.latitude), Number(c.longitude)] as [number, number])
+                    .filter(([lat, lng]) => !isNaN(lat) && !isNaN(lng));
+                if (validCoords.length > 0) {
+                    const bounds = L.latLngBounds(validCoords);
+                    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+                }
+            }
+
             if (initialLat && initialLng) {
                 markerRef.current = L.marker([initialLat, initialLng], {
                     icon: createMapMarkerIcon(L, customIconUrl),
+                    zIndexOffset: 1000,
                 }).addTo(map);
+
+                markerRef.current.bindTooltip('Titik Lokasi Baru (Dipilih)', {
+                    direction: 'top',
+                    offset: [0, -12],
+                });
 
                 markerRef.current.on('click', (e: L.LeafletMouseEvent) => {
                     if (e.originalEvent) {
@@ -364,6 +512,10 @@ export default function LocationPickerMap({
             if (timer1) clearTimeout(timer1);
             if (timer2) clearTimeout(timer2);
             if (resizeObserver) resizeObserver.disconnect();
+            if (existingMarkersLayerRef.current) {
+                existingMarkersLayerRef.current.clearLayers();
+                existingMarkersLayerRef.current = null;
+            }
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.remove();
                 mapInstanceRef.current = null;
@@ -371,6 +523,18 @@ export default function LocationPickerMap({
             markerRef.current = null;
         };
     }, []);
+
+    // Re-render existing channels when prop changes
+    useEffect(() => {
+        if (!leafletRef.current || !existingMarkersLayerRef.current) {
+            return;
+        }
+        renderExistingChannels(
+            leafletRef.current,
+            existingMarkersLayerRef.current,
+            existingChannels,
+        );
+    }, [existingChannels]);
 
     // Dynamically update marker icon if customIconUrl changes
     useEffect(() => {
@@ -552,11 +716,19 @@ export default function LocationPickerMap({
                             'Klik titik di peta atau gunakan pencarian di atas untuk menentukan lokasi.'}
                     </span>
                 </div>
-                {initialLat != null && initialLng != null && (
-                    <span className="shrink-0 font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
-                        [{initialLat.toFixed(6)}, {initialLng.toFixed(6)}]
-                    </span>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                    {existingChannels && existingChannels.length > 0 && (
+                        <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+                            <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+                            {existingChannels.length} Channel Terdaftar
+                        </span>
+                    )}
+                    {initialLat != null && initialLng != null && (
+                        <span className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
+                            [{initialLat.toFixed(6)}, {initialLng.toFixed(6)}]
+                        </span>
+                    )}
+                </div>
             </div>
         </div>
     );
