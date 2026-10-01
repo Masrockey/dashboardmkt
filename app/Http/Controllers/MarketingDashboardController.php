@@ -190,13 +190,14 @@ class MarketingDashboardController extends Controller
                         $kecCoords = $this->getKecamatanCoordinates($kabName, $kecName, $idx, $coords);
 
                         $desaKey = $kabName.'|'.$kecName;
-                        $desas = ($allDesas->get($desaKey) ?? collect())
-                            ->take(12)
+                        $desaCollection = $allDesas->get($desaKey) ?? collect();
+                        $desas = $desaCollection
                             ->map(function ($d, $dIdx) use ($kecCoords) {
                                 $dTotal = (int) $d->total;
                                 $dHonda = (int) $d->honda_count;
-                                $angle = ($dIdx * 30 + 15) * (M_PI / 180);
-                                $radius = 0.009 + (($dIdx % 4) * 0.006);
+                                $angle = ($dIdx * 137.5) * (M_PI / 180);
+                                $ring = (int) floor($dIdx / 6);
+                                $radius = 0.008 + ($ring * 0.007);
 
                                 return [
                                     'desa' => (string) $d->kel_desc,

@@ -4,6 +4,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import {
+    ArrowLeft,
     BarChart3,
     Bike,
     ChevronRight,
@@ -107,7 +108,6 @@ export default function MarketingKabupatenMap({
     const overlayLayerRef = useRef<L.LayerGroup | null>(null);
 
     const [metricMode, setMetricMode] = useState<'share' | 'volume'>('share');
-    const [overlayMode, setOverlayMode] = useState<'kecamatan' | 'desa'>('kecamatan');
     const [selectedKabupaten, setSelectedKabupaten] = useState<KabupatenMapItem | null>(null);
     const [selectedKecamatan, setSelectedKecamatan] = useState<KecamatanMapItem | null>(null);
     const [isMapReady, setIsMapReady] = useState(false);
@@ -122,17 +122,6 @@ export default function MarketingKabupatenMap({
                 !isNaN(item.longitude),
         );
     }, [kabupatenData]);
-
-    // All desas in the currently selected kabupaten
-    const allDesasInSelectedKab = useMemo(() => {
-        if (!selectedKabupaten?.kecamatans) return [];
-        return selectedKabupaten.kecamatans.flatMap((k) =>
-            (k.desas || []).map((d) => ({
-                ...d,
-                kecamatan: k.kecamatan,
-            })),
-        );
-    }, [selectedKabupaten]);
 
     // Initialize Leaflet Map
     useEffect(() => {
@@ -339,8 +328,11 @@ export default function MarketingKabupatenMap({
 
         const bounds = L.latLngBounds([]);
 
-        if (overlayMode === 'kecamatan') {
-            // RENDER OVERLAY KECAMATAN (Colored Coverage Circles & Interactive Pin Badges)
+        if (!selectedKecamatan) {
+            // ========================================================
+            // LEVEL 2: TAMPILKAN DAFTAR KECAMATAN DI KABUPATEN INI
+            // (Desa belum ditampilkan sampai salah satu kecamatan diklik)
+            // ========================================================
             kecamatans.forEach((k) => {
                 if (k.latitude == null || k.longitude == null) return;
                 const latLng: [number, number] = [k.latitude, k.longitude];
@@ -353,16 +345,14 @@ export default function MarketingKabupatenMap({
                 // Scaled circle radius based on unit volume
                 const radiusMeters = 2000 + Math.min(2500, k.total * 8);
 
-                const isKecSelected = selectedKecamatan?.kecamatan === k.kecamatan;
-
                 // 1. Coverage Area Circle
                 const circle = L.circle(latLng, {
                     radius: radiusMeters,
                     color: zoneColor,
                     fillColor: zoneColor,
-                    fillOpacity: isKecSelected ? 0.38 : 0.22,
-                    weight: isKecSelected ? 3 : 2,
-                    dashArray: isKecSelected ? undefined : '4, 4',
+                    fillOpacity: 0.22,
+                    weight: 2,
+                    dashArray: '4, 4',
                 });
 
                 circle.on('mouseover', () => {
@@ -370,14 +360,12 @@ export default function MarketingKabupatenMap({
                 });
 
                 circle.on('mouseout', () => {
-                    if (selectedKecamatan?.kecamatan !== k.kecamatan) {
-                        circle.setStyle({ fillOpacity: 0.22, weight: 2 });
-                    }
+                    circle.setStyle({ fillOpacity: 0.22, weight: 2 });
                 });
 
                 circle.on('click', () => {
                     setSelectedKecamatan(k);
-                    map.flyTo(latLng, 12, { duration: 0.6 });
+                    map.flyTo(latLng, 12.5, { duration: 0.6 });
                 });
 
                 circle.addTo(layer);
@@ -392,10 +380,10 @@ export default function MarketingKabupatenMap({
                         cursor: pointer;
                         transform: translate(-50%, -50%);
                         transition: transform 0.2s ease, filter 0.2s ease;
-                        filter: ${isKecSelected ? 'drop-shadow(0 0 10px rgba(220, 38, 38, 0.9))' : 'drop-shadow(0 2px 5px rgba(0,0,0,0.3))'};
+                        filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
                     ">
                         <div style="
-                            background-color: ${isKecSelected ? '#b91c1c' : zoneColor};
+                            background-color: ${zoneColor};
                             color: #ffffff;
                             border: 2px solid #ffffff;
                             border-radius: 9999px;
@@ -442,7 +430,7 @@ export default function MarketingKabupatenMap({
                     .join('');
 
                 const tooltipHtml = `
-                    <div style="font-family: inherit; padding: 3px 2px; min-width: 160px;">
+                    <div style="font-family: inherit; padding: 3px 2px; min-width: 170px;">
                         <div style="font-weight: 700; font-size: 12px; color: #0f172a; margin-bottom: 2px;">
                             ${k.kecamatan}
                         </div>
@@ -463,7 +451,9 @@ export default function MarketingKabupatenMap({
                                 <span>${k.competitor_count.toLocaleString('id-ID')} unit</span>
                             </div>
                         </div>
-                        ${topDesasHtml ? `<div style="margin-top: 6px; border-top: 1px solid #f1f5f9; padding-top: 4px;"><div style="font-size: 9.5px; font-weight: 600; color: #475569; margin-bottom: 3px;">Desa/Kelurahan:</div>${topDesasHtml}</div>` : ''}
+                        <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed #cbd5e1; font-size: 9.5px; color: #dc2626; font-weight: 600; text-align: center;">
+                            👆 Klik untuk melihat sebaran desa (${k.desas?.length || 0} desa)
+                        </div>
                     </div>
                 `;
 
@@ -475,46 +465,73 @@ export default function MarketingKabupatenMap({
 
                 kecMarker.on('click', () => {
                     setSelectedKecamatan(k);
-                    map.flyTo(latLng, 12, { duration: 0.6 });
+                    map.flyTo(latLng, 12.5, { duration: 0.6 });
                 });
 
                 kecMarker.addTo(layer);
             });
+
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
+            }
         } else {
-            // RENDER OVERLAY DESA (Villages / Kelurahans)
-            const desasToRender = selectedKecamatan
-                ? (selectedKecamatan.desas || []).map((d) => ({ ...d, kecamatan: selectedKecamatan.kecamatan }))
-                : allDesasInSelectedKab;
+            // ========================================================
+            // LEVEL 3: KECAMATAN DIKLIK -> BARU MUNCUL DESA NYA!
+            // ========================================================
+            const kec = selectedKecamatan;
+            const kecLatLng: [number, number] = [kec.latitude, kec.longitude];
+            bounds.extend(kecLatLng);
 
-            desasToRender.forEach((d) => {
+            const isDominant = kec.honda_share >= 70;
+            const isStrong = kec.honda_share >= 50 && kec.honda_share < 70;
+            const zoneColor = isDominant ? '#dc2626' : isStrong ? '#d97706' : '#4b5563';
+
+            // 1. Lingkaran area kecamatan terpilih
+            const radiusMeters = 2500 + Math.min(2500, kec.total * 8);
+            const circle = L.circle(kecLatLng, {
+                radius: radiusMeters,
+                color: zoneColor,
+                fillColor: zoneColor,
+                fillOpacity: 0.12,
+                weight: 2,
+                dashArray: '4, 4',
+            });
+            circle.addTo(layer);
+
+            const cleanKecName = kec.kecamatan.replace(/^(KEC\.?|KECAMATAN)\s+/i, '');
+
+            // 2. Render Titik Setiap Desa / Kelurahan di Kecamatan Ini
+            const desas = kec.desas || [];
+            desas.forEach((d) => {
                 if (d.latitude == null || d.longitude == null) return;
-                const latLng: [number, number] = [d.latitude, d.longitude];
-                bounds.extend(latLng);
+                const dLatLng: [number, number] = [d.latitude, d.longitude];
+                bounds.extend(dLatLng);
 
-                const isDominant = d.honda_share >= 70;
-                const isStrong = d.honda_share >= 50 && d.honda_share < 70;
-                const desaBadgeColor = isDominant ? '#dc2626' : isStrong ? '#d97706' : '#4b5563';
+                const isDesaDominant = d.honda_share >= 70;
+                const isDesaStrong = d.honda_share >= 50 && d.honda_share < 70;
+                const desaBadgeColor = isDesaDominant ? '#dc2626' : isDesaStrong ? '#d97706' : '#4b5563';
 
                 const desaHtml = `
                     <div style="
                         display: flex;
                         align-items: center;
-                        gap: 3px;
-                        background-color: rgba(255, 255, 255, 0.95);
-                        border: 1.5px solid ${desaBadgeColor};
+                        gap: 3.5px;
+                        background-color: rgba(255, 255, 255, 0.96);
+                        border: 2px solid ${desaBadgeColor};
                         color: #0f172a;
-                        padding: 1.5px 6px;
+                        padding: 2px 7px;
                         border-radius: 9999px;
-                        font-size: 9.5px;
-                        font-weight: 600;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.18);
+                        font-size: 10px;
+                        font-weight: 700;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
                         white-space: nowrap;
                         transform: translate(-50%, -50%);
                         cursor: pointer;
+                        transition: transform 0.15s ease, box-shadow 0.15s ease;
                     ">
-                        <span style="display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background-color: ${desaBadgeColor};"></span>
+                        <span style="display: inline-block; width: 6.5px; height: 6.5px; border-radius: 9999px; background-color: ${desaBadgeColor}; shrink-0;"></span>
                         <span>${d.desa}</span>
-                        <span style="background-color: #f1f5f9; color: #334155; padding: 0.5px 4px; border-radius: 4px; font-size: 8.5px; font-weight: 700;">
+                        <span style="background-color: #f1f5f9; color: #1e293b; padding: 0.5px 5px; border-radius: 4px; font-size: 9px; font-weight: 800;">
                             ${d.total}
                         </span>
                     </div>
@@ -523,28 +540,32 @@ export default function MarketingKabupatenMap({
                 const desaIcon = L.divIcon({
                     className: 'desa-div-icon',
                     html: desaHtml,
-                    iconSize: [80, 22],
-                    iconAnchor: [40, 11],
+                    iconSize: [90, 24],
+                    iconAnchor: [45, 12],
                 });
 
-                const desaMarker = L.marker(latLng, { icon: desaIcon });
+                const desaMarker = L.marker(dLatLng, { icon: desaIcon, zIndexOffset: 500 });
 
                 const desaTooltip = `
-                    <div style="font-family: inherit; padding: 3px 2px; min-width: 140px;">
-                        <div style="font-weight: 700; font-size: 11.5px; color: #0f172a;">
+                    <div style="font-family: inherit; padding: 3px 2px; min-width: 150px;">
+                        <div style="font-weight: 700; font-size: 12px; color: #0f172a;">
                             Desa / Kel. ${d.desa}
                         </div>
-                        <div style="font-size: 10px; color: #64748b; margin-bottom: 4px;">
-                            ${d.kecamatan}
+                        <div style="font-size: 10px; color: #64748b; margin-bottom: 5px;">
+                            Kec. ${cleanKecName}, ${selectedKabupaten.kabupaten}
                         </div>
-                        <div style="font-size: 10.5px; border-top: 1px solid #e2e8f0; padding-top: 3px;">
+                        <div style="font-size: 11px; line-height: 1.5; border-top: 1px solid #e2e8f0; padding-top: 4px;">
                             <div style="display: flex; justify-content: space-between;">
                                 <span>Total R2:</span>
                                 <strong>${d.total} unit</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; color: #dc2626;">
                                 <span>Honda:</span>
-                                <strong>${d.honda_share}% (${d.honda_count})</strong>
+                                <strong>${d.honda_share}% (${d.honda_count} unit)</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; color: #64748b;">
+                                <span>Kompetitor:</span>
+                                <span>${d.competitor_count} unit</span>
                             </div>
                         </div>
                     </div>
@@ -552,19 +573,22 @@ export default function MarketingKabupatenMap({
 
                 desaMarker.bindTooltip(desaTooltip, {
                     direction: 'top',
-                    offset: [0, -10],
+                    offset: [0, -12],
                     opacity: 0.98,
+                });
+
+                desaMarker.on('click', () => {
+                    map.flyTo(dLatLng, 14, { duration: 0.5 });
                 });
 
                 desaMarker.addTo(layer);
             });
-        }
 
-        // Adjust bounds if valid
-        if (bounds.isValid() && !selectedKecamatan) {
-            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+            }
         }
-    }, [selectedKabupaten, overlayMode, selectedKecamatan, isMapReady, allDesasInSelectedKab]);
+    }, [selectedKabupaten, selectedKecamatan, isMapReady]);
 
     // Handle Reset View (Fit All NTB)
     const handleResetView = () => {
@@ -585,6 +609,30 @@ export default function MarketingKabupatenMap({
             } else {
                 mapInstanceRef.current.setView(NTB_CENTER, NTB_DEFAULT_ZOOM);
             }
+        }
+    };
+
+    // Handle Back to All Kecamatans in Selected Kabupaten
+    const handleBackToKecamatanView = () => {
+        setSelectedKecamatan(null);
+        if (!mapInstanceRef.current || !selectedKabupaten) return;
+        const kecamatans = selectedKabupaten.kecamatans || [];
+        if (kecamatans.length > 0) {
+            const bounds = L.latLngBounds([]);
+            kecamatans.forEach((k) => {
+                if (k.latitude != null && k.longitude != null) {
+                    bounds.extend([k.latitude, k.longitude]);
+                }
+            });
+            if (bounds.isValid()) {
+                mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 11 });
+                return;
+            }
+        }
+        if (selectedKabupaten.latitude != null && selectedKabupaten.longitude != null) {
+            mapInstanceRef.current.flyTo([selectedKabupaten.latitude, selectedKabupaten.longitude], 11, {
+                duration: 0.6,
+            });
         }
     };
 
@@ -611,6 +659,15 @@ export default function MarketingKabupatenMap({
         if (mapInstanceRef.current && kec.latitude != null && kec.longitude != null) {
             mapInstanceRef.current.flyTo([kec.latitude, kec.longitude], 12.5, {
                 duration: 0.7,
+            });
+        }
+    };
+
+    // Fly to specific desa
+    const handleSelectDesaClick = (desa: DesaMapItem) => {
+        if (mapInstanceRef.current && desa.latitude != null && desa.longitude != null) {
+            mapInstanceRef.current.flyTo([desa.latitude, desa.longitude], 14, {
+                duration: 0.5,
             });
         }
     };
@@ -699,7 +756,7 @@ export default function MarketingKabupatenMap({
             <div className="relative w-full overflow-hidden" style={{ height }}>
                 <div ref={mapContainerRef} className="size-full z-0" />
 
-                {/* Floating Top Bar Saat Kabupaten Dipilih (Switch Overlay Kecamatan / Desa) */}
+                {/* Floating Top Bar Saat Kabupaten Dipilih */}
                 {selectedKabupaten && (
                     <div className="absolute top-3 left-3 right-3 sm:right-auto z-[450] flex flex-wrap items-center gap-2 rounded-xl bg-background/95 p-2 shadow-lg backdrop-blur-md border border-neutral-200/90 dark:border-neutral-800/90 text-xs animate-in fade-in slide-in-from-top-2 duration-200">
                         <div className="flex items-center gap-1.5 font-bold text-neutral-900 dark:text-neutral-100 pr-2 border-r border-neutral-200 dark:border-neutral-800">
@@ -707,46 +764,35 @@ export default function MarketingKabupatenMap({
                             <span className="truncate max-w-[150px]">{selectedKabupaten.kabupaten}</span>
                         </div>
 
-                        {/* Switch Overlay: Kecamatan vs Desa */}
-                        <div className="flex items-center rounded-lg border border-neutral-200 bg-white p-0.5 dark:border-neutral-800 dark:bg-neutral-950">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setOverlayMode('kecamatan');
-                                    setSelectedKecamatan(null);
-                                }}
-                                className={`rounded px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                                    overlayMode === 'kecamatan'
-                                        ? 'bg-red-600 text-white shadow-xs'
-                                        : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
-                                }`}
-                            >
-                                Kecamatan ({selectedKabupaten.kecamatans?.length || 0})
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setOverlayMode('desa')}
-                                className={`rounded px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                                    overlayMode === 'desa'
-                                        ? 'bg-red-600 text-white shadow-xs'
-                                        : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400'
-                                }`}
-                            >
-                                Desa ({allDesasInSelectedKab.length})
-                            </button>
-                        </div>
-
-                        {selectedKecamatan && (
-                            <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 text-[10px] gap-1 py-0.5">
-                                <span>Kec. {selectedKecamatan.kecamatan.replace(/^(KEC\.?|KECAMATAN)\s+/i, '')}</span>
-                                <button
-                                    onClick={() => setSelectedKecamatan(null)}
-                                    className="hover:text-red-900"
-                                    title="Hapus fokus kecamatan"
+                        {!selectedKecamatan ? (
+                            <>
+                                <Badge variant="secondary" className="text-[11px] font-semibold py-1 px-2.5">
+                                    {selectedKabupaten.kecamatans?.length || 0} Kecamatan
+                                </Badge>
+                                <span className="text-[11px] text-neutral-500 hidden sm:inline-block">
+                                    Pilih / klik kecamatan untuk melihat desa
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <ChevronRight className="size-3.5 text-neutral-400" />
+                                <div className="font-bold text-red-600 dark:text-red-400 max-w-[140px] truncate">
+                                    Kec. {selectedKecamatan.kecamatan.replace(/^(KEC\.?|KECAMATAN)\s+/i, '')}
+                                </div>
+                                <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 text-[10px] py-0.5 px-2">
+                                    {selectedKecamatan.desas?.length || 0} Desa
+                                </Badge>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleBackToKecamatanView}
+                                    className="h-7 text-xs px-2.5 gap-1 font-medium bg-white hover:bg-neutral-100 text-neutral-700 border-neutral-300 dark:bg-neutral-900 dark:text-neutral-200 dark:border-neutral-700 shadow-xs"
+                                    title="Kembali ke tampilan semua kecamatan"
                                 >
-                                    <X className="size-3" />
-                                </button>
-                            </Badge>
+                                    <ArrowLeft className="size-3" />
+                                    <span>Semua Kecamatan</span>
+                                </Button>
+                            </>
                         )}
 
                         <Button
@@ -754,6 +800,7 @@ export default function MarketingKabupatenMap({
                             size="sm"
                             onClick={handleResetView}
                             className="h-7 text-xs px-2 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 ml-auto"
+                            title="Tutup overlay dan kembali ke tinjauan NTB"
                         >
                             <X className="size-3.5 mr-1" />
                             Tutup
@@ -870,73 +917,111 @@ export default function MarketingKabupatenMap({
                         {/* Rincian Kecamatan / Overlay Navigasi */}
                         {selectedKabupaten.kecamatans && selectedKabupaten.kecamatans.length > 0 && (
                             <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800">
-                                <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                                    <span className="flex items-center gap-1">
-                                        <MapPin className="size-3 text-red-600" />
-                                        Rincian Kecamatan ({selectedKabupaten.kecamatans.length}):
-                                    </span>
-                                    <span className="text-[10px] text-neutral-400 font-normal">
-                                        Klik untuk zoom zona
-                                    </span>
-                                </div>
-                                <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
-                                    {selectedKabupaten.kecamatans.map((k) => {
-                                        const isKecActive = selectedKecamatan?.kecamatan === k.kecamatan;
-
-                                        return (
-                                            <button
-                                                key={k.kecamatan}
-                                                type="button"
-                                                onClick={() => handleSelectKecamatanClick(k)}
-                                                className={`w-full flex items-center justify-between p-1.5 rounded-md text-[11px] transition-all text-left ${
-                                                    isKecActive
-                                                        ? 'bg-red-50 text-red-700 border border-red-200 font-semibold dark:bg-red-950/40 dark:text-red-300 dark:border-red-900'
-                                                        : 'bg-neutral-50/80 hover:bg-neutral-100 text-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-200 dark:hover:bg-neutral-800'
-                                                }`}
+                                {!selectedKecamatan ? (
+                                    <>
+                                        <div className="flex items-center justify-between text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                                            <span className="flex items-center gap-1">
+                                                <MapPin className="size-3 text-red-600" />
+                                                Daftar Kecamatan ({selectedKabupaten.kecamatans.length}):
+                                            </span>
+                                            <span className="text-[10px] text-neutral-400 font-normal">
+                                                Klik untuk buka desa
+                                            </span>
+                                        </div>
+                                        <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
+                                            {selectedKabupaten.kecamatans.map((k) => (
+                                                <button
+                                                    key={k.kecamatan}
+                                                    type="button"
+                                                    onClick={() => handleSelectKecamatanClick(k)}
+                                                    className="w-full flex items-center justify-between p-1.5 rounded-md text-[11px] transition-all text-left bg-neutral-50/80 hover:bg-neutral-100 text-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                                                >
+                                                    <div className="truncate pr-1">
+                                                        {k.kecamatan.replace(/^(KEC\.?|KECAMATAN)\s+/i, '')}
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        <span className="text-[10px] text-neutral-500">
+                                                            {k.total} unit
+                                                        </span>
+                                                        <span className={`text-[10px] font-bold ${k.honda_share >= 70 ? 'text-red-600 dark:text-red-400' : 'text-neutral-600'}`}>
+                                                            {k.honda_share}%
+                                                        </span>
+                                                        <ChevronRight className="size-3 text-neutral-400" />
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <div className="text-[10px] uppercase font-bold tracking-wider text-red-600 dark:text-red-400">
+                                                    Kecamatan Terpilih
+                                                </div>
+                                                <div className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
+                                                    {selectedKecamatan.kecamatan}
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleBackToKecamatanView}
+                                                className="h-6 text-[10.5px] px-2 text-neutral-600 hover:text-neutral-900 gap-1 dark:text-neutral-300"
                                             >
-                                                <div className="truncate pr-1">
-                                                    {k.kecamatan.replace(/^(KEC\.?|KECAMATAN)\s+/i, '')}
-                                                </div>
-                                                <div className="flex items-center gap-1.5 shrink-0">
-                                                    <span className="text-[10px] text-neutral-500">
-                                                        {k.total} unit
-                                                    </span>
-                                                    <span className={`text-[10px] font-bold ${k.honda_share >= 70 ? 'text-red-600 dark:text-red-400' : 'text-neutral-600'}`}>
-                                                        {k.honda_share}%
-                                                    </span>
-                                                    <ChevronRight className="size-3 text-neutral-400" />
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
+                                                <ArrowLeft className="size-3" />
+                                                Semua Kec.
+                                            </Button>
+                                        </div>
 
-                        {/* Rincian Desa / Kelurahan jika Kecamatan Dipilih */}
-                        {selectedKecamatan && selectedKecamatan.desas && selectedKecamatan.desas.length > 0 && (
-                            <div className="mt-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                                <div className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-1 flex items-center justify-between">
-                                    <span>Desa di {selectedKecamatan.kecamatan.replace(/^(KEC\.?|KECAMATAN)\s+/i, '')}:</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setOverlayMode('desa')}
-                                        className="text-[10px] text-blue-600 hover:underline dark:text-blue-400"
-                                    >
-                                        Tampilkan Pin Desa
-                                    </button>
-                                </div>
-                                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                                    {selectedKecamatan.desas.map((d) => (
-                                        <Badge
-                                            key={d.desa}
-                                            variant="secondary"
-                                            className="text-[9.5px] py-0 px-1.5 font-normal"
-                                        >
-                                            {d.desa} ({d.total})
-                                        </Badge>
-                                    ))}
-                                </div>
+                                        <div className="grid grid-cols-3 gap-1.5 text-center text-xs bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800">
+                                            <div>
+                                                <div className="text-[10px] text-neutral-500">Total R2</div>
+                                                <div className="font-bold text-neutral-900 dark:text-neutral-100">
+                                                    {selectedKecamatan.total}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-[10px] text-red-600">Honda</div>
+                                                <div className="font-bold text-red-600">
+                                                    {selectedKecamatan.honda_share}%
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-[10px] text-neutral-500">Desa</div>
+                                                <div className="font-bold text-neutral-900 dark:text-neutral-100">
+                                                    {selectedKecamatan.desas?.length || 0}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {selectedKecamatan.desas && selectedKecamatan.desas.length > 0 ? (
+                                            <div>
+                                                <div className="text-[10.5px] font-semibold text-neutral-700 dark:text-neutral-300 mb-1 flex items-center justify-between">
+                                                    <span>Sebaran Desa ({selectedKecamatan.desas.length}):</span>
+                                                    <span className="text-[9.5px] text-neutral-400">Klik desa untuk fokus</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto pr-0.5">
+                                                    {selectedKecamatan.desas.map((d) => (
+                                                        <button
+                                                            key={d.desa}
+                                                            type="button"
+                                                            onClick={() => handleSelectDesaClick(d)}
+                                                            className="inline-flex items-center gap-1 rounded-md border border-neutral-200 bg-white px-1.5 py-0.5 text-[10px] text-neutral-800 transition-colors hover:border-red-400 hover:bg-red-50 hover:text-red-700 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:bg-red-950/40"
+                                                        >
+                                                            <span className="font-medium">{d.desa}</span>
+                                                            <span className="text-[9px] text-neutral-500 font-bold">({d.total})</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-[11px] text-neutral-500 italic py-1">
+                                                Belum ada rincian data desa untuk kecamatan ini.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -984,9 +1069,11 @@ export default function MarketingKabupatenMap({
                 <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400">
                     <Compass className="size-3 text-neutral-400" />
                     <span>
-                        {selectedKabupaten
-                            ? 'Klik zona/pin untuk zoom kecamatan & desa'
-                            : 'Klik pin kabupaten untuk melihat statistik & overlay'}
+                        {selectedKecamatan
+                            ? `Menampilkan sebaran desa di Kec. ${selectedKecamatan.kecamatan.replace(/^(KEC\.?|KECAMATAN)\s+/i, '')}`
+                            : selectedKabupaten
+                              ? 'Klik pin / zona kecamatan untuk melihat sebaran desa'
+                              : 'Klik pin kabupaten untuk melihat statistik & kecamatan'}
                     </span>
                 </div>
             </div>
