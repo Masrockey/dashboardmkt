@@ -44,6 +44,11 @@ class R2 extends Model
         'knd_tgl_notice_new',
         'knd_tgl_notice_old',
         'knd_df_jenis',
+        'model',
+        'roda',
+        'type',
+        'segment',
+        'nama_pasar',
     ];
 
     /**
@@ -60,4 +65,3 @@ class R2 extends Model
         ];
     }
 }
-

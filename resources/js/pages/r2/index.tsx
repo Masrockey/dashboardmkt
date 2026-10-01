@@ -44,10 +44,27 @@ import {
 import r2Route from '@/routes/r2';
 import type { PaginatedR2, R2, R2FormData } from '@/types';
 
+interface MasterDataTypeItem {
+    id: number;
+    nama_type: string;
+    segment_id: number;
+    nama_pasar: string;
+    segment?: {
+        id: number;
+        nama_segment: string;
+    };
+}
+
 interface R2IndexProps {
     r2s: PaginatedR2;
     filters: {
         search?: string;
+    };
+    masterData?: {
+        kabupatens: string[];
+        brands: string[];
+        segments: string[];
+        types: MasterDataTypeItem[];
     };
 }
 
@@ -59,21 +76,26 @@ const initialFormData: R2FormData = {
     kel_desc: '',
     kec_desc: '',
     kab_desc: '',
-    jns_desc: '',
-    mrk_desc: '',
+    jns_desc: 'SPM R 2',
+    mrk_desc: 'HONDA',
     pkb_desc: '',
     knd_thn_buat: '',
     knd_cyl: '',
     knd_rangka: '',
     knd_mesin: '',
     knd_warna: '',
-    guna_desc: '',
+    guna_desc: 'PRIBADI',
     wrn_desc: '',
     ctk_notice_tanggal: '',
     ctk_notice_seri: '',
     knd_tgl_notice_new: '',
     knd_tgl_notice_old: '',
     knd_df_jenis: '',
+    model: 'SOLO',
+    roda: '2',
+    type: '',
+    segment: '',
+    nama_pasar: '',
 };
 
 const formatDateDisplay = (dateVal: string | null | undefined): string => {
@@ -92,7 +114,7 @@ const formatDateDisplay = (dateVal: string | null | undefined): string => {
     return clean;
 };
 
-export default function R2Index({ r2s, filters }: R2IndexProps) {
+export default function R2Index({ r2s, filters, masterData }: R2IndexProps) {
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -176,21 +198,26 @@ export default function R2Index({ r2s, filters }: R2IndexProps) {
             kel_desc: item.kel_desc || '',
             kec_desc: item.kec_desc || '',
             kab_desc: item.kab_desc || '',
-            jns_desc: item.jns_desc || '',
-            mrk_desc: item.mrk_desc || '',
+            jns_desc: item.jns_desc || 'SPM R 2',
+            mrk_desc: item.mrk_desc || 'HONDA',
             pkb_desc: item.pkb_desc || '',
             knd_thn_buat: item.knd_thn_buat || '',
             knd_cyl: item.knd_cyl || '',
             knd_rangka: item.knd_rangka || '',
             knd_mesin: item.knd_mesin || '',
             knd_warna: item.knd_warna || '',
-            guna_desc: item.guna_desc || '',
+            guna_desc: item.guna_desc || 'PRIBADI',
             wrn_desc: item.wrn_desc || '',
             ctk_notice_tanggal: item.ctk_notice_tanggal || '',
             ctk_notice_seri: item.ctk_notice_seri || '',
             knd_tgl_notice_new: item.knd_tgl_notice_new || '',
             knd_tgl_notice_old: item.knd_tgl_notice_old || '',
             knd_df_jenis: item.knd_df_jenis || '',
+            model: item.model || 'SOLO',
+            roda: item.roda || '2',
+            type: item.type || item.pkb_desc || '',
+            segment: item.segment || '',
+            nama_pasar: item.nama_pasar || '',
         });
         editForm.clearErrors();
         setActiveTab('identitas');
@@ -375,10 +402,18 @@ export default function R2Index({ r2s, filters }: R2IndexProps) {
                             <Label htmlFor="kab_desc">Kabupaten (kab_desc)</Label>
                             <Input
                                 id="kab_desc"
+                                list="kab-datalist"
                                 value={form.data.kab_desc}
                                 onChange={(e) => form.setData('kab_desc', e.target.value)}
                                 placeholder="Nama Kabupaten / Kota"
                             />
+                            {masterData?.kabupatens && (
+                                <datalist id="kab-datalist">
+                                    {masterData.kabupatens.map((k) => (
+                                        <option key={k} value={k} />
+                                    ))}
+                                </datalist>
+                            )}
                             <InputError message={form.errors.kab_desc} />
                         </div>
                     </div>
@@ -388,14 +423,102 @@ export default function R2Index({ r2s, filters }: R2IndexProps) {
                 {activeTab === 'spesifikasi' && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="mrk_desc">Merk (mrk_desc)</Label>
+                            <Label htmlFor="mrk_desc">Brand / Merk (mrk_desc)</Label>
                             <Input
                                 id="mrk_desc"
+                                list="brand-datalist"
                                 value={form.data.mrk_desc}
                                 onChange={(e) => form.setData('mrk_desc', e.target.value)}
                                 placeholder="Contoh: HONDA, YAMAHA"
                             />
+                            {masterData?.brands && (
+                                <datalist id="brand-datalist">
+                                    {masterData.brands.map((b) => (
+                                        <option key={b} value={b} />
+                                    ))}
+                                </datalist>
+                            )}
                             <InputError message={form.errors.mrk_desc} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="model">Model</Label>
+                            <Input
+                                id="model"
+                                value={form.data.model}
+                                onChange={(e) => form.setData('model', e.target.value)}
+                                placeholder="Contoh: SOLO"
+                            />
+                            <InputError message={form.errors.model} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="roda">Jumlah Roda</Label>
+                            <Input
+                                id="roda"
+                                value={form.data.roda}
+                                onChange={(e) => form.setData('roda', e.target.value)}
+                                placeholder="Contoh: 2"
+                            />
+                            <InputError message={form.errors.roda} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="type">TYPE Kendaraan</Label>
+                            <Input
+                                id="type"
+                                list="type-datalist"
+                                value={form.data.type}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const found = masterData?.types?.find(
+                                        (t) => t.nama_type.toUpperCase() === val.toUpperCase(),
+                                    );
+                                    form.setData((prev) => ({
+                                        ...prev,
+                                        type: val,
+                                        pkb_desc: val,
+                                        segment: found?.segment?.nama_segment || prev.segment,
+                                        nama_pasar: found?.nama_pasar || prev.nama_pasar,
+                                    }));
+                                }}
+                                placeholder="Contoh: X1H02N32L1 A/T"
+                            />
+                            {masterData?.types && (
+                                <datalist id="type-datalist">
+                                    {masterData.types.map((t) => (
+                                        <option key={t.id} value={t.nama_type}>
+                                            {t.nama_pasar} ({t.segment?.nama_segment || '-'})
+                                        </option>
+                                    ))}
+                                </datalist>
+                            )}
+                            <InputError message={form.errors.type} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="segment">Segment</Label>
+                            <Input
+                                id="segment"
+                                list="segment-datalist"
+                                value={form.data.segment}
+                                onChange={(e) => form.setData('segment', e.target.value)}
+                                placeholder="Contoh: AT HIGH, AT LOW"
+                            />
+                            {masterData?.segments && (
+                                <datalist id="segment-datalist">
+                                    {masterData.segments.map((s) => (
+                                        <option key={s} value={s} />
+                                    ))}
+                                </datalist>
+                            )}
+                            <InputError message={form.errors.segment} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="nama_pasar">Nama Pasar</Label>
+                            <Input
+                                id="nama_pasar"
+                                value={form.data.nama_pasar}
+                                onChange={(e) => form.setData('nama_pasar', e.target.value)}
+                                placeholder="Contoh: Vario 160 CBS"
+                            />
+                            <InputError message={form.errors.nama_pasar} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="jns_desc">Jenis (jns_desc)</Label>
@@ -403,7 +526,7 @@ export default function R2Index({ r2s, filters }: R2IndexProps) {
                                 id="jns_desc"
                                 value={form.data.jns_desc}
                                 onChange={(e) => form.setData('jns_desc', e.target.value)}
-                                placeholder="Contoh: SEPEDA MOTOR"
+                                placeholder="Contoh: SPM R 2"
                             />
                             <InputError message={form.errors.jns_desc} />
                         </div>
@@ -611,77 +734,120 @@ export default function R2Index({ r2s, filters }: R2IndexProps) {
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-12 text-center">No</TableHead>
-                                    <TableHead>No. Polisi</TableHead>
-                                    <TableHead>Nama Pemilik</TableHead>
-                                    <TableHead>Merk / Jenis</TableHead>
-                                    <TableHead>Kabupaten</TableHead>
-                                    <TableHead>Tgl Notice</TableHead>
-                                    <TableHead className="text-right">Aksi</TableHead>
+                                <TableRow className="text-xs">
+                                    <TableHead className="w-12 text-center whitespace-nowrap">No</TableHead>
+                                    <TableHead className="whitespace-nowrap">TGL</TableHead>
+                                    <TableHead className="whitespace-nowrap min-w-[150px]">PEMILIK</TableHead>
+                                    <TableHead className="whitespace-nowrap min-w-[200px]">ALAMAT</TableHead>
+                                    <TableHead className="whitespace-nowrap">KEL</TableHead>
+                                    <TableHead className="whitespace-nowrap">KEC</TableHead>
+                                    <TableHead className="bg-yellow-300 text-yellow-950 font-bold dark:bg-yellow-500/25 dark:text-yellow-300 border-x border-yellow-400/50 whitespace-nowrap text-center text-xs tracking-wider">
+                                        KAB
+                                    </TableHead>
+                                    <TableHead className="whitespace-nowrap text-center">MODEL</TableHead>
+                                    <TableHead className="bg-yellow-300 text-yellow-950 font-bold dark:bg-yellow-500/25 dark:text-yellow-300 border-x border-yellow-400/50 whitespace-nowrap text-center text-xs tracking-wider">
+                                        Brand
+                                    </TableHead>
+                                    <TableHead className="whitespace-nowrap text-center">RODA</TableHead>
+                                    <TableHead className="whitespace-nowrap text-center">Tahun</TableHead>
+                                    <TableHead className="whitespace-nowrap text-center">CC</TableHead>
+                                    <TableHead className="whitespace-nowrap">Noka</TableHead>
+                                    <TableHead className="whitespace-nowrap">Nosin</TableHead>
+                                    <TableHead className="whitespace-nowrap">WARNA</TableHead>
+                                    <TableHead className="bg-yellow-300 text-yellow-950 font-bold dark:bg-yellow-500/25 dark:text-yellow-300 border-x border-yellow-400/50 whitespace-nowrap text-center text-xs tracking-wider">
+                                        TYPE
+                                    </TableHead>
+                                    <TableHead className="bg-yellow-300 text-yellow-950 font-bold dark:bg-yellow-500/25 dark:text-yellow-300 border-x border-yellow-400/50 whitespace-nowrap text-center text-xs tracking-wider">
+                                        Segment
+                                    </TableHead>
+                                    <TableHead className="bg-yellow-300 text-yellow-950 font-bold dark:bg-yellow-500/25 dark:text-yellow-300 border-x border-yellow-400/50 whitespace-nowrap text-center text-xs tracking-wider">
+                                        NAMA PASAR
+                                    </TableHead>
+                                    <TableHead className="text-right whitespace-nowrap sticky right-0 bg-background/95 shadow-xs">Aksi</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {r2s.data.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                                            Tidak ada data R2 ditemukan.
+                                        <TableCell colSpan={19} className="h-32 text-center text-muted-foreground">
+                                            Tidak ada data ditemukan.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     r2s.data.map((item, index) => (
-                                        <TableRow key={item.id}>
+                                        <TableRow key={item.id} className="text-xs hover:bg-neutral-50/70 dark:hover:bg-neutral-800/40">
                                             <TableCell className="text-center font-medium">
                                                 {(r2s.from ?? 1) + index}
                                             </TableCell>
-                                            <TableCell className="font-semibold text-foreground">
-                                                <Badge variant="outline" className="font-mono text-xs">
-                                                    {item.knd_nopol || '-'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="font-medium text-foreground">
-                                                {item.knd_nama || '-'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-foreground">
-                                                        {item.mrk_desc || '-'}
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {item.jns_desc || '-'}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>{item.kab_desc || '-'}</TableCell>
-                                            <TableCell>
+                                            <TableCell className="whitespace-nowrap font-medium text-foreground">
                                                 {formatDateDisplay(item.ctk_notice_tanggal || item.knd_tgl_notice_new)}
                                             </TableCell>
+                                            <TableCell className="whitespace-nowrap font-semibold text-foreground">
+                                                <div className="flex flex-col">
+                                                    <span>{item.knd_nama || '-'}</span>
+                                                    {item.knd_nopol && (
+                                                        <span className="font-mono text-[10px] text-muted-foreground">{item.knd_nopol}</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="max-w-[220px] truncate" title={item.knd_alamat || ''}>
+                                                {item.knd_alamat || '-'}
+                                            </TableCell>
+                                            <TableCell className="whitespace-nowrap">{item.kel_desc || '-'}</TableCell>
+                                            <TableCell className="whitespace-nowrap">{item.kec_desc || '-'}</TableCell>
+                                            <TableCell className="bg-yellow-100/70 font-semibold text-yellow-950 dark:bg-yellow-500/15 dark:text-yellow-200 border-x border-yellow-200/60 dark:border-yellow-900/40 whitespace-nowrap">
+                                                {item.kab_desc || '-'}
+                                            </TableCell>
+                                            <TableCell className="whitespace-nowrap text-center font-medium">
+                                                {item.model || 'SOLO'}
+                                            </TableCell>
+                                            <TableCell className="bg-yellow-100/70 font-semibold text-yellow-950 dark:bg-yellow-500/15 dark:text-yellow-200 border-x border-yellow-200/60 dark:border-yellow-900/40 whitespace-nowrap">
+                                                {item.mrk_desc || '-'}
+                                            </TableCell>
+                                            <TableCell className="text-center whitespace-nowrap">{item.roda || '2'}</TableCell>
+                                            <TableCell className="text-center whitespace-nowrap">{item.knd_thn_buat || '-'}</TableCell>
+                                            <TableCell className="text-center whitespace-nowrap">{item.knd_cyl || '-'}</TableCell>
+                                            <TableCell className="font-mono text-[11px] whitespace-nowrap">{item.knd_rangka || '-'}</TableCell>
+                                            <TableCell className="font-mono text-[11px] whitespace-nowrap">{item.knd_mesin || '-'}</TableCell>
+                                            <TableCell className="whitespace-nowrap">{item.knd_warna || item.wrn_desc || '-'}</TableCell>
+                                            <TableCell className="bg-yellow-100/70 font-semibold font-mono text-[11px] text-yellow-950 dark:bg-yellow-500/15 dark:text-yellow-200 border-x border-yellow-200/60 dark:border-yellow-900/40 whitespace-nowrap">
+                                                {item.type || item.pkb_desc || '-'}
+                                            </TableCell>
+                                            <TableCell className="bg-yellow-100/70 font-semibold text-yellow-950 dark:bg-yellow-500/15 dark:text-yellow-200 border-x border-yellow-200/60 dark:border-yellow-900/40 whitespace-nowrap">
+                                                {item.segment || '-'}
+                                            </TableCell>
+                                            <TableCell className="bg-yellow-100/70 font-semibold text-yellow-950 dark:bg-yellow-500/15 dark:text-yellow-200 border-x border-yellow-200/60 dark:border-yellow-900/40 whitespace-nowrap">
+                                                {item.nama_pasar || '-'}
+                                            </TableCell>
 
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right whitespace-nowrap sticky right-0 bg-background/95 shadow-xs">
                                                 <div className="flex items-center justify-end gap-1">
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
+                                                        className="size-7"
                                                         onClick={() => handleOpenDetail(item)}
                                                         title="Lihat Detail"
                                                     >
-                                                        <Eye className="size-4 text-muted-foreground hover:text-foreground" />
+                                                        <Eye className="size-3.5 text-muted-foreground hover:text-foreground" />
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
+                                                        className="size-7"
                                                         onClick={() => handleOpenEdit(item)}
                                                         title="Edit Data"
                                                     >
-                                                        <Pencil className="size-4 text-muted-foreground hover:text-foreground" />
+                                                        <Pencil className="size-3.5 text-muted-foreground hover:text-foreground" />
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
+                                                        className="size-7"
                                                         onClick={() => handleOpenDelete(item)}
                                                         title="Hapus Data"
                                                     >
-                                                        <Trash2 className="size-4 text-destructive hover:text-destructive" />
+                                                        <Trash2 className="size-3.5 text-destructive hover:text-destructive" />
                                                     </Button>
                                                 </div>
                                             </TableCell>
@@ -787,16 +953,6 @@ export default function R2Index({ r2s, filters }: R2IndexProps) {
                                 </div>
                             </div>
                             <InputError message={importForm.errors.file} />
-                        </div>
-
-                        <div className="bg-muted/40 p-3 rounded-lg text-xs space-y-1 text-muted-foreground">
-                            <p className="font-semibold text-foreground">Ketentuan Header Kolom:</p>
-                            <p>
-                                File harus memiliki baris pertama berisi nama kolom seperti:
-                            </p>
-                            <p className="font-mono text-[10px] break-all bg-background p-1.5 rounded border border-border">
-                                drv_desc, knd_nopol, knd_nama, knd_alamat, kel_desc, kec_desc, kab_desc, jns_desc, mrk_desc, pkb_desc, knd_thn_buat, knd_cyl, knd_rangka, knd_mesin, knd_warna, guna_desc, wrn_desc, ctk_notice_tanggal, ctk_notice_seri, knd_tgl_notice_new, knd_tgl_notice_old, knd_df_jenis
-                            </p>
                         </div>
 
                         <DialogFooter className="mt-4">
@@ -940,9 +1096,29 @@ export default function R2Index({ r2s, filters }: R2IndexProps) {
                                     Spesifikasi Kendaraan
                                 </h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-muted/40 p-3 rounded-lg text-sm">
+                                    <div className="bg-yellow-50/80 dark:bg-yellow-950/20 p-2 rounded border border-yellow-200/60 dark:border-yellow-900/40">
+                                        <span className="text-yellow-800 dark:text-yellow-400 block text-xs font-semibold">Brand (Master Data):</span>
+                                        <span className="font-bold text-yellow-950 dark:text-yellow-100">{selectedR2.mrk_desc || '-'}</span>
+                                    </div>
                                     <div>
-                                        <span className="text-muted-foreground block text-xs">Merk:</span>
-                                        <span className="font-medium">{selectedR2.mrk_desc || '-'}</span>
+                                        <span className="text-muted-foreground block text-xs">Model:</span>
+                                        <span className="font-medium">{selectedR2.model || 'SOLO'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-muted-foreground block text-xs">Jumlah Roda:</span>
+                                        <span className="font-medium">{selectedR2.roda || '2'}</span>
+                                    </div>
+                                    <div className="bg-yellow-50/80 dark:bg-yellow-950/20 p-2 rounded border border-yellow-200/60 dark:border-yellow-900/40">
+                                        <span className="text-yellow-800 dark:text-yellow-400 block text-xs font-semibold">TYPE (Master Data):</span>
+                                        <span className="font-bold font-mono text-xs text-yellow-950 dark:text-yellow-100">{selectedR2.type || selectedR2.pkb_desc || '-'}</span>
+                                    </div>
+                                    <div className="bg-yellow-50/80 dark:bg-yellow-950/20 p-2 rounded border border-yellow-200/60 dark:border-yellow-900/40">
+                                        <span className="text-yellow-800 dark:text-yellow-400 block text-xs font-semibold">Segment (Master Data):</span>
+                                        <span className="font-bold text-yellow-950 dark:text-yellow-100">{selectedR2.segment || '-'}</span>
+                                    </div>
+                                    <div className="bg-yellow-50/80 dark:bg-yellow-950/20 p-2 rounded border border-yellow-200/60 dark:border-yellow-900/40">
+                                        <span className="text-yellow-800 dark:text-yellow-400 block text-xs font-semibold">Nama Pasar (Master Data):</span>
+                                        <span className="font-bold text-yellow-950 dark:text-yellow-100">{selectedR2.nama_pasar || '-'}</span>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground block text-xs">Jenis:</span>
@@ -951,10 +1127,6 @@ export default function R2Index({ r2s, filters }: R2IndexProps) {
                                     <div>
                                         <span className="text-muted-foreground block text-xs">Penggunaan:</span>
                                         <span className="font-medium">{selectedR2.guna_desc || '-'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-muted-foreground block text-xs">PKB Desc:</span>
-                                        <span className="font-medium">{selectedR2.pkb_desc || '-'}</span>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground block text-xs">Tahun Buat:</span>

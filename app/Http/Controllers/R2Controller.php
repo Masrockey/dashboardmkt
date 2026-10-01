@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\R2ImportRequest;
 use App\Http\Requests\R2StoreRequest;
 use App\Http\Requests\R2UpdateRequest;
+use App\Models\Brand;
+use App\Models\Kabupaten;
 use App\Models\R2;
+use App\Models\Segment;
+use App\Models\Type;
+use App\Services\R2ImportService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,13 +33,19 @@ class R2Controller extends Controller
                         ->orWhere('knd_nama', 'like', "%{$search}%")
                         ->orWhere('kab_desc', 'like', "%{$search}%")
                         ->orWhere('mrk_desc', 'like', "%{$search}%")
-                        ->orWhere('jns_desc', 'like', "%{$search}%")
+                        ->orWhere('type', 'like', "%{$search}%")
+                        ->orWhere('segment', 'like', "%{$search}%")
+                        ->orWhere('nama_pasar', 'like', "%{$search}%")
+                        ->orWhere('pkb_desc', 'like', "%{$search}%")
+                        ->orWhere('model', 'like', "%{$search}%")
+                        ->orWhere('kec_desc', 'like', "%{$search}%")
+                        ->orWhere('kel_desc', 'like', "%{$search}%")
                         ->orWhere('knd_rangka', 'like', "%{$search}%")
                         ->orWhere('knd_mesin', 'like', "%{$search}%");
                 });
             })
             ->latest('id')
-            ->paginate(10)
+            ->paginate(15)
             ->withQueryString();
 
         return Inertia::render('r2/index', [
@@ -41,15 +53,24 @@ class R2Controller extends Controller
             'filters' => [
                 'search' => $search,
             ],
+            'masterData' => [
+                'kabupatens' => Kabupaten::orderBy('nama_kabupaten')->pluck('nama_kabupaten'),
+                'brands' => Brand::orderBy('nama_brand')->pluck('nama_brand'),
+                'segments' => Segment::orderBy('nama_segment')->pluck('nama_segment'),
+                'types' => Type::with('segment')->orderBy('nama_type')->get(['id', 'nama_type', 'segment_id', 'nama_pasar']),
+            ],
         ]);
     }
 
     /**
      * Store a newly created R2 record in storage.
      */
-    public function store(R2StoreRequest $request): RedirectResponse
+    public function store(R2StoreRequest $request, R2ImportService $importService): RedirectResponse
     {
-        R2::create($request->validated());
+        $data = $request->validated();
+        $importService->adjustRecord($data);
+
+        R2::create($data);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -62,9 +83,12 @@ class R2Controller extends Controller
     /**
      * Update the specified R2 record in storage.
      */
-    public function update(R2UpdateRequest $request, R2 $r2): RedirectResponse
+    public function update(R2UpdateRequest $request, R2 $r2, R2ImportService $importService): RedirectResponse
     {
-        $r2->update($request->validated());
+        $data = $request->validated();
+        $importService->adjustRecord($data);
+
+        $r2->update($data);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -77,7 +101,7 @@ class R2Controller extends Controller
     /**
      * Import R2 records from uploaded Excel file.
      */
-    public function import(\App\Http\Requests\R2ImportRequest $request, \App\Services\R2ImportService $importService): RedirectResponse
+    public function import(R2ImportRequest $request, R2ImportService $importService): RedirectResponse
     {
         $count = $importService->import($request->file('file'));
 
@@ -104,4 +128,3 @@ class R2Controller extends Controller
         return to_route('r2.index');
     }
 }
-

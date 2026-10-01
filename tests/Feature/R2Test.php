@@ -1,7 +1,11 @@
 <?php
 
 use App\Enums\UserRole;
+use App\Models\Brand;
+use App\Models\Kabupaten;
 use App\Models\R2;
+use App\Models\Segment;
+use App\Models\Type;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 
@@ -116,3 +120,38 @@ test('authorized users can import r2 records from excel file', function () {
     $response->assertRedirect(route('r2.index'));
 });
 
+test('r2 auto-populates segment and nama_pasar from master data type on create and update', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+
+    $segment = Segment::create(['nama_segment' => 'AT HIGH']);
+    Brand::create(['nama_brand' => 'HONDA']);
+    Kabupaten::create(['nama_kabupaten' => 'LOMBOK TIMUR']);
+    Type::create([
+        'nama_type' => 'X1H02N32L1 A/T',
+        'segment_id' => $segment->id,
+        'nama_pasar' => 'Vario 160 CBS',
+    ]);
+
+    $response = $this->actingAs($user)->post(route('r2.store'), [
+        'knd_nopol' => 'DR 1234 AB',
+        'knd_nama' => 'Test Master Sync',
+        'kab_desc' => 'lombok timur',
+        'mrk_desc' => 'honda',
+        'type' => 'X1H02N32L1 A/T',
+        'model' => 'SEPEDA MOTOR',
+        'roda' => '2',
+    ]);
+
+    $response->assertRedirect(route('r2.index'));
+
+    $this->assertDatabaseHas('r2s', [
+        'knd_nopol' => 'DR 1234 AB',
+        'kab_desc' => 'LOMBOK TIMUR',
+        'mrk_desc' => 'HONDA',
+        'type' => 'X1H02N32L1 A/T',
+        'segment' => 'AT HIGH',
+        'nama_pasar' => 'Vario 160 CBS',
+        'model' => 'SEPEDA MOTOR',
+        'roda' => '2',
+    ]);
+});

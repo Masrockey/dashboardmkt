@@ -36,6 +36,11 @@ class R2UpdateRequest extends FormRequest
             'knd_tgl_notice_new' => ['nullable', 'date'],
             'knd_tgl_notice_old' => ['nullable', 'date'],
             'knd_df_jenis' => ['nullable', 'string', 'max:255'],
+            'model' => ['nullable', 'string', 'max:255'],
+            'roda' => ['nullable', 'string', 'max:255'],
+            'type' => ['nullable', 'string', 'max:255'],
+            'segment' => ['nullable', 'string', 'max:255'],
+            'nama_pasar' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

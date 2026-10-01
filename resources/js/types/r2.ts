@@ -22,6 +22,11 @@ export interface R2 {
     knd_tgl_notice_new: string | null;
     knd_tgl_notice_old: string | null;
     knd_df_jenis: string | null;
+    model: string | null;
+    roda: string | null;
+    type: string | null;
+    segment: string | null;
+    nama_pasar: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -71,5 +76,10 @@ export type R2FormData = {
     knd_tgl_notice_new: string;
     knd_tgl_notice_old: string;
     knd_df_jenis: string;
+    model: string;
+    roda: string;
+    type: string;
+    segment: string;
+    nama_pasar: string;
 };
 

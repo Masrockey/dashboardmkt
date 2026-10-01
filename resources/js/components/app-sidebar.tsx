@@ -33,6 +33,7 @@ import categories from '@/routes/categories';
 import dealers from '@/routes/dealers';
 import jenisPameran from '@/routes/jenis-pameran';
 import kabupatens from '@/routes/kabupatens';
+import marketing from '@/routes/marketing';
 import pameran from '@/routes/pameran';
 import segments from '@/routes/segments';
 import types from '@/routes/types';
@@ -86,6 +87,11 @@ const masterDataNavItems: NavItem[] = [
 ];
 
 const marketingNavItems: NavItem[] = [
+    {
+        title: 'Dashboard Marketing',
+        href: marketing.dashboard(),
+        icon: LayoutGrid,
+    },
     {
         title: 'R2',
         href: r2.index(),

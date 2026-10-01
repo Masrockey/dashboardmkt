@@ -7,15 +7,15 @@ use App\Http\Controllers\DealerController;
 use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\JenisPameranController;
 use App\Http\Controllers\KabupatenController;
+use App\Http\Controllers\MarketingDashboardController;
 use App\Http\Controllers\PameranController;
 use App\Http\Controllers\R2Controller;
 use App\Http\Controllers\SegmentController;
 use App\Http\Controllers\TypeController;
 use App\Http\Controllers\UserController;
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Middleware\EnsureMarketingAccess;
 use App\Http\Middleware\EnsureMasterDataAccess;
+use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', 'login')->name('home');
 
@@ -26,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Marketing (Hanya untuk Superadmin, SPV, & Kabag)
     Route::middleware(EnsureMarketingAccess::class)->group(function () {
+        Route::get('marketing/dashboard', [MarketingDashboardController::class, 'index'])->name('marketing.dashboard');
         Route::post('r2/import', [R2Controller::class, 'import'])->name('r2.import');
         Route::resource('r2', R2Controller::class)->except(['create', 'show', 'edit']);
     });
