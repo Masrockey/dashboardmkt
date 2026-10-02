@@ -45,7 +45,7 @@ class JenisPameranController extends Controller
      */
     public function store(JenisPameranStoreRequest $request): RedirectResponse
     {
-        $data = $request->safe()->only(['kode_pameran', 'jenis_pameran']);
+        $data = $request->safe()->only(['kode_pameran', 'jenis_pameran', 'radius_km']);
 
         if ($request->hasFile('icon_map')) {
             $data['icon_map'] = $request->file('icon_map')->store('icons/pameran', 'public');
@@ -68,7 +68,7 @@ class JenisPameranController extends Controller
      */
     public function update(JenisPameranUpdateRequest $request, JenisPameran $jenisPameran): RedirectResponse
     {
-        $data = $request->safe()->only(['kode_pameran', 'jenis_pameran']);
+        $data = $request->safe()->only(['kode_pameran', 'jenis_pameran', 'radius_km']);
 
         if ($request->boolean('remove_icon_map')) {
             if ($jenisPameran->icon_map && Storage::disk('public')->exists($jenisPameran->icon_map)) {

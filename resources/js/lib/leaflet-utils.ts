@@ -46,16 +46,18 @@ export function createMapMarkerIcon(
     arg2?: string | null,
 ): LeafletNamespace.Icon | LeafletNamespace.Icon.Default {
     let leafletObj: typeof LeafletNamespace = L;
-    let url: string | null | undefined;
+    let url: string | null | undefined = null;
 
-    if (arg1 && typeof arg1 === 'object' && 'icon' in arg1) {
-        leafletObj = arg1 as typeof LeafletNamespace;
+    if (typeof arg1 === 'string') {
+        url = arg1;
+    } else if (arg1 && typeof arg1 === 'object') {
+        leafletObj = typeof (arg1 as any).icon === 'function' ? (arg1 as typeof LeafletNamespace) : L;
+        url = typeof arg2 === 'string' ? arg2 : null;
+    } else if (typeof arg2 === 'string') {
         url = arg2;
-    } else {
-        url = arg1 as string | null | undefined;
     }
 
-    if (!url) {
+    if (!url || !url.trim()) {
         return new leafletObj.Icon.Default();
     }
 

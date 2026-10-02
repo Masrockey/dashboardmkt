@@ -1079,6 +1079,7 @@ export default function PameranIndex({
                                     existingChannels={mapPamerans.filter((p) => p.id !== selectedPameran?.id)}
                                     channelId={selectedPameran?.id}
                                     isDealer={currentUser.role === 'dealer'}
+                                    radiusKm={selectedEditJenis?.radius_km ? Number(selectedEditJenis.radius_km) : 2}
                                     onLocationSelect={(res) => {
                                         editForm.setData((prev) => ({
                                             ...prev,

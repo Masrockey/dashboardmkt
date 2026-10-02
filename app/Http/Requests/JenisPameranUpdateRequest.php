@@ -37,6 +37,7 @@ class JenisPameranUpdateRequest extends FormRequest
             'jenis_pameran' => ['required', 'string', 'max:255'],
             'icon_map' => ['nullable', 'file', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
             'remove_icon_map' => ['nullable', 'boolean'],
+            'radius_km' => ['nullable', 'numeric', 'min:0', 'max:999.99'],
         ];
     }
 

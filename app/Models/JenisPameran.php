@@ -23,7 +23,20 @@ class JenisPameran extends Model
         'kode_pameran',
         'jenis_pameran',
         'icon_map',
+        'radius_km',
     ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'radius_km' => 'float',
+        ];
+    }
 
     /**
      * The accessors to append to the model's array form.

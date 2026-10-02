@@ -342,9 +342,10 @@ export default function DashboardMap({
                     radiusCircleRef.current = null;
                 }
 
-                // Gambar circle radius 2km
+                // Gambar circle radius dari jenis channel (default 2 km)
+                const radiusKm = pameran.jenis_pameran?.radius_km ?? 2;
                 const circle = L.circle([lat, lng], {
-                    radius: 2000, // 2 km dalam meter
+                    radius: radiusKm * 1000, // konversi KM ke meter
                     color: '#3b82f6',
                     fillColor: '#3b82f6',
                     fillOpacity: 0.08,
@@ -591,10 +592,12 @@ export default function DashboardMap({
                                         ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950/60 dark:text-blue-300'
                                         : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400'
                                 }`}
-                                title="Tampilkan / sembunyikan area radius 2 km"
+                                title="Tampilkan / sembunyikan area radius"
                             >
                                 <Radio className="size-3" />
-                                {showRadiusCircle ? 'Sembunyikan Radius' : 'Radius 2 km'}
+                                {showRadiusCircle
+                                    ? 'Sembunyikan Radius'
+                                    : `Radius ${selectedPameran.jenis_pameran?.radius_km ?? 2} km`}
                             </button>
 
                             <a

@@ -4,6 +4,7 @@ export interface JenisPameran {
     jenis_pameran: string;
     icon_map: string | null;
     icon_map_url: string | null;
+    radius_km: number | null;
     created_at: string;
     updated_at: string;
 }

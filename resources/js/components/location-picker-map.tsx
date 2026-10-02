@@ -49,13 +49,14 @@ export function getDistanceInMeters(
 }
 
 /**
- * Memeriksa apakah titik koordinat berada di dalam radius 2 km dari channel lain yang sudah terdaftar
+ * Memeriksa apakah titik koordinat berada di dalam radius tertentu dari channel lain yang sudah terdaftar
  */
 export function checkRadiusConflicts(
     lat: number,
     lng: number,
     channels: PameranItem[],
     excludeId?: number,
+    radiusMeters: number = 2000,
 ): RadiusConflictInfo[] {
     if (!channels || channels.length === 0) return [];
     return channels
@@ -65,7 +66,7 @@ export function checkRadiusConflicts(
             const itemLng = Number(item.longitude);
             if (isNaN(itemLat) || isNaN(itemLng)) return null;
             const distance = getDistanceInMeters(lat, lng, itemLat, itemLng);
-            if (distance <= 2000) {
+            if (distance <= radiusMeters) {
                 return { item, distance };
             }
             return null;
@@ -97,6 +98,7 @@ interface LocationPickerMapProps {
     existingChannels?: PameranItem[];
     isDealer?: boolean;
     channelId?: number;
+    radiusKm?: number;
 }
 
 // Default center: Mataram, Nusa Tenggara Barat (-8.5833, 116.1167)
@@ -114,9 +116,26 @@ export default function LocationPickerMap({
     existingChannels = [],
     isDealer,
     channelId,
+    radiusKm = 2,
 }: LocationPickerMapProps) {
     const page = usePage<{ auth?: { user?: { role?: string } } }>();
     const isDealerUser = isDealer ?? (page?.props?.auth?.user?.role === 'dealer');
+
+    const effectiveRadiusKm = Number(radiusKm) > 0 ? Number(radiusKm) : 2;
+    const radiusKmRef = useRef(effectiveRadiusKm);
+    radiusKmRef.current = effectiveRadiusKm;
+
+    const customIconUrlRef = useRef(customIconUrl);
+    customIconUrlRef.current = customIconUrl;
+
+    const existingChannelsRef = useRef(existingChannels);
+    existingChannelsRef.current = existingChannels;
+
+    const channelIdRef = useRef(channelId);
+    channelIdRef.current = channelId;
+
+    const onLocationSelectRef = useRef(onLocationSelect);
+    onLocationSelectRef.current = onLocationSelect;
 
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -138,7 +157,14 @@ export default function LocationPickerMap({
         setIsLoadingAddress(true);
         setStatusMessage('Mengambil informasi alamat...');
 
-        const conflicts = checkRadiusConflicts(lat, lng, existingChannels, channelId);
+        const currentRadKm = radiusKmRef.current;
+        const conflicts = checkRadiusConflicts(
+            lat,
+            lng,
+            existingChannelsRef.current,
+            channelIdRef.current,
+            currentRadKm * 1000,
+        );
         setRadiusConflicts(conflicts);
 
         try {
@@ -168,7 +194,7 @@ export default function LocationPickerMap({
                 conflictDistance: conflicts.length > 0 ? conflicts[0].distance : undefined,
             };
 
-            onLocationSelect(result);
+            onLocationSelectRef.current(result);
 
             const areaParts = [
                 data.kecamatan ? `Kec. ${data.kecamatan}` : null,
@@ -186,7 +212,7 @@ export default function LocationPickerMap({
                 'Gagal mengambil nama alamat otomatis. Anda dapat mengisinya manual.',
             );
 
-            onLocationSelect({
+            onLocationSelectRef.current({
                 kabupaten: '',
                 kecamatan: '',
                 detailAlamat: `Titik Koordinat: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
@@ -210,53 +236,64 @@ export default function LocationPickerMap({
             map.panTo([lat, lng]);
         }
 
-        const conflicts = checkRadiusConflicts(lat, lng, existingChannels, channelId);
+        const currentRadKm = radiusKmRef.current;
+        const currentCustomIconUrl = customIconUrlRef.current;
+
+        const conflicts = checkRadiusConflicts(
+            lat,
+            lng,
+            existingChannelsRef.current,
+            channelIdRef.current,
+            currentRadKm * 1000,
+        );
         setRadiusConflicts(conflicts);
         const hasConflict = conflicts.length > 0;
         const circleColor = hasConflict ? '#dc2626' : '#2563eb';
         const fillColor = hasConflict ? '#ef4444' : '#3b82f6';
         const fillOpacity = hasConflict ? 0.22 : 0.12;
 
-        if (markerRef.current) {
-            markerRef.current.setLatLng([lat, lng]);
-            markerRef.current.setZIndexOffset(1000);
-            markerRef.current.unbindTooltip();
-            markerRef.current.bindTooltip(
-                hasConflict
-                    ? 'Titik Lokasi Baru (Dipilih) - ⚠️ Masuk Radius 2 km Channel Lain!'
-                    : 'Titik Lokasi Baru (Dipilih)',
-                { direction: 'top', offset: [0, -12] },
-            );
-        } else if (leafletRef.current) {
-            const L = leafletRef.current;
-            markerRef.current = L.marker([lat, lng], {
-                icon: createMapMarkerIcon(L, customIconUrl),
-                zIndexOffset: 1000,
-            }).addTo(map);
-
-            markerRef.current.bindTooltip(
-                hasConflict
-                    ? 'Titik Lokasi Baru (Dipilih) - ⚠️ Masuk Radius 2 km Channel Lain!'
-                    : 'Titik Lokasi Baru (Dipilih)',
-                {
-                    direction: 'top',
-                    offset: [0, -12],
-                },
-            );
-
-            markerRef.current.on('click', (e: L.LeafletMouseEvent) => {
-                if (e.originalEvent) {
-                    e.originalEvent.preventDefault();
-                    e.originalEvent.stopPropagation();
-                }
-            });
-        }
-
-        // Preview radius 2km untuk titik lokasi channel baru yang dipilih
         if (leafletRef.current) {
             const L = leafletRef.current;
+            const icon = createMapMarkerIcon(L, currentCustomIconUrl);
+
+            if (markerRef.current) {
+                markerRef.current.setLatLng([lat, lng]);
+                markerRef.current.setIcon(icon);
+                markerRef.current.setZIndexOffset(1000);
+                markerRef.current.unbindTooltip();
+                markerRef.current.bindTooltip(
+                    hasConflict
+                        ? `Titik Lokasi Baru (Dipilih) - ⚠️ Masuk Radius ${currentRadKm} km Channel Lain!`
+                        : 'Titik Lokasi Baru (Dipilih)',
+                    { direction: 'top', offset: [0, -12] },
+                );
+            } else {
+                markerRef.current = L.marker([lat, lng], {
+                    icon,
+                    zIndexOffset: 1000,
+                }).addTo(map);
+
+                markerRef.current.bindTooltip(
+                    hasConflict
+                        ? `Titik Lokasi Baru (Dipilih) - ⚠️ Masuk Radius ${currentRadKm} km Channel Lain!`
+                        : 'Titik Lokasi Baru (Dipilih)',
+                    {
+                        direction: 'top',
+                        offset: [0, -12],
+                    },
+                );
+
+                markerRef.current.on('click', (e: L.LeafletMouseEvent) => {
+                    if (e.originalEvent) {
+                        e.originalEvent.preventDefault();
+                        e.originalEvent.stopPropagation();
+                    }
+                });
+            }
+
             if (selectedCircleRef.current) {
                 selectedCircleRef.current.setLatLng([lat, lng]);
+                selectedCircleRef.current.setRadius(currentRadKm * 1000);
                 selectedCircleRef.current.setStyle({
                     color: circleColor,
                     fillColor,
@@ -264,7 +301,7 @@ export default function LocationPickerMap({
                 });
             } else {
                 selectedCircleRef.current = L.circle([lat, lng], {
-                    radius: 2000, // 2km dalam meter
+                    radius: currentRadKm * 1000,
                     color: circleColor,
                     weight: 2.5,
                     dashArray: '6, 6',
@@ -276,7 +313,7 @@ export default function LocationPickerMap({
 
             const tooltipText = hasConflict
                 ? `⚠️ Peringatan: Menimpa Radius Channel Terdaftar! (${conflicts[0].distance < 1000 ? `${Math.round(conflicts[0].distance)} m` : `${(conflicts[0].distance / 1000).toFixed(2)} km`})`
-                : 'Radius Channel Baru: 2 km';
+                : `Radius Channel Baru: ${currentRadKm} km`;
 
             selectedCircleRef.current.unbindTooltip();
             selectedCircleRef.current.bindTooltip(tooltipText, {
@@ -288,6 +325,12 @@ export default function LocationPickerMap({
             });
         }
     };
+
+    const setPositionRef = useRef(setPosition);
+    setPositionRef.current = setPosition;
+
+    const handleReverseGeocodeRef = useRef(handleReverseGeocode);
+    handleReverseGeocodeRef.current = handleReverseGeocode;
 
     const executeSearch = async () => {
         const query = searchQuery.trim();
@@ -329,7 +372,14 @@ export default function LocationPickerMap({
                     .filter(Boolean)
                     .join(', ');
 
-                const conflicts = checkRadiusConflicts(top.latitude, top.longitude, existingChannels, channelId);
+                const currentRadKm = radiusKmRef.current;
+                const conflicts = checkRadiusConflicts(
+                    top.latitude,
+                    top.longitude,
+                    existingChannelsRef.current,
+                    channelIdRef.current,
+                    currentRadKm * 1000,
+                );
                 setRadiusConflicts(conflicts);
 
                 const locationResult: LocationSelectResult = {
@@ -342,7 +392,7 @@ export default function LocationPickerMap({
                     hasRadiusConflict: conflicts.length > 0,
                     conflictDistance: conflicts.length > 0 ? conflicts[0].distance : undefined,
                 };
-                onLocationSelect(locationResult);
+                onLocationSelectRef.current(locationResult);
 
                 setStatusMessage(
                     `Ditemukan: ${top.name}${topAreaInfo ? ` (${topAreaInfo})` : ''}`,
@@ -374,7 +424,14 @@ export default function LocationPickerMap({
             .filter(Boolean)
             .join(', ');
 
-        const conflicts = checkRadiusConflicts(item.latitude, item.longitude, existingChannels, channelId);
+        const currentRadKm = radiusKmRef.current;
+        const conflicts = checkRadiusConflicts(
+            item.latitude,
+            item.longitude,
+            existingChannelsRef.current,
+            channelIdRef.current,
+            currentRadKm * 1000,
+        );
         setRadiusConflicts(conflicts);
 
         const locationResult: LocationSelectResult = {
@@ -387,7 +444,7 @@ export default function LocationPickerMap({
             hasRadiusConflict: conflicts.length > 0,
             conflictDistance: conflicts.length > 0 ? conflicts[0].distance : undefined,
         };
-        onLocationSelect(locationResult);
+        onLocationSelectRef.current(locationResult);
 
         setSearchQuery(item.name);
         setShowResultsDropdown(false);
@@ -456,8 +513,9 @@ export default function LocationPickerMap({
             // Jika role dealer dan merupakan channel dealer lain:
             // JANGAN munculkan pin point nya, tetapi munculkan radius nya saja (2 km dari titik koordinat)
             if (item.is_other_dealer || (isDealer && item.is_other_dealer !== false)) {
+                const itemRadiusM = (item.jenis_pameran?.radius_km ?? 2) * 1000;
                 const circle = L.circle([lat, lng], {
-                    radius: 2000, // 2km dalam meter
+                    radius: itemRadiusM,
                     color: '#ef4444',
                     weight: 1.5,
                     dashArray: '5, 5',
@@ -467,7 +525,7 @@ export default function LocationPickerMap({
                 });
 
                 circle.bindTooltip(
-                    `<b>Radius Channel Terdaftar (2 km)</b>${
+                    `<b>Radius Channel Terdaftar (${item.jenis_pameran?.radius_km ?? 2} km)</b>${
                         item.jenis_pameran?.jenis_pameran
                             ? `<br/><span style="font-size: 10px; color: #4b5563;">${item.jenis_pameran.jenis_pameran}</span>`
                             : ''
@@ -490,8 +548,9 @@ export default function LocationPickerMap({
 
             // Jika role dealer dan merupakan channel milik dealer sendiri:
             if (isDealer) {
+                const ownRadiusM = (item.jenis_pameran?.radius_km ?? 2) * 1000;
                 const ownCircle = L.circle([lat, lng], {
-                    radius: 2000,
+                    radius: ownRadiusM,
                     color: '#10b981',
                     weight: 1.5,
                     dashArray: '5, 5',
@@ -501,7 +560,7 @@ export default function LocationPickerMap({
                 });
 
                 ownCircle.bindTooltip(
-                    `<b>Radius Channel Anda (2 km)</b>${
+                    `<b>Radius Channel Anda (${item.jenis_pameran?.radius_km ?? 2} km)</b>${
                         item.jenis_pameran?.jenis_pameran
                             ? `<br/><span style="font-size: 10px; color: #047857;">${item.jenis_pameran.jenis_pameran}</span>`
                             : ''
@@ -597,8 +656,15 @@ export default function LocationPickerMap({
                 useBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setPosition(lat, lng, 16);
-                    const conflicts = checkRadiusConflicts(lat, lng, existingChannels, channelId);
+                    setPositionRef.current(lat, lng, 16);
+                    const currentRadKm = radiusKmRef.current;
+                    const conflicts = checkRadiusConflicts(
+                        lat,
+                        lng,
+                        existingChannelsRef.current,
+                        channelIdRef.current,
+                        currentRadKm * 1000,
+                    );
                     setRadiusConflicts(conflicts);
                     const locationResult: LocationSelectResult = {
                         kabupaten: item.kabupaten || '',
@@ -609,7 +675,7 @@ export default function LocationPickerMap({
                         hasRadiusConflict: conflicts.length > 0,
                         conflictDistance: conflicts.length > 0 ? conflicts[0].distance : undefined,
                     };
-                    onLocationSelect(locationResult);
+                    onLocationSelectRef.current(locationResult);
                     setStatusMessage(
                         `Lokasi disalin dari channel: ${item.dealer?.nama_dealer || 'Channel'} (${item.kecamatan})`,
                     );
@@ -670,16 +736,16 @@ export default function LocationPickerMap({
             // Layer for existing registered channels
             const existingLayer = L.layerGroup().addTo(map);
             existingMarkersLayerRef.current = existingLayer;
-            renderExistingChannels(L, existingLayer, existingChannels, map, isDealerUser);
+            renderExistingChannels(L, existingLayer, existingChannelsRef.current, map, isDealerUser);
 
             // Fit bounds if existing channels are available and no initial coordinate is selected
             if (
                 initialLat == null &&
                 initialLng == null &&
-                existingChannels &&
-                existingChannels.length > 0
+                existingChannelsRef.current &&
+                existingChannelsRef.current.length > 0
             ) {
-                const validCoords = existingChannels
+                const validCoords = existingChannelsRef.current
                     .map((c) => [Number(c.latitude), Number(c.longitude)] as [number, number])
                     .filter(([lat, lng]) => !isNaN(lat) && !isNaN(lng));
                 if (validCoords.length > 0) {
@@ -689,7 +755,15 @@ export default function LocationPickerMap({
             }
 
             if (initialLat && initialLng) {
-                const initialConflicts = checkRadiusConflicts(initialLat, initialLng, existingChannels, channelId);
+                const currentRadiusKm = radiusKmRef.current;
+                const currentCustomIconUrl = customIconUrlRef.current;
+                const initialConflicts = checkRadiusConflicts(
+                    initialLat,
+                    initialLng,
+                    existingChannelsRef.current,
+                    channelIdRef.current,
+                    currentRadiusKm * 1000,
+                );
                 setRadiusConflicts(initialConflicts);
                 const hasConflict = initialConflicts.length > 0;
                 const circleColor = hasConflict ? '#dc2626' : '#2563eb';
@@ -697,13 +771,13 @@ export default function LocationPickerMap({
                 const fillOpacity = hasConflict ? 0.22 : 0.12;
 
                 markerRef.current = L.marker([initialLat, initialLng], {
-                    icon: createMapMarkerIcon(L, customIconUrl),
+                    icon: createMapMarkerIcon(L, currentCustomIconUrl),
                     zIndexOffset: 1000,
                 }).addTo(map);
 
                 markerRef.current.bindTooltip(
                     hasConflict
-                        ? 'Titik Lokasi Baru (Dipilih) - ⚠️ Masuk Radius 2 km Channel Lain!'
+                        ? `Titik Lokasi Baru (Dipilih) - ⚠️ Masuk Radius ${currentRadiusKm} km Channel Lain!`
                         : 'Titik Lokasi Baru (Dipilih)',
                     {
                         direction: 'top',
@@ -719,7 +793,7 @@ export default function LocationPickerMap({
                 });
 
                 selectedCircleRef.current = L.circle([initialLat, initialLng], {
-                    radius: 2000,
+                    radius: currentRadiusKm * 1000,
                     color: circleColor,
                     weight: 2.5,
                     dashArray: '6, 6',
@@ -730,7 +804,7 @@ export default function LocationPickerMap({
 
                 const tooltipText = hasConflict
                     ? `⚠️ Peringatan: Menimpa Radius Channel Terdaftar! (${initialConflicts[0].distance < 1000 ? `${Math.round(initialConflicts[0].distance)} m` : `${(initialConflicts[0].distance / 1000).toFixed(2)} km`})`
-                    : 'Radius Channel Baru: 2 km';
+                    : `Radius Channel Baru: ${currentRadiusKm} km`;
 
                 selectedCircleRef.current.bindTooltip(tooltipText, {
                     direction: 'bottom',
@@ -747,8 +821,8 @@ export default function LocationPickerMap({
                     e.originalEvent.stopPropagation();
                 }
                 const { lat, lng } = e.latlng;
-                setPosition(lat, lng);
-                void handleReverseGeocode(lat, lng);
+                setPositionRef.current(lat, lng);
+                void handleReverseGeocodeRef.current(lat, lng);
             });
 
             mapInstanceRef.current = map;
@@ -824,7 +898,7 @@ export default function LocationPickerMap({
                 currentCenter.lat !== initialLat ||
                 currentCenter.lng !== initialLng
             ) {
-                setPosition(initialLat, initialLng);
+                setPositionRef.current(initialLat, initialLng);
             }
         }
     }, [initialLat, initialLng]);
@@ -833,11 +907,13 @@ export default function LocationPickerMap({
     useEffect(() => {
         if (markerRef.current) {
             const pos = markerRef.current.getLatLng();
+            const radKm = radiusKmRef.current;
             const conflicts = checkRadiusConflicts(
                 pos.lat,
                 pos.lng,
                 existingChannels,
                 channelId,
+                radKm * 1000,
             );
             setRadiusConflicts(conflicts);
             const hasConflict = conflicts.length > 0;
@@ -853,7 +929,7 @@ export default function LocationPickerMap({
                 });
                 const tooltipText = hasConflict
                     ? `⚠️ Peringatan: Menimpa Radius Channel Terdaftar! (${conflicts[0].distance < 1000 ? `${Math.round(conflicts[0].distance)} m` : `${(conflicts[0].distance / 1000).toFixed(2)} km`})`
-                    : 'Radius Channel Baru: 2 km';
+                    : `Radius Channel Baru: ${radKm} km`;
                 selectedCircleRef.current.unbindTooltip();
                 selectedCircleRef.current.bindTooltip(tooltipText, {
                     direction: 'bottom',
@@ -865,6 +941,49 @@ export default function LocationPickerMap({
             }
         }
     }, [existingChannels, channelId]);
+
+    // Update circle radius when radiusKm prop changes (e.g. user selects different jenis channel)
+    useEffect(() => {
+        const radKm = Number(radiusKm) > 0 ? Number(radiusKm) : 2;
+        if (selectedCircleRef.current && markerRef.current) {
+            const pos = markerRef.current.getLatLng();
+            // Update radius
+            selectedCircleRef.current.setRadius(radKm * 1000);
+            // Re-check conflicts with new radius
+            const conflicts = checkRadiusConflicts(
+                pos.lat,
+                pos.lng,
+                existingChannelsRef.current,
+                channelIdRef.current,
+                radKm * 1000,
+            );
+            setRadiusConflicts(conflicts);
+            const hasConflict = conflicts.length > 0;
+            const circleColor = hasConflict ? '#dc2626' : '#2563eb';
+            const fillColor = hasConflict ? '#ef4444' : '#3b82f6';
+            const fillOpacity = hasConflict ? 0.22 : 0.12;
+            selectedCircleRef.current.setStyle({ color: circleColor, fillColor, fillOpacity });
+            const tooltipText = hasConflict
+                ? `⚠️ Peringatan: Menimpa Radius Channel Terdaftar! (${conflicts[0].distance < 1000 ? `${Math.round(conflicts[0].distance)} m` : `${(conflicts[0].distance / 1000).toFixed(2)} km`})`
+                : `Radius Channel Baru: ${radKm} km`;
+            selectedCircleRef.current.unbindTooltip();
+            selectedCircleRef.current.bindTooltip(tooltipText, {
+                direction: 'bottom',
+                offset: [0, 20],
+                className: hasConflict
+                    ? 'text-xs font-bold text-red-600 dark:text-red-400 border border-red-300'
+                    : 'text-xs font-semibold text-blue-700 dark:text-blue-300',
+            });
+
+            markerRef.current.unbindTooltip();
+            markerRef.current.bindTooltip(
+                hasConflict
+                    ? `Titik Lokasi Baru (Dipilih) - ⚠️ Masuk Radius ${radKm} km Channel Lain!`
+                    : 'Titik Lokasi Baru (Dipilih)',
+                { direction: 'top', offset: [0, -12] },
+            );
+        }
+    }, [radiusKm]);
 
     return (
         <div
@@ -1035,7 +1154,7 @@ export default function LocationPickerMap({
                             </p>
                             <div className="mt-2 space-y-1.5 rounded-lg border border-red-200/90 bg-white/90 p-2.5 dark:border-red-900/60 dark:bg-red-950/70">
                                 <div className="text-[10px] font-semibold text-red-900 dark:text-red-300 uppercase tracking-wide">
-                                    Daftar Channel Dalam Radius 2 km:
+                                    Daftar Channel Dalam Radius {radiusKm} km:
                                 </div>
                                 <ul className="space-y-1 text-[11px]">
                                     {radiusConflicts.slice(0, 3).map((conf, idx) => (
@@ -1085,7 +1204,7 @@ export default function LocationPickerMap({
                             <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 px-2 py-0.5 rounded-full flex items-center gap-1.5">
                                 <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
                                 {isDealerUser
-                                    ? `${existingChannels.length} Radius Channel (2 km)`
+                                    ? `${existingChannels.length} Radius Channel (${radiusKm} km)`
                                     : `${existingChannels.length} Channel Terdaftar`}
                             </span>
                         )

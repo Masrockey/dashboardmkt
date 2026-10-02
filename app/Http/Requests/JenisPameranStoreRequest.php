@@ -26,6 +26,7 @@ class JenisPameranStoreRequest extends FormRequest
             'kode_pameran' => ['required', 'string', 'max:50', 'unique:jenis_pamerans,kode_pameran'],
             'jenis_pameran' => ['required', 'string', 'max:255'],
             'icon_map' => ['nullable', 'file', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
+            'radius_km' => ['nullable', 'numeric', 'min:0', 'max:999.99'],
         ];
     }
 

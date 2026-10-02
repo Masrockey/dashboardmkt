@@ -111,7 +111,7 @@ class PameranController extends Controller
             ->get();
 
         $jenisPameranList = JenisPameran::query()
-            ->select(['id', 'kode_pameran', 'jenis_pameran', 'icon_map'])
+            ->select(['id', 'kode_pameran', 'jenis_pameran', 'icon_map', 'radius_km'])
             ->orderBy('jenis_pameran')
             ->get();
 
@@ -134,7 +134,7 @@ class PameranController extends Controller
         $mapPamerans = Pameran::query()
             ->with([
                 'dealer:id,kode_dealer,nama_dealer',
-                'jenisPameran:id,kode_pameran,jenis_pameran,icon_map',
+                'jenisPameran:id,kode_pameran,jenis_pameran,icon_map,radius_km',
             ])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
@@ -199,14 +199,14 @@ class PameranController extends Controller
             ->get();
 
         $jenisPameranList = JenisPameran::query()
-            ->select(['id', 'kode_pameran', 'jenis_pameran', 'icon_map'])
+            ->select(['id', 'kode_pameran', 'jenis_pameran', 'icon_map', 'radius_km'])
             ->orderBy('jenis_pameran')
             ->get();
 
         $existingPamerans = Pameran::query()
             ->with([
                 'dealer:id,kode_dealer,nama_dealer',
-                'jenisPameran:id,kode_pameran,jenis_pameran,icon_map',
+                'jenisPameran:id,kode_pameran,jenis_pameran,icon_map,radius_km',
             ])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')

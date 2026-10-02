@@ -71,10 +71,12 @@ export default function JenisPameranIndex({
         kode_pameran: string;
         jenis_pameran: string;
         icon_map: File | null;
+        radius_km: string;
     }>({
         kode_pameran: '',
         jenis_pameran: '',
         icon_map: null,
+        radius_km: '2',
     });
 
     // Edit Form
@@ -83,11 +85,13 @@ export default function JenisPameranIndex({
         jenis_pameran: string;
         icon_map: File | null;
         remove_icon_map: boolean;
+        radius_km: string;
     }>({
         kode_pameran: '',
         jenis_pameran: '',
         icon_map: null,
         remove_icon_map: false,
+        radius_km: '2',
     });
 
     // Delete Form
@@ -159,6 +163,7 @@ export default function JenisPameranIndex({
             jenis_pameran: pameran.jenis_pameran,
             icon_map: null,
             remove_icon_map: false,
+            radius_km: String(pameran.radius_km ?? 2),
         });
         editForm.clearErrors();
         setEditPreview(null);
@@ -210,6 +215,7 @@ export default function JenisPameranIndex({
                 jenis_pameran: editForm.data.jenis_pameran,
                 icon_map: editForm.data.icon_map,
                 remove_icon_map: editForm.data.remove_icon_map ? 1 : 0,
+                radius_km: editForm.data.radius_km,
             },
             {
                 forceFormData: true,
@@ -299,6 +305,7 @@ export default function JenisPameranIndex({
                                 <TableHead className="w-16 text-center">No</TableHead>
                                 <TableHead>Kode Channel</TableHead>
                                 <TableHead>Nama Jenis Channel</TableHead>
+                                <TableHead>Radius Peta</TableHead>
                                 <TableHead>Icon Map</TableHead>
                                 <TableHead>Tanggal Dibuat</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
@@ -307,7 +314,7 @@ export default function JenisPameranIndex({
                         <TableBody>
                             {jenisPameran.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="py-12 text-center">
+                                    <TableCell colSpan={7} className="py-12 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <div className="rounded-full bg-neutral-100 p-3 dark:bg-neutral-800">
                                                 <MapPin className="size-6 text-neutral-500 dark:text-neutral-400" />
@@ -352,6 +359,11 @@ export default function JenisPameranIndex({
                                             </TableCell>
                                             <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">
                                                 {item.jenis_pameran}
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                                                    {item.radius_km ?? 2} km
+                                                </span>
                                             </TableCell>
                                             <TableCell>
                                                 {item.icon_map_url ? (
@@ -496,6 +508,27 @@ export default function JenisPameranIndex({
                                 <InputError message={createForm.errors.jenis_pameran} />
                             </div>
 
+                            <div className="space-y-1.5">
+                                <Label htmlFor="create_radius_km">Radius Peta (KM)</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        id="create_radius_km"
+                                        type="number"
+                                        min="0"
+                                        max="999.99"
+                                        step="0.01"
+                                        placeholder="Contoh: 2"
+                                        value={createForm.data.radius_km}
+                                        onChange={(e) => createForm.setData('radius_km', e.target.value)}
+                                        disabled={createForm.processing}
+                                        className="w-32"
+                                    />
+                                    <span className="text-sm text-neutral-500">km</span>
+                                </div>
+                                <p className="text-[11px] text-neutral-400">Radius lingkaran overlay saat pin diklik di peta. Default: 2 km.</p>
+                                <InputError message={createForm.errors.radius_km} />
+                            </div>
+
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <Label htmlFor="create_icon_map">Icon Map</Label>
@@ -597,6 +630,27 @@ export default function JenisPameranIndex({
                                     disabled={editForm.processing}
                                 />
                                 <InputError message={editForm.errors.jenis_pameran} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="edit_radius_km">Radius Peta (KM)</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        id="edit_radius_km"
+                                        type="number"
+                                        min="0"
+                                        max="999.99"
+                                        step="0.01"
+                                        placeholder="Contoh: 2"
+                                        value={editForm.data.radius_km}
+                                        onChange={(e) => editForm.setData('radius_km', e.target.value)}
+                                        disabled={editForm.processing}
+                                        className="w-32"
+                                    />
+                                    <span className="text-sm text-neutral-500">km</span>
+                                </div>
+                                <p className="text-[11px] text-neutral-400">Radius lingkaran overlay saat pin diklik di peta.</p>
+                                <InputError message={editForm.errors.radius_km} />
                             </div>
 
                             <div className="space-y-2">
