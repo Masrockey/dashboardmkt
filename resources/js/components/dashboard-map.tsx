@@ -12,6 +12,7 @@ import {
     Filter,
     Layers,
     MapPin,
+    Radio,
     RotateCcw,
     Search,
     Store,
@@ -60,6 +61,9 @@ export default function DashboardMap({
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
     const markersLayerRef = useRef<L.LayerGroup | null>(null);
+    const radiusCircleRef = useRef<L.Circle | null>(null);
+
+    const [showRadiusCircle, setShowRadiusCircle] = useState(false);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRentalFilter, setSelectedRentalFilter] = useState('all'); // all | berlangsung | akan_datang | selesai
@@ -326,10 +330,31 @@ export default function DashboardMap({
                 className: 'custom-dashboard-map-tooltip',
             });
 
-            // Klik pin untuk fokus dan melihat detail card
+            // Klik pin untuk fokus dan melihat detail card + radius 2km
             marker.on('click', () => {
                 setSelectedPameran(pameran);
+                setShowRadiusCircle(false);
                 map.panTo([lat, lng], { animate: true, duration: 0.5 });
+
+                // Hapus circle lama jika ada
+                if (radiusCircleRef.current) {
+                    radiusCircleRef.current.remove();
+                    radiusCircleRef.current = null;
+                }
+
+                // Gambar circle radius 2km
+                const circle = L.circle([lat, lng], {
+                    radius: 2000, // 2 km dalam meter
+                    color: '#3b82f6',
+                    fillColor: '#3b82f6',
+                    fillOpacity: 0.08,
+                    weight: 2,
+                    dashArray: '6 4',
+                    opacity: 0.7,
+                }).addTo(map);
+
+                radiusCircleRef.current = circle;
+                setShowRadiusCircle(true);
             });
 
             markersLayer.addLayer(marker);
@@ -502,7 +527,14 @@ export default function DashboardMap({
                                 </p>
                             </div>
                             <button
-                                onClick={() => setSelectedPameran(null)}
+                                onClick={() => {
+                                    setSelectedPameran(null);
+                                    setShowRadiusCircle(false);
+                                    if (radiusCircleRef.current) {
+                                        radiusCircleRef.current.remove();
+                                        radiusCircleRef.current = null;
+                                    }
+                                }}
                                 className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800"
                             >
                                 <X className="size-3.5" />
@@ -539,7 +571,32 @@ export default function DashboardMap({
                             )}
                         </div>
 
-                        <div className="mt-3 flex items-center justify-end gap-2 border-t border-neutral-100 pt-2.5 dark:border-neutral-800">
+                        <div className="mt-3 flex items-center justify-between gap-2 border-t border-neutral-100 pt-2.5 dark:border-neutral-800">
+                            {/* Toggle radius circle 2km */}
+                            <button
+                                onClick={() => {
+                                    const map = mapInstanceRef.current;
+                                    if (!map || !radiusCircleRef.current) return;
+
+                                    if (showRadiusCircle) {
+                                        radiusCircleRef.current.remove();
+                                        setShowRadiusCircle(false);
+                                    } else {
+                                        radiusCircleRef.current.addTo(map);
+                                        setShowRadiusCircle(true);
+                                    }
+                                }}
+                                className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                                    showRadiusCircle
+                                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-950/60 dark:text-blue-300'
+                                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400'
+                                }`}
+                                title="Tampilkan / sembunyikan area radius 2 km"
+                            >
+                                <Radio className="size-3" />
+                                {showRadiusCircle ? 'Sembunyikan Radius' : 'Radius 2 km'}
+                            </button>
+
                             <a
                                 href={`https://www.google.com/maps?q=${selectedPameran.latitude},${selectedPameran.longitude}`}
                                 target="_blank"
