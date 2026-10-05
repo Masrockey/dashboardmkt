@@ -9,7 +9,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
-test('authenticated users can view meet and greet page and only see honda and null category dealers', function () {
+test('authenticated users can view meet and greet page and only see honda category dealers', function () {
     $user = User::factory()->create(['role' => UserRole::Superadmin]);
 
     $hondaCat = Category::firstOrCreate(['nama_kategori' => 'HONDA']);
@@ -40,7 +40,7 @@ test('authenticated users can view meet and greet page and only see honda and nu
         ->component('meet-and-greet/index')
         ->has('dealers')
         ->where('dealers', fn ($dealers) => collect($dealers)->pluck('kode_dealer')->contains('DLR_HND_TEST')
-            && collect($dealers)->pluck('kode_dealer')->contains('DLR_NULL_TEST')
+            && ! collect($dealers)->pluck('kode_dealer')->contains('DLR_NULL_TEST')
             && ! collect($dealers)->pluck('kode_dealer')->contains('DLR_YMH_TEST')
         )
     );
@@ -70,7 +70,7 @@ test('authenticated users can create a meet and greet record with valid data', f
     ]);
 });
 
-test('guests can access public meet and greet form at /meetngreethonda and only see honda and null category dealers', function () {
+test('guests can access public meet and greet form at /meetngreethonda and only see honda category dealers', function () {
     $hondaCat = Category::firstOrCreate(['nama_kategori' => 'HONDA']);
     $yamahaCat = Category::firstOrCreate(['nama_kategori' => 'YAMAHA']);
 
@@ -100,7 +100,7 @@ test('guests can access public meet and greet form at /meetngreethonda and only 
         ->has('dealers')
         ->has('motorcycleTypes')
         ->where('dealers', fn ($dealers) => collect($dealers)->pluck('kode_dealer')->contains('DLR_HND_PUB')
-            && collect($dealers)->pluck('kode_dealer')->contains('DLR_NULL_PUB')
+            && ! collect($dealers)->pluck('kode_dealer')->contains('DLR_NULL_PUB')
             && ! collect($dealers)->pluck('kode_dealer')->contains('DLR_YMH_PUB')
         )
     );

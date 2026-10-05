@@ -21,11 +21,8 @@ class PublicMeetAndGreetController extends Controller
     {
         $dealers = Dealer::query()
             ->select(['id', 'kode_dealer', 'nama_dealer'])
-            ->where(function (Builder $query) {
-                $query->whereNull('category_id')
-                    ->orWhereHas('category', function (Builder $catQuery) {
-                        $catQuery->where('nama_kategori', 'HONDA');
-                    });
+            ->whereHas('category', function (Builder $query) {
+                $query->where('nama_kategori', 'HONDA');
             })
             ->orderBy('nama_dealer')
             ->get();

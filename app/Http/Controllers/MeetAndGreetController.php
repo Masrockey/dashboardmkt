@@ -60,11 +60,8 @@ class MeetAndGreetController extends Controller
 
         $dealers = Dealer::query()
             ->select(['id', 'kode_dealer', 'nama_dealer', 'category_id'])
-            ->where(function (Builder $query) {
-                $query->whereNull('category_id')
-                    ->orWhereHas('category', function (Builder $catQuery) {
-                        $catQuery->where('nama_kategori', 'HONDA');
-                    });
+            ->whereHas('category', function (Builder $catQuery) {
+                $catQuery->where('nama_kategori', 'HONDA');
             })
             ->when($user->isDealerOnly(), function (Builder $query) use ($user) {
                 if ($user->dealer_id) {
