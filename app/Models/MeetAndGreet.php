@@ -12,6 +12,21 @@ class MeetAndGreet extends Model
 {
     use HasFactory;
 
+    public const DEALER_ASAL_OPTIONS = [
+        'Krida Mataram',
+        'SPS Mataram',
+        'Daya Motor Bertais',
+        'SO Brawijaya',
+        'MPM',
+        'SO Ampenan',
+        'SO Sriwijaya',
+        'NSS Mataram',
+        'SO Gerung',
+        'TDM Mataram',
+        'Daya Selaparang',
+        'FIF Mataram',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -19,6 +34,7 @@ class MeetAndGreet extends Model
      */
     protected $fillable = [
         'no_registrasi',
+        'dealer_asal',
         'dealer_id',
         'nama_konsumen',
         'alamat',

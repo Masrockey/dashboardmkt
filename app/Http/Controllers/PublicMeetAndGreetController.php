@@ -19,14 +19,6 @@ class PublicMeetAndGreetController extends Controller
      */
     public function index(Request $request): Response
     {
-        $dealers = Dealer::query()
-            ->select(['id', 'kode_dealer', 'nama_dealer'])
-            ->whereHas('category', function (Builder $query) {
-                $query->where('nama_kategori', 'HONDA');
-            })
-            ->orderBy('nama_dealer')
-            ->get();
-
         $motorcycleTypes = Type::query()
             ->whereHas('category', function (Builder $query) {
                 $query->where('nama_kategori', 'HONDA');
@@ -51,7 +43,8 @@ class PublicMeetAndGreetController extends Controller
         }
 
         return Inertia::render('meet-and-greet/public', [
-            'dealers' => $dealers,
+            'dealers' => MeetAndGreet::DEALER_ASAL_OPTIONS,
+            'dealerOptions' => MeetAndGreet::DEALER_ASAL_OPTIONS,
             'motorcycleTypes' => $motorcycleTypes,
             'status' => session('success'),
             'registeredNo' => $registeredNo,
@@ -65,6 +58,14 @@ class PublicMeetAndGreetController extends Controller
     public function store(PublicMeetAndGreetStoreRequest $request): RedirectResponse
     {
         $data = $request->validated();
+
+        if (empty($data['dealer_id']) && ! empty($data['dealer_asal'])) {
+            $keyword = preg_replace('/^(SO|PT\.?\s*Astra\s*International\s*Tbk-Honda\s*-?)\s*/i', '', $data['dealer_asal']);
+            $matchedDealerId = Dealer::where('nama_dealer', 'like', "%{$keyword}%")->value('id');
+            if ($matchedDealerId) {
+                $data['dealer_id'] = $matchedDealerId;
+            }
+        }
 
         if ($request->hasFile('stnk')) {
             $path = $request->file('stnk')->store('meet-and-greet/stnk', 'public');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Dealer;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -16,16 +17,32 @@ class MeetAndGreetUpdateRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('dealer_asal') && $this->filled('dealer_id')) {
+            if (is_numeric($this->dealer_id)) {
+                $dealer = Dealer::find($this->dealer_id);
+                if ($dealer) {
+                    $this->merge(['dealer_asal' => $dealer->nama_dealer]);
+                }
+            } else {
+                $this->merge(['dealer_asal' => (string) $this->dealer_id]);
+            }
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $isDealer = $this->user()?->isDealerOnly();
-
         return [
-            'dealer_id' => $isDealer ? ['nullable', 'exists:dealers,id'] : ['required', 'exists:dealers,id'],
+            'dealer_asal' => ['required', 'string', 'max:100'],
+            'dealer_id' => ['nullable'],
             'nama_konsumen' => ['required', 'string', 'max:255'],
             'alamat' => ['required', 'string', 'max:1000'],
             'no_hp' => ['required', 'string', 'max:30'],

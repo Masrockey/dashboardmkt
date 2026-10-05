@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Dealer;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -16,6 +17,23 @@ class PublicMeetAndGreetStoreRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (! $this->filled('dealer_asal') && $this->filled('dealer_id')) {
+            if (is_numeric($this->dealer_id)) {
+                $dealer = Dealer::find($this->dealer_id);
+                if ($dealer) {
+                    $this->merge(['dealer_asal' => $dealer->nama_dealer]);
+                }
+            } else {
+                $this->merge(['dealer_asal' => (string) $this->dealer_id]);
+            }
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
@@ -23,7 +41,8 @@ class PublicMeetAndGreetStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'dealer_id' => ['required', 'exists:dealers,id'],
+            'dealer_asal' => ['required', 'string', 'max:100'],
+            'dealer_id' => ['nullable'],
             'nama_konsumen' => ['required', 'string', 'max:255'],
             'alamat' => ['required', 'string', 'max:1000'],
             'no_hp' => ['required', 'string', 'max:30'],
@@ -41,6 +60,7 @@ class PublicMeetAndGreetStoreRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'dealer_asal' => 'Nama Dealer Asal',
             'dealer_id' => 'Nama Dealer Asal',
             'nama_konsumen' => 'Nama Konsumen sesuai ID',
             'alamat' => 'Alamat',
@@ -59,8 +79,8 @@ class PublicMeetAndGreetStoreRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'dealer_asal.required' => 'Pilih salah satu Nama Dealer Asal.',
             'dealer_id.required' => 'Pilih salah satu Nama Dealer Asal.',
-            'dealer_id.exists' => 'Dealer yang dipilih tidak valid.',
             'nama_konsumen.required' => 'Nama Konsumen sesuai ID wajib diisi.',
             'alamat.required' => 'Alamat lengkap wajib diisi.',
             'no_hp.required' => 'Nomor HP aktif wajib diisi.',

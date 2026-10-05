@@ -24,9 +24,25 @@ import InputError from '@/components/input-error';
 import { Spinner } from '@/components/ui/spinner';
 import type { Dealer } from '@/types';
 
+export const DEALER_ASAL_OPTIONS = [
+    'Krida Mataram',
+    'SPS Mataram',
+    'Daya Motor Bertais',
+    'SO Brawijaya',
+    'MPM',
+    'SO Ampenan',
+    'SO Sriwijaya',
+    'NSS Mataram',
+    'SO Gerung',
+    'TDM Mataram',
+    'Daya Selaparang',
+    'FIF Mataram',
+] as const;
+
 interface RegistrationSuccessData {
     id: number;
     no_registrasi: string;
+    dealer_asal?: string;
     nama_konsumen: string;
     no_hp: string;
     alamat: string;
@@ -41,7 +57,8 @@ interface RegistrationSuccessData {
 }
 
 interface PublicMeetAndGreetProps {
-    dealers: Dealer[];
+    dealers?: string[] | Dealer[];
+    dealerOptions?: string[];
     motorcycleTypes: string[];
     status?: string;
     registeredNo?: string;
@@ -50,11 +67,19 @@ interface PublicMeetAndGreetProps {
 
 export default function PublicMeetAndGreet({
     dealers,
+    dealerOptions,
     motorcycleTypes,
     status,
     registeredNo,
     registrationSuccess,
 }: PublicMeetAndGreetProps) {
+    const activeDealerOptions =
+        dealerOptions && dealerOptions.length > 0
+            ? dealerOptions
+            : Array.isArray(dealers) && typeof dealers[0] === 'string'
+            ? (dealers as unknown as string[])
+            : DEALER_ASAL_OPTIONS;
+
     const [stnkFileName, setStnkFileName] = useState<string | null>(null);
     const [stnkFileSize, setStnkFileSize] = useState<string | null>(null);
     const [stnkPreview, setStnkPreview] = useState<string | null>(null);
@@ -105,6 +130,7 @@ export default function PublicMeetAndGreet({
     };
 
     const form = useForm<{
+        dealer_asal: string;
         dealer_id: string;
         nama_konsumen: string;
         alamat: string;
@@ -113,6 +139,7 @@ export default function PublicMeetAndGreet({
         no_plat: string;
         stnk: File | null;
     }>({
+        dealer_asal: '',
         dealer_id: '',
         nama_konsumen: '',
         alamat: '',
@@ -481,8 +508,10 @@ export default function PublicMeetAndGreet({
                                                 <div className="flex justify-between items-center border-b border-gray-200 pb-2 print:pb-1">
                                                     <span className="text-xs print:text-[10px] text-gray-500">Dealer Asal:</span>
                                                     <span className="font-bold text-gray-900 text-right">
-                                                        {registrationSuccess?.dealer?.nama_dealer ||
-                                                            dealers.find((d) => String(d.id) === String(form.data.dealer_id))?.nama_dealer ||
+                                                        {registrationSuccess?.dealer_asal ||
+                                                            registrationSuccess?.dealer?.nama_dealer ||
+                                                            form.data.dealer_asal ||
+                                                            form.data.dealer_id ||
                                                             '-'}
                                                     </span>
                                                 </div>
@@ -606,32 +635,35 @@ export default function PublicMeetAndGreet({
                                                     Nama Dealer Asal Pembelian / Servis <span className="text-red-600">*</span>
                                                 </span>
                                                 <span className="text-[11px] text-gray-500 font-normal">
-                                                    Pilih Dealer NTB
+                                                    Pilih Dealer Asal
                                                 </span>
                                             </label>
                                             <div className="relative">
                                                 <select
                                                     id="dealerName"
-                                                    value={form.data.dealer_id}
-                                                    onChange={(e) => form.setData('dealer_id', e.target.value)}
+                                                    value={form.data.dealer_asal}
+                                                    onChange={(e) => {
+                                                        form.setData('dealer_asal', e.target.value);
+                                                        form.setData('dealer_id', e.target.value);
+                                                    }}
                                                     required
                                                     disabled={form.processing}
                                                     className="w-full bg-[#f9fafb] text-gray-900 text-sm px-4 py-3 border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:bg-white cursor-pointer transition-colors"
                                                 >
                                                     <option disabled value="">
-                                                        -- Pilih Jaringan Dealer Resmi Honda NTB --
+                                                        -- Pilih Dealer Asal --
                                                     </option>
-                                                    {dealers.map((d) => (
-                                                        <option key={d.id} value={String(d.id)}>
-                                                            [{d.kode_dealer}] {d.nama_dealer}
+                                                    {activeDealerOptions.map((name) => (
+                                                        <option key={name} value={name}>
+                                                            {name}
                                                         </option>
                                                     ))}
                                                 </select>
                                                 <ChevronDown className="size-4 absolute right-3 top-3.5 pointer-events-none text-gray-500" />
                                             </div>
-                                            <InputError message={form.errors.dealer_id} />
+                                            <InputError message={form.errors.dealer_asal || form.errors.dealer_id} />
                                             <p className="text-[11px] text-gray-500">
-                                                Pastikan unit motor Honda Anda terdaftar di jaringan dealer resmi Astra Motor NTB.
+                                                Pilih cabang atau jaringan dealer resmi Honda asal unit motor Anda di area NTB.
                                             </p>
                                         </div>
 

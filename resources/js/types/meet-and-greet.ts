@@ -3,7 +3,8 @@ import type { Dealer } from './dealer';
 export interface MeetAndGreetItem {
     id: number;
     no_registrasi: string;
-    dealer_id: number;
+    dealer_asal?: string | null;
+    dealer_id: number | null;
     nama_konsumen: string;
     alamat: string;
     no_hp: string;

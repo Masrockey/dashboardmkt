@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\UserRole;
-use App\Models\Category;
 use App\Models\Dealer;
 use App\Models\MeetAndGreet;
 use App\Models\User;
@@ -9,29 +8,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
-test('authenticated users can view meet and greet page and only see honda category dealers', function () {
+test('authenticated users can view meet and greet page and see fixed dealer asal options', function () {
     $user = User::factory()->create(['role' => UserRole::Superadmin]);
-
-    $hondaCat = Category::firstOrCreate(['nama_kategori' => 'HONDA']);
-    $yamahaCat = Category::firstOrCreate(['nama_kategori' => 'YAMAHA']);
-
-    $hondaDealer = Dealer::factory()->create([
-        'kode_dealer' => 'DLR_HND_TEST',
-        'nama_dealer' => 'Honda Dealer Test',
-        'category_id' => $hondaCat->id,
-    ]);
-
-    $nullDealer = Dealer::factory()->create([
-        'kode_dealer' => 'DLR_NULL_TEST',
-        'nama_dealer' => 'Null Dealer Test',
-        'category_id' => null,
-    ]);
-
-    $yamahaDealer = Dealer::factory()->create([
-        'kode_dealer' => 'DLR_YMH_TEST',
-        'nama_dealer' => 'Yamaha Dealer Test',
-        'category_id' => $yamahaCat->id,
-    ]);
 
     $response = $this->actingAs($user)->get(route('meet-and-greet.index'));
 
@@ -39,9 +17,9 @@ test('authenticated users can view meet and greet page and only see honda catego
     $response->assertInertia(fn (Assert $page) => $page
         ->component('meet-and-greet/index')
         ->has('dealers')
-        ->where('dealers', fn ($dealers) => collect($dealers)->pluck('kode_dealer')->contains('DLR_HND_TEST')
-            && ! collect($dealers)->pluck('kode_dealer')->contains('DLR_NULL_TEST')
-            && ! collect($dealers)->pluck('kode_dealer')->contains('DLR_YMH_TEST')
+        ->where('dealers', fn ($dealers) => collect($dealers)->contains('Krida Mataram')
+            && collect($dealers)->contains('FIF Mataram')
+            && collect($dealers)->count() === 12
         )
     );
 });
@@ -49,11 +27,10 @@ test('authenticated users can view meet and greet page and only see honda catego
 test('authenticated users can create a meet and greet record with valid data', function () {
     Storage::fake('public');
 
-    $dealer = Dealer::factory()->create();
     $user = User::factory()->create(['role' => UserRole::Superadmin]);
 
     $response = $this->actingAs($user)->post(route('meet-and-greet.store'), [
-        'dealer_id' => $dealer->id,
+        'dealer_asal' => 'FIF Mataram',
         'nama_konsumen' => 'Budi Santoso',
         'alamat' => 'Jl. Pejanggik No. 12, Mataram',
         'no_hp' => '081234567890',
@@ -64,34 +41,13 @@ test('authenticated users can create a meet and greet record with valid data', f
 
     $response->assertRedirect(route('meet-and-greet.index'));
     $this->assertDatabaseHas('meet_and_greets', [
-        'dealer_id' => $dealer->id,
+        'dealer_asal' => 'FIF Mataram',
         'nama_konsumen' => 'Budi Santoso',
         'no_plat' => 'DR 1234 AB',
     ]);
 });
 
-test('guests can access public meet and greet form at /meetngreethonda and only see honda category dealers', function () {
-    $hondaCat = Category::firstOrCreate(['nama_kategori' => 'HONDA']);
-    $yamahaCat = Category::firstOrCreate(['nama_kategori' => 'YAMAHA']);
-
-    Dealer::factory()->create([
-        'kode_dealer' => 'DLR_HND_PUB',
-        'nama_dealer' => 'Honda Dealer Public',
-        'category_id' => $hondaCat->id,
-    ]);
-
-    Dealer::factory()->create([
-        'kode_dealer' => 'DLR_NULL_PUB',
-        'nama_dealer' => 'Null Dealer Public',
-        'category_id' => null,
-    ]);
-
-    Dealer::factory()->create([
-        'kode_dealer' => 'DLR_YMH_PUB',
-        'nama_dealer' => 'Yamaha Dealer Public',
-        'category_id' => $yamahaCat->id,
-    ]);
-
+test('guests can access public meet and greet form at /meetngreethonda and see fixed dealer asal options', function () {
     $response = $this->get(route('meetngreethonda.index'));
 
     $response->assertOk();
@@ -99,9 +55,10 @@ test('guests can access public meet and greet form at /meetngreethonda and only 
         ->component('meet-and-greet/public')
         ->has('dealers')
         ->has('motorcycleTypes')
-        ->where('dealers', fn ($dealers) => collect($dealers)->pluck('kode_dealer')->contains('DLR_HND_PUB')
-            && ! collect($dealers)->pluck('kode_dealer')->contains('DLR_NULL_PUB')
-            && ! collect($dealers)->pluck('kode_dealer')->contains('DLR_YMH_PUB')
+        ->where('dealers', fn ($dealers) => collect($dealers)->contains('Krida Mataram')
+            && collect($dealers)->contains('FIF Mataram')
+            && collect($dealers)->contains('Daya Selaparang')
+            && collect($dealers)->count() === 12
         )
     );
 });
@@ -109,10 +66,8 @@ test('guests can access public meet and greet form at /meetngreethonda and only 
 test('guests can submit meet and greet registration form via public route', function () {
     Storage::fake('public');
 
-    $dealer = Dealer::factory()->create();
-
     $response = $this->post(route('meetngreethonda.store'), [
-        'dealer_id' => $dealer->id,
+        'dealer_asal' => 'FIF Mataram',
         'nama_konsumen' => 'Siti Rahma',
         'alamat' => 'Jl. Airlangga No. 45, Mataram',
         'no_hp' => '087812345678',
@@ -123,14 +78,15 @@ test('guests can submit meet and greet registration form via public route', func
 
     $saved = MeetAndGreet::where('nama_konsumen', 'Siti Rahma')->first();
     expect($saved)->not->toBeNull()
-        ->and($saved->no_registrasi)->toStartWith('MNG-'.now()->format('Ymd').'-');
+        ->and($saved->no_registrasi)->toStartWith('MNG-'.now()->format('Ymd').'-')
+        ->and($saved->dealer_asal)->toBe('FIF Mataram');
 
     $response->assertRedirect(route('meetngreethonda.index', ['registered' => $saved->no_registrasi]));
     $response->assertSessionHas('success');
     $response->assertSessionHas('no_registrasi');
 
     $this->assertDatabaseHas('meet_and_greets', [
-        'dealer_id' => $dealer->id,
+        'dealer_asal' => 'FIF Mataram',
         'nama_konsumen' => 'Siti Rahma',
         'tipe_motor' => 'Vario 160',
         'no_plat' => 'DR 5678 XY',

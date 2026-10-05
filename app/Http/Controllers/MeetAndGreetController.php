@@ -23,7 +23,7 @@ class MeetAndGreetController extends Controller
     {
         $user = $request->user();
         $search = $request->string('search')->toString();
-        $dealerFilter = $request->input('dealer_id');
+        $dealerFilter = $request->input('dealer_asal') ?: $request->input('dealer_id');
 
         $meetAndGreets = MeetAndGreet::query()
             ->with([
@@ -38,12 +38,17 @@ class MeetAndGreetController extends Controller
                 }
             })
             ->when($dealerFilter && ! $user->isDealerOnly(), function (Builder $query) use ($dealerFilter) {
-                $query->where('dealer_id', $dealerFilter);
+                if (is_numeric($dealerFilter)) {
+                    $query->where('dealer_id', $dealerFilter);
+                } else {
+                    $query->where('dealer_asal', $dealerFilter);
+                }
             })
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $sub) use ($search) {
                     $sub->where('nama_konsumen', 'like', "%{$search}%")
                         ->orWhere('no_registrasi', 'like', "%{$search}%")
+                        ->orWhere('dealer_asal', 'like', "%{$search}%")
                         ->orWhere('no_hp', 'like', "%{$search}%")
                         ->orWhere('no_plat', 'like', "%{$search}%")
                         ->orWhere('tipe_motor', 'like', "%{$search}%")
@@ -57,21 +62,6 @@ class MeetAndGreetController extends Controller
             ->latest('id')
             ->paginate(10)
             ->withQueryString();
-
-        $dealers = Dealer::query()
-            ->select(['id', 'kode_dealer', 'nama_dealer', 'category_id'])
-            ->whereHas('category', function (Builder $catQuery) {
-                $catQuery->where('nama_kategori', 'HONDA');
-            })
-            ->when($user->isDealerOnly(), function (Builder $query) use ($user) {
-                if ($user->dealer_id) {
-                    $query->where('id', $user->dealer_id);
-                } else {
-                    $query->whereRaw('1 = 0');
-                }
-            })
-            ->orderBy('nama_dealer')
-            ->get();
 
         $motorcycleTypes = Type::query()
             ->whereHas('category', function (Builder $query) {
@@ -88,11 +78,13 @@ class MeetAndGreetController extends Controller
 
         return Inertia::render('meet-and-greet/index', [
             'meetAndGreets' => $meetAndGreets,
-            'dealers' => $dealers,
+            'dealers' => MeetAndGreet::DEALER_ASAL_OPTIONS,
+            'dealerOptions' => MeetAndGreet::DEALER_ASAL_OPTIONS,
             'motorcycleTypes' => $motorcycleTypes,
             'filters' => [
                 'search' => $search,
                 'dealer_id' => $dealerFilter,
+                'dealer_asal' => $dealerFilter,
             ],
         ]);
     }
@@ -110,6 +102,17 @@ class MeetAndGreetController extends Controller
                 abort(403, 'Akun Anda belum terhubung dengan data Dealer.');
             }
             $data['dealer_id'] = $user->dealer_id;
+            if (empty($data['dealer_asal']) && $user->dealer) {
+                $data['dealer_asal'] = $user->dealer->nama_dealer;
+            }
+        }
+
+        if (empty($data['dealer_id']) && ! empty($data['dealer_asal'])) {
+            $keyword = preg_replace('/^(SO|PT\.?\s*Astra\s*International\s*Tbk-Honda\s*-?)\s*/i', '', $data['dealer_asal']);
+            $matchedDealerId = Dealer::where('nama_dealer', 'like', "%{$keyword}%")->value('id');
+            if ($matchedDealerId) {
+                $data['dealer_id'] = $matchedDealerId;
+            }
         }
 
         if ($request->hasFile('stnk')) {
@@ -145,6 +148,17 @@ class MeetAndGreetController extends Controller
 
         if ($user->isDealerOnly()) {
             $data['dealer_id'] = $user->dealer_id;
+            if (empty($data['dealer_asal']) && $user->dealer) {
+                $data['dealer_asal'] = $user->dealer->nama_dealer;
+            }
+        }
+
+        if (empty($data['dealer_id']) && ! empty($data['dealer_asal'])) {
+            $keyword = preg_replace('/^(SO|PT\.?\s*Astra\s*International\s*Tbk-Honda\s*-?)\s*/i', '', $data['dealer_asal']);
+            $matchedDealerId = Dealer::where('nama_dealer', 'like', "%{$keyword}%")->value('id');
+            if ($matchedDealerId) {
+                $data['dealer_id'] = $matchedDealerId;
+            }
         }
 
         if ($request->hasFile('stnk')) {

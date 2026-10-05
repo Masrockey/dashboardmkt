@@ -55,22 +55,46 @@ import { Textarea } from '@/components/ui/textarea';
 import { dashboard } from '@/routes';
 import type { Dealer, MeetAndGreetItem, PaginatedMeetAndGreets } from '@/types';
 
+export const DEALER_ASAL_OPTIONS = [
+    'Krida Mataram',
+    'SPS Mataram',
+    'Daya Motor Bertais',
+    'SO Brawijaya',
+    'MPM',
+    'SO Ampenan',
+    'SO Sriwijaya',
+    'NSS Mataram',
+    'SO Gerung',
+    'TDM Mataram',
+    'Daya Selaparang',
+    'FIF Mataram',
+] as const;
+
 interface MeetAndGreetIndexProps {
     meetAndGreets: PaginatedMeetAndGreets;
-    dealers: Dealer[];
+    dealers?: string[] | Dealer[];
+    dealerOptions?: string[];
     motorcycleTypes: string[];
     filters: {
         search?: string;
         dealer_id?: string;
+        dealer_asal?: string;
     };
 }
 
 export default function MeetAndGreetIndex({
     meetAndGreets,
     dealers,
+    dealerOptions,
     motorcycleTypes,
     filters,
 }: MeetAndGreetIndexProps) {
+    const availableDealerOptions: readonly string[] =
+        dealerOptions && dealerOptions.length > 0
+            ? dealerOptions
+            : Array.isArray(dealers) && dealers.length > 0 && typeof dealers[0] === 'string'
+              ? (dealers as unknown as string[])
+              : DEALER_ASAL_OPTIONS;
     const { auth } = usePage<{
         auth: {
             user: {
@@ -86,7 +110,9 @@ export default function MeetAndGreetIndex({
     const isDealerUser = currentUser.role === 'dealer';
 
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
-    const [selectedDealerFilter, setSelectedDealerFilter] = useState(filters.dealer_id || 'all');
+    const [selectedDealerFilter, setSelectedDealerFilter] = useState(
+        filters.dealer_asal || filters.dealer_id || 'all',
+    );
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -101,6 +127,7 @@ export default function MeetAndGreetIndex({
 
     // Create Form
     const createForm = useForm<{
+        dealer_asal: string;
         dealer_id: string;
         nama_konsumen: string;
         alamat: string;
@@ -109,6 +136,7 @@ export default function MeetAndGreetIndex({
         no_plat: string;
         stnk: File | null;
     }>({
+        dealer_asal: '',
         dealer_id: isDealerUser && currentUser.dealer_id ? String(currentUser.dealer_id) : '',
         nama_konsumen: '',
         alamat: '',
@@ -121,6 +149,7 @@ export default function MeetAndGreetIndex({
     // Edit Form
     const editForm = useForm<{
         _method: string;
+        dealer_asal: string;
         dealer_id: string;
         nama_konsumen: string;
         alamat: string;
@@ -130,6 +159,7 @@ export default function MeetAndGreetIndex({
         stnk: File | null;
     }>({
         _method: 'PUT',
+        dealer_asal: '',
         dealer_id: '',
         nama_konsumen: '',
         alamat: '',
@@ -148,6 +178,7 @@ export default function MeetAndGreetIndex({
             '/meet-and-greet',
             {
                 search: searchQuery || undefined,
+                dealer_asal: selectedDealerFilter !== 'all' ? selectedDealerFilter : undefined,
                 dealer_id: selectedDealerFilter !== 'all' ? selectedDealerFilter : undefined,
             },
             {
@@ -215,7 +246,8 @@ export default function MeetAndGreetIndex({
         setSelectedItem(item);
         editForm.setData({
             _method: 'PUT',
-            dealer_id: String(item.dealer_id),
+            dealer_asal: item.dealer_asal || item.dealer?.nama_dealer || '',
+            dealer_id: item.dealer_id ? String(item.dealer_id) : '',
             nama_konsumen: item.nama_konsumen,
             alamat: item.alamat,
             no_hp: item.no_hp,
@@ -352,6 +384,7 @@ export default function MeetAndGreetIndex({
                                         '/meet-and-greet',
                                         {
                                             search: searchQuery || undefined,
+                                            dealer_asal: val !== 'all' ? val : undefined,
                                             dealer_id: val !== 'all' ? val : undefined,
                                         },
                                         {
@@ -362,13 +395,13 @@ export default function MeetAndGreetIndex({
                                 }}
                             >
                                 <SelectTrigger className="w-[200px] h-9 text-xs">
-                                    <SelectValue placeholder="Semua Dealer" />
+                                    <SelectValue placeholder="Semua Dealer Asal" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Semua Dealer</SelectItem>
-                                    {dealers.map((d) => (
-                                        <SelectItem key={d.id} value={String(d.id)}>
-                                            [{d.kode_dealer}] {d.nama_dealer}
+                                    <SelectItem value="all">Semua Dealer Asal</SelectItem>
+                                    {availableDealerOptions.map((d) => (
+                                        <SelectItem key={d} value={d}>
+                                            {d}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -458,7 +491,7 @@ export default function MeetAndGreetIndex({
                                             <TableCell>
                                                 <div className="flex flex-col">
                                                     <span className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">
-                                                        {item.dealer?.nama_dealer || '-'}
+                                                        {item.dealer_asal || item.dealer?.nama_dealer || '-'}
                                                     </span>
                                                     {item.dealer?.kode_dealer && (
                                                         <span className="font-mono text-xs text-neutral-500">
@@ -641,37 +674,26 @@ export default function MeetAndGreetIndex({
                         </div>
                         {/* Nama Dealer Asal */}
                         <div className="space-y-1.5">
-                            <Label htmlFor="create_dealer_id">
+                            <Label htmlFor="create_dealer_asal">
                                 Nama Dealer Asal <span className="text-red-500">*</span>
                             </Label>
-                            {isDealerUser ? (
-                                <Input
-                                    value={
-                                        dealers.find((d) => String(d.id) === String(currentUser.dealer_id))
-                                            ?.nama_dealer || 'Dealer Anda'
-                                    }
-                                    disabled
-                                    className="bg-neutral-100 dark:bg-neutral-800"
-                                />
-                            ) : (
-                                <Select
-                                    value={createForm.data.dealer_id}
-                                    onValueChange={(val) => createForm.setData('dealer_id', val)}
-                                    disabled={createForm.processing}
-                                >
-                                    <SelectTrigger id="create_dealer_id" className="w-full">
-                                        <SelectValue placeholder="-- Pilih Dealer Asal --" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {dealers.map((d) => (
-                                            <SelectItem key={d.id} value={String(d.id)}>
-                                                [{d.kode_dealer}] {d.nama_dealer}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
-                            <InputError message={createForm.errors.dealer_id} />
+                            <Select
+                                value={createForm.data.dealer_asal}
+                                onValueChange={(val) => createForm.setData('dealer_asal', val)}
+                                disabled={createForm.processing}
+                            >
+                                <SelectTrigger id="create_dealer_asal" className="w-full">
+                                    <SelectValue placeholder="-- Pilih Dealer Asal --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableDealerOptions.map((option) => (
+                                        <SelectItem key={option} value={option}>
+                                            {option}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <InputError message={createForm.errors.dealer_asal || createForm.errors.dealer_id} />
                         </div>
 
                         {/* Nama Konsumen Sesuai ID */}
@@ -844,37 +866,26 @@ export default function MeetAndGreetIndex({
                         )}
                         {/* Nama Dealer Asal */}
                         <div className="space-y-1.5">
-                            <Label htmlFor="edit_dealer_id">
+                            <Label htmlFor="edit_dealer_asal">
                                 Nama Dealer Asal <span className="text-red-500">*</span>
                             </Label>
-                            {isDealerUser ? (
-                                <Input
-                                    value={
-                                        dealers.find((d) => String(d.id) === String(currentUser.dealer_id))
-                                            ?.nama_dealer || 'Dealer Anda'
-                                    }
-                                    disabled
-                                    className="bg-neutral-100 dark:bg-neutral-800"
-                                />
-                            ) : (
-                                <Select
-                                    value={editForm.data.dealer_id}
-                                    onValueChange={(val) => editForm.setData('dealer_id', val)}
-                                    disabled={editForm.processing}
-                                >
-                                    <SelectTrigger id="edit_dealer_id" className="w-full">
-                                        <SelectValue placeholder="-- Pilih Dealer Asal --" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {dealers.map((d) => (
-                                            <SelectItem key={d.id} value={String(d.id)}>
-                                                [{d.kode_dealer}] {d.nama_dealer}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
-                            <InputError message={editForm.errors.dealer_id} />
+                            <Select
+                                value={editForm.data.dealer_asal}
+                                onValueChange={(val) => editForm.setData('dealer_asal', val)}
+                                disabled={editForm.processing}
+                            >
+                                <SelectTrigger id="edit_dealer_asal" className="w-full">
+                                    <SelectValue placeholder="-- Pilih Dealer Asal --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableDealerOptions.map((option) => (
+                                        <SelectItem key={option} value={option}>
+                                            {option}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <InputError message={editForm.errors.dealer_asal || editForm.errors.dealer_id} />
                         </div>
 
                         {/* Nama Konsumen Sesuai ID */}
