@@ -63,7 +63,6 @@ export const DEALER_ASAL_OPTIONS = [
     'MPM',
     'SO Ampenan',
     'SO Sriwijaya',
-    'NSS Mataram',
     'SO Gerung',
     'TDM Mataram',
     'Daya Selaparang',
@@ -93,8 +92,8 @@ export default function MeetAndGreetIndex({
         dealerOptions && dealerOptions.length > 0
             ? dealerOptions
             : Array.isArray(dealers) && dealers.length > 0 && typeof dealers[0] === 'string'
-              ? (dealers as unknown as string[])
-              : DEALER_ASAL_OPTIONS;
+                ? (dealers as unknown as string[])
+                : DEALER_ASAL_OPTIONS;
     const { auth } = usePage<{
         auth: {
             user: {

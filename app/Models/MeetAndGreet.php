@@ -20,7 +20,6 @@ class MeetAndGreet extends Model
         'MPM',
         'SO Ampenan',
         'SO Sriwijaya',
-        'NSS Mataram',
         'SO Gerung',
         'TDM Mataram',
         'Daya Selaparang',

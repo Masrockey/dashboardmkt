@@ -32,7 +32,6 @@ export const DEALER_ASAL_OPTIONS = [
     'MPM',
     'SO Ampenan',
     'SO Sriwijaya',
-    'NSS Mataram',
     'SO Gerung',
     'TDM Mataram',
     'Daya Selaparang',
@@ -77,8 +76,8 @@ export default function PublicMeetAndGreet({
         dealerOptions && dealerOptions.length > 0
             ? dealerOptions
             : Array.isArray(dealers) && typeof dealers[0] === 'string'
-            ? (dealers as unknown as string[])
-            : DEALER_ASAL_OPTIONS;
+                ? (dealers as unknown as string[])
+                : DEALER_ASAL_OPTIONS;
 
     const [stnkFileName, setStnkFileName] = useState<string | null>(null);
     const [stnkFileSize, setStnkFileSize] = useState<string | null>(null);
@@ -509,7 +508,6 @@ export default function PublicMeetAndGreet({
                                                         {registrationSuccess?.dealer_asal ||
                                                             registrationSuccess?.dealer?.nama_dealer ||
                                                             form.data.dealer_asal ||
-                                                            form.data.dealer_id ||
                                                             '-'}
                                                     </span>
                                                 </div>
@@ -658,7 +656,7 @@ export default function PublicMeetAndGreet({
                                                 </select>
                                                 <ChevronDown className="size-4 absolute right-3 top-3.5 pointer-events-none text-gray-500" />
                                             </div>
-                                            <InputError message={form.errors.dealer_asal || form.errors.dealer_id} />
+                                            <InputError message={form.errors.dealer_asal} />
                                             <p className="text-[11px] text-gray-500">
                                                 Pilih cabang atau jaringan dealer resmi Honda asal unit motor Anda di area NTB.
                                             </p>
@@ -921,236 +919,236 @@ export default function PublicMeetAndGreet({
                                     </form>
                                 </div>
 
-                            {/* RIGHT COLUMN: Sticky Event & Rider Information Display (38% Desktop) */}
-                            <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-14">
-                                {/* Lineup Highlight: Riders Honda (Moto2, Moto3 & Moto4 Asia Cup) */}
-                                <div className="bg-white border border-gray-200 p-6 shadow-xs flex flex-col gap-5">
-                                    <div className="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-2.5 h-2.5 bg-red-600"></span>
+                                {/* RIGHT COLUMN: Sticky Event & Rider Information Display (38% Desktop) */}
+                                <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-14">
+                                    {/* Lineup Highlight: Riders Honda (Moto2, Moto3 & Moto4 Asia Cup) */}
+                                    <div className="bg-white border border-gray-200 p-6 shadow-xs flex flex-col gap-5">
+                                        <div className="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2.5 h-2.5 bg-red-600"></span>
+                                                <span className="text-base font-bold uppercase italic text-gray-900">
+                                                    Official Riders Lineup
+                                                </span>
+                                            </div>
+                                            <span className="text-[11px] text-red-600 font-bold bg-red-50 border border-red-200 px-2 py-0.5">
+                                                AHRT HEROES
+                                            </span>
+                                        </div>
+
+                                        {/* Hero Riders Preview Image Card */}
+                                        <div className="relative w-full overflow-hidden bg-gray-100 border border-gray-200">
+                                            <img
+                                                className="w-full h-56 object-cover object-top hover:scale-105 transition-transform duration-500"
+                                                alt="Astra Honda Racing Team Riders"
+                                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoiD8yX3hnewjP99vbHehq6J1YymruZncjI737XLmbRwRmVd0ZbT8SzrZxddizzyaFF_ZMdMdV1J2_jvMmSM4OnyUnUELgrKcPibV6k16UaTbD5P-lkj15i5AuckpAzu2iGQ7LJiv3LK_z4FZ9KZeL_o5EoXZF_-0Fy9UM2wcxboCv-uCdheyQG2DWdz1rI2700k-f_SSXvICw1unI3e99LtYRMmpyFfYPfY5h4mnZ9lWAJC5ZKkNKS6dFPFgVKncMlA"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                                            <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+                                                <span className="bg-red-600 text-white font-['Anybody',sans-serif] text-sm italic font-black px-2.5 py-1 uppercase shadow-xs">
+                                                    Astra Honda Racing Team
+                                                </span>
+                                                <span className="bg-white/90 text-gray-900 text-[11px] px-2 py-1 font-bold backdrop-blur-xs">
+                                                    MANDALIKA 2026
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Rider Grid List */}
+                                        <div className="grid grid-cols-2 gap-2.5">
+                                            {/* Rider 1: Mario Aji */}
+                                            <div className="bg-gray-50 border border-gray-200 p-3 flex flex-col">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="px-1.5 py-0.5 bg-white border border-gray-200 font-['Anybody',sans-serif] text-xl text-red-600 font-black italic">
+                                                        #64
+                                                    </span>
+                                                    <span className="text-[11px] px-1.5 py-0.5 bg-red-600 text-white font-bold">
+                                                        MOTO2
+                                                    </span>
+                                                </div>
+                                                <span className="text-base font-bold uppercase text-gray-900 italic leading-tight">
+                                                    MARIO AJI
+                                                </span>
+                                                <span className="text-[11px] text-gray-500">Honda Team Asia • Moto2</span>
+                                            </div>
+
+                                            {/* Rider 2: Veda Pratama */}
+                                            <div className="bg-gray-50 border border-gray-200 p-3 flex flex-col">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="px-1.5 py-0.5 bg-white border border-gray-200 font-['Anybody',sans-serif] text-xl text-red-600 font-black italic">
+                                                        #9
+                                                    </span>
+                                                    <span className="text-[11px] px-1.5 py-0.5 bg-red-600 text-white font-bold">
+                                                        MOTO3
+                                                    </span>
+                                                </div>
+                                                <span className="text-base font-bold uppercase text-gray-900 italic leading-tight">
+                                                    VEDA PRATAMA
+                                                </span>
+                                                <span className="text-[11px] text-gray-500">Red Bull MotoGP Rookies Cup</span>
+                                            </div>
+
+                                            {/* Rider 3: Resky & Maulana */}
+                                            <div className="bg-gray-50 border border-gray-200 p-3 flex flex-col">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-[11px] text-red-600 font-bold">#22 • #17</span>
+                                                    <span className="text-[11px] px-1.5 py-0.5 bg-gray-200 text-gray-800 font-bold">
+                                                        MOTO4
+                                                    </span>
+                                                </div>
+                                                <span className="text-base font-bold uppercase text-gray-900 italic leading-tight">
+                                                    RESKY &amp; MAULANA
+                                                </span>
+                                                <span className="text-[11px] text-gray-500">Asia Talent Cup Squad</span>
+                                            </div>
+
+                                            {/* Rider 4: Badly & Bintang */}
+                                            <div className="bg-gray-50 border border-gray-200 p-3 flex flex-col">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-[11px] text-red-600 font-bold">#13 • #3</span>
+                                                    <span className="text-[11px] px-1.5 py-0.5 bg-gray-200 text-gray-800 font-bold">
+                                                        MOTO4
+                                                    </span>
+                                                </div>
+                                                <span className="text-base font-bold uppercase text-gray-900 italic leading-tight">
+                                                    BADLY &amp; BINTANG
+                                                </span>
+                                                <span className="text-[11px] text-gray-500">Astra Honda Racing School</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Syarat & Ketentuan Masuk Paddock Card */}
+                                    <div className="bg-white border border-gray-200 p-6 shadow-xs flex flex-col gap-4">
+                                        <div className="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2">
                                             <span className="text-base font-bold uppercase italic text-gray-900">
-                                                Official Riders Lineup
+                                                Syarat &amp; Ketentuan Acara
+                                            </span>
+                                            <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 uppercase">
+                                                Ketentuan
                                             </span>
                                         </div>
-                                        <span className="text-[11px] text-red-600 font-bold bg-red-50 border border-red-200 px-2 py-0.5">
-                                            AHRT HEROES
-                                        </span>
-                                    </div>
-
-                                    {/* Hero Riders Preview Image Card */}
-                                    <div className="relative w-full overflow-hidden bg-gray-100 border border-gray-200">
-                                        <img
-                                            className="w-full h-56 object-cover object-top hover:scale-105 transition-transform duration-500"
-                                            alt="Astra Honda Racing Team Riders"
-                                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoiD8yX3hnewjP99vbHehq6J1YymruZncjI737XLmbRwRmVd0ZbT8SzrZxddizzyaFF_ZMdMdV1J2_jvMmSM4OnyUnUELgrKcPibV6k16UaTbD5P-lkj15i5AuckpAzu2iGQ7LJiv3LK_z4FZ9KZeL_o5EoXZF_-0Fy9UM2wcxboCv-uCdheyQG2DWdz1rI2700k-f_SSXvICw1unI3e99LtYRMmpyFfYPfY5h4mnZ9lWAJC5ZKkNKS6dFPFgVKncMlA"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                                        <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-                                            <span className="bg-red-600 text-white font-['Anybody',sans-serif] text-sm italic font-black px-2.5 py-1 uppercase shadow-xs">
-                                                Astra Honda Racing Team
-                                            </span>
-                                            <span className="bg-white/90 text-gray-900 text-[11px] px-2 py-1 font-bold backdrop-blur-xs">
-                                                MANDALIKA 2026
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Rider Grid List */}
-                                    <div className="grid grid-cols-2 gap-2.5">
-                                        {/* Rider 1: Mario Aji */}
-                                        <div className="bg-gray-50 border border-gray-200 p-3 flex flex-col">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="px-1.5 py-0.5 bg-white border border-gray-200 font-['Anybody',sans-serif] text-xl text-red-600 font-black italic">
-                                                    #64
+                                        <ul className="space-y-3 text-sm text-gray-700">
+                                            <li className="flex items-start gap-3">
+                                                <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+                                                <span>
+                                                    Pria / Wanita konsumen resmi pemilik sepeda motor <strong className="text-gray-900">Honda</strong> domisili Nusa Tenggara Barat.
                                                 </span>
-                                                <span className="text-[11px] px-1.5 py-0.5 bg-red-600 text-white font-bold">
-                                                    MOTO2
+                                            </li>
+                                            <li className="flex items-start gap-3">
+                                                <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+                                                <span>
+                                                    Menyukai dan berantusiasme tinggi terhadap dunia <strong className="text-gray-900">Racing &amp; Motorsport Indonesia</strong>.
                                                 </span>
-                                            </div>
-                                            <span className="text-base font-bold uppercase text-gray-900 italic leading-tight">
-                                                MARIO AJI
-                                            </span>
-                                            <span className="text-[11px] text-gray-500">Honda Team Asia • Moto2</span>
-                                        </div>
+                                            </li>
+                                            <li className="flex items-start gap-3">
+                                                <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+                                                <span>
+                                                    Wajib dapat menunjukkan <strong className="text-gray-900">Fisik STNK Asli Honda</strong> dan e-KTP yang cocok saat registrasi ulang di venue.
+                                                </span>
+                                            </li>
+                                            <li className="flex items-start gap-3">
+                                                <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+                                                <span>
+                                                    Follow akun resmi Instagram <strong className="text-red-600 font-bold">@hondantb.official</strong>.
+                                                </span>
+                                            </li>
+                                            <li className="flex items-start gap-3">
+                                                <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+                                                <span>
+                                                    Memberikan komentar <strong className="text-gray-900">"Honda"</strong> serta men-tag 3 teman pada postingan Meet &amp; Greet.
+                                                </span>
+                                            </li>
+                                            <li className="flex items-start gap-3">
+                                                <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+                                                <span className="text-gray-700">
+                                                    Tim Honda NTB akan menghubungi melalui Direct Message (DM) Instagram dan WhatsApp untuk mengirimkan e-invitation pass resmi.
+                                                </span>
+                                            </li>
+                                        </ul>
 
-                                        {/* Rider 2: Veda Pratama */}
-                                        <div className="bg-gray-50 border border-gray-200 p-3 flex flex-col">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="px-1.5 py-0.5 bg-white border border-gray-200 font-['Anybody',sans-serif] text-xl text-red-600 font-black italic">
-                                                    #9
+                                        {/* Periode Pendaftaran Pill */}
+                                        <div className="mt-2 p-3 bg-red-50 border border-red-200 flex items-center justify-between">
+                                            <div className="flex flex-col">
+                                                <span className="text-[11px] text-gray-600 uppercase font-semibold">
+                                                    Periode Pendaftaran
                                                 </span>
-                                                <span className="text-[11px] px-1.5 py-0.5 bg-red-600 text-white font-bold">
-                                                    MOTO3
-                                                </span>
-                                            </div>
-                                            <span className="text-base font-bold uppercase text-gray-900 italic leading-tight">
-                                                VEDA PRATAMA
-                                            </span>
-                                            <span className="text-[11px] text-gray-500">Red Bull MotoGP Rookies Cup</span>
-                                        </div>
-
-                                        {/* Rider 3: Resky & Maulana */}
-                                        <div className="bg-gray-50 border border-gray-200 p-3 flex flex-col">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-[11px] text-red-600 font-bold">#22 • #17</span>
-                                                <span className="text-[11px] px-1.5 py-0.5 bg-gray-200 text-gray-800 font-bold">
-                                                    MOTO4
+                                                <span className="text-base text-red-600 font-bold">
+                                                    2 - 5 Oktober 2026
                                                 </span>
                                             </div>
-                                            <span className="text-base font-bold uppercase text-gray-900 italic leading-tight">
-                                                RESKY &amp; MAULANA
-                                            </span>
-                                            <span className="text-[11px] text-gray-500">Asia Talent Cup Squad</span>
+                                            <Timer className="size-6 text-red-600" />
                                         </div>
+                                    </div>
 
-                                        {/* Rider 4: Badly & Bintang */}
-                                        <div className="bg-gray-50 border border-gray-200 p-3 flex flex-col">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-[11px] text-red-600 font-bold">#13 • #3</span>
-                                                <span className="text-[11px] px-1.5 py-0.5 bg-gray-200 text-gray-800 font-bold">
-                                                    MOTO4
+                                    {/* Venue Location Map Card */}
+                                    <div className="bg-white border border-gray-200 p-6 shadow-xs flex flex-col gap-4">
+                                        <div className="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2">
+                                            <span className="text-base font-bold uppercase italic text-gray-900">
+                                                Venue Map
+                                            </span>
+                                            <span className="text-[11px] text-red-600 font-mono font-bold">
+                                                DAPUR SASAK
+                                            </span>
+                                        </div>
+                                        <div
+                                            className="w-full h-44 border border-gray-200 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden bg-cover bg-center"
+                                            style={{
+                                                backgroundImage:
+                                                    "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBB9-44rzIlhHdzm0AHfhRdaD_OR5iL-lYYKuZVfzoxJOpPYz69DtxCk8zkIB-E-B8uiG81H1LJ1bGN8pqD8tjoMB2ycVkBlSHhpd1IdnvG4IumwjWYviJLoK5BLbEa7j22U6SxalXH4MzMwU3TVjLbMBEsZ9QeYnV5XYj2nDeAzguSUk0mmAxu-LOfusxkHiQlS-MNdnumFFZocC2NW4RdRDZmmovENjWA2w-KGKWKjcWdtEcu_Z6N')",
+                                            }}
+                                        >
+                                            <div className="absolute inset-0 bg-white/75 backdrop-blur-[1px]"></div>
+                                            <div className="relative z-10 flex flex-col items-center gap-1">
+                                                <MapPin className="size-8 text-red-600 animate-bounce" />
+                                                <span className="text-base font-bold text-gray-900 uppercase">
+                                                    Dapur Sasak, Udayana
+                                                </span>
+                                                <span className="text-[11px] text-gray-600 font-medium">
+                                                    Jl. Udayana, Mataram, Nusa Tenggara Barat
+                                                </span>
+                                                <span className="mt-2 px-3 py-1 bg-white border border-gray-300 text-gray-900 text-[11px] uppercase font-bold shadow-xs">
+                                                    Gate Open: 08:00 WITA
                                                 </span>
                                             </div>
-                                            <span className="text-base font-bold uppercase text-gray-900 italic leading-tight">
-                                                BADLY &amp; BINTANG
-                                            </span>
-                                            <span className="text-[11px] text-gray-500">Astra Honda Racing School</span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs text-gray-600">
+                                            <span className="font-medium">Parkir Khusus Honda Tersedia</span>
+                                            <span className="text-red-600 font-bold">Akses Fan Area</span>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Syarat & Ketentuan Masuk Paddock Card */}
-                                <div className="bg-white border border-gray-200 p-6 shadow-xs flex flex-col gap-4">
-                                    <div className="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2">
-                                        <span className="text-base font-bold uppercase italic text-gray-900">
-                                            Syarat &amp; Ketentuan Acara
-                                        </span>
-                                        <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 uppercase">
-                                            Ketentuan
-                                        </span>
-                                    </div>
-                                    <ul className="space-y-3 text-sm text-gray-700">
-                                        <li className="flex items-start gap-3">
-                                            <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
-                                            <span>
-                                                Pria / Wanita konsumen resmi pemilik sepeda motor <strong className="text-gray-900">Honda</strong> domisili Nusa Tenggara Barat.
+                                    {/* Official Taglines & FIFASTRA Banner */}
+                                    <div className="bg-white border border-gray-200 p-6 shadow-xs flex flex-col gap-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-['Anybody',sans-serif] text-xl text-red-600 font-black italic">
+                                                #pakeMotorkuXaja
                                             </span>
-                                        </li>
-                                        <li className="flex items-start gap-3">
-                                            <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
-                                            <span>
-                                                Menyukai dan berantusiasme tinggi terhadap dunia <strong className="text-gray-900">Racing &amp; Motorsport Indonesia</strong>.
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-3">
-                                            <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
-                                            <span>
-                                                Wajib dapat menunjukkan <strong className="text-gray-900">Fisik STNK Asli Honda</strong> dan e-KTP yang cocok saat registrasi ulang di venue.
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-3">
-                                            <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
-                                            <span>
-                                                Follow akun resmi Instagram <strong className="text-red-600 font-bold">@hondantb.official</strong>.
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-3">
-                                            <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
-                                            <span>
-                                                Memberikan komentar <strong className="text-gray-900">"Honda"</strong> serta men-tag 3 teman pada postingan Meet &amp; Greet.
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start gap-3">
-                                            <span className="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
-                                            <span className="text-gray-700">
-                                                Tim Honda NTB akan menghubungi melalui Direct Message (DM) Instagram dan WhatsApp untuk mengirimkan e-invitation pass resmi.
-                                            </span>
-                                        </li>
-                                    </ul>
-
-                                    {/* Periode Pendaftaran Pill */}
-                                    <div className="mt-2 p-3 bg-red-50 border border-red-200 flex items-center justify-between">
-                                        <div className="flex flex-col">
-                                            <span className="text-[11px] text-gray-600 uppercase font-semibold">
-                                                Periode Pendaftaran
-                                            </span>
-                                            <span className="text-base text-red-600 font-bold">
-                                                2 - 5 Oktober 2026
+                                            <span className="text-[11px] text-gray-700 font-bold uppercase tracking-wider">
+                                                FIFASTRA
                                             </span>
                                         </div>
-                                        <Timer className="size-6 text-red-600" />
-                                    </div>
-                                </div>
-
-                                {/* Venue Location Map Card */}
-                                <div className="bg-white border border-gray-200 p-6 shadow-xs flex flex-col gap-4">
-                                    <div className="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2">
-                                        <span className="text-base font-bold uppercase italic text-gray-900">
-                                            Venue Map
-                                        </span>
-                                        <span className="text-[11px] text-red-600 font-mono font-bold">
-                                            DAPUR SASAK
-                                        </span>
-                                    </div>
-                                    <div
-                                        className="w-full h-44 border border-gray-200 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden bg-cover bg-center"
-                                        style={{
-                                            backgroundImage:
-                                                "url('https://lh3.googleusercontent.com/aida-public/AB6AXuBB9-44rzIlhHdzm0AHfhRdaD_OR5iL-lYYKuZVfzoxJOpPYz69DtxCk8zkIB-E-B8uiG81H1LJ1bGN8pqD8tjoMB2ycVkBlSHhpd1IdnvG4IumwjWYviJLoK5BLbEa7j22U6SxalXH4MzMwU3TVjLbMBEsZ9QeYnV5XYj2nDeAzguSUk0mmAxu-LOfusxkHiQlS-MNdnumFFZocC2NW4RdRDZmmovENjWA2w-KGKWKjcWdtEcu_Z6N')",
-                                        }}
-                                    >
-                                        <div className="absolute inset-0 bg-white/75 backdrop-blur-[1px]"></div>
-                                        <div className="relative z-10 flex flex-col items-center gap-1">
-                                            <MapPin className="size-8 text-red-600 animate-bounce" />
-                                            <span className="text-base font-bold text-gray-900 uppercase">
-                                                Dapur Sasak, Udayana
+                                        <div className="p-4 bg-red-600 text-white flex flex-col gap-1 shadow-xs">
+                                            <span className="text-[11px] uppercase font-bold tracking-widest opacity-90">
+                                                Satu HATI.
                                             </span>
-                                            <span className="text-[11px] text-gray-600 font-medium">
-                                                Jl. Udayana, Mataram, Nusa Tenggara Barat
+                                            <span className="font-['Anybody',sans-serif] text-2xl uppercase italic font-black leading-none tracking-tight">
+                                                MELESAT LEBIH CEPAT
                                             </span>
-                                            <span className="mt-2 px-3 py-1 bg-white border border-gray-300 text-gray-900 text-[11px] uppercase font-bold shadow-xs">
-                                                Gate Open: 08:00 WITA
+                                            <span className="text-[11px] uppercase tracking-wider font-bold mt-1">
+                                                Dukung Pembalap Indonesia di Mandalika!
                                             </span>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center justify-between text-xs text-gray-600">
-                                        <span className="font-medium">Parkir Khusus Honda Tersedia</span>
-                                        <span className="text-red-600 font-bold">Akses Fan Area</span>
-                                    </div>
-                                </div>
-
-                                {/* Official Taglines & FIFASTRA Banner */}
-                                <div className="bg-white border border-gray-200 p-6 shadow-xs flex flex-col gap-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-['Anybody',sans-serif] text-xl text-red-600 font-black italic">
-                                            #pakeMotorkuXaja
-                                        </span>
-                                        <span className="text-[11px] text-gray-700 font-bold uppercase tracking-wider">
-                                            FIFASTRA
-                                        </span>
-                                    </div>
-                                    <div className="p-4 bg-red-600 text-white flex flex-col gap-1 shadow-xs">
-                                        <span className="text-[11px] uppercase font-bold tracking-widest opacity-90">
-                                            Satu HATI.
-                                        </span>
-                                        <span className="font-['Anybody',sans-serif] text-2xl uppercase italic font-black leading-none tracking-tight">
-                                            MELESAT LEBIH CEPAT
-                                        </span>
-                                        <span className="text-[11px] uppercase tracking-wider font-bold mt-1">
-                                            Dukung Pembalap Indonesia di Mandalika!
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-gray-600 text-xs pt-2 border-t border-gray-100">
-                                        <span className="font-medium">Instagram: @HondaNTB.Official</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
-                                            <span className="text-red-600 font-bold">LIVE ACCESS</span>
+                                        <div className="flex items-center justify-between text-gray-600 text-xs pt-2 border-t border-gray-100">
+                                            <span className="font-medium">Instagram: @HondaNTB.Official</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+                                                <span className="text-red-600 font-bold">LIVE ACCESS</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
                     </section>
                 </div>
             </main>

@@ -6,9 +6,11 @@ use App\Http\Requests\PublicMeetAndGreetStoreRequest;
 use App\Models\Dealer;
 use App\Models\MeetAndGreet;
 use App\Models\Type;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,13 +34,28 @@ class PublicMeetAndGreetController extends Controller
             ->sort(SORT_NATURAL | SORT_FLAG_CASE)
             ->values();
 
-        $registeredNo = $request->query('registered') ?: session('no_registrasi');
+        $registeredParam = $request->query('registered');
+        $actualNoRegistrasi = null;
+
+        if ($registeredParam) {
+            try {
+                $actualNoRegistrasi = Crypt::decryptString($registeredParam);
+            } catch (DecryptException) {
+                // If encrypted token is invalid or tampered with, do not reveal any data
+                $actualNoRegistrasi = null;
+            }
+        }
+
+        if (! $actualNoRegistrasi && session('no_registrasi')) {
+            $actualNoRegistrasi = session('no_registrasi');
+        }
+
         $registrationSuccess = null;
 
-        if ($registeredNo) {
+        if ($actualNoRegistrasi) {
             $registrationSuccess = MeetAndGreet::query()
                 ->with('dealer:id,kode_dealer,nama_dealer')
-                ->where('no_registrasi', $registeredNo)
+                ->where('no_registrasi', $actualNoRegistrasi)
                 ->first();
         }
 
@@ -47,7 +64,7 @@ class PublicMeetAndGreetController extends Controller
             'dealerOptions' => MeetAndGreet::DEALER_ASAL_OPTIONS,
             'motorcycleTypes' => $motorcycleTypes,
             'status' => session('success'),
-            'registeredNo' => $registeredNo,
+            'registeredNo' => $actualNoRegistrasi,
             'registrationSuccess' => $registrationSuccess,
         ]);
     }
@@ -77,8 +94,10 @@ class PublicMeetAndGreetController extends Controller
 
         $meetAndGreet = MeetAndGreet::create($data);
 
+        $encryptedToken = Crypt::encryptString($meetAndGreet->no_registrasi);
+
         return redirect()
-            ->route('meetngreethonda.index', ['registered' => $meetAndGreet->no_registrasi])
+            ->route('meetngreethonda.index', ['registered' => $encryptedToken])
             ->with('success', 'Pendaftaran Meet & Greet Honda berhasil disimpan! Terima kasih telah melakukan registrasi.')
             ->with('no_registrasi', $meetAndGreet->no_registrasi);
     }

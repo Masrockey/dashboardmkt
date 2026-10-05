@@ -5,6 +5,7 @@ use App\Models\Dealer;
 use App\Models\MeetAndGreet;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -19,7 +20,8 @@ test('authenticated users can view meet and greet page and see fixed dealer asal
         ->has('dealers')
         ->where('dealers', fn ($dealers) => collect($dealers)->contains('Krida Mataram')
             && collect($dealers)->contains('FIF Mataram')
-            && collect($dealers)->count() === 12
+            && ! collect($dealers)->contains('NSS Mataram')
+            && collect($dealers)->count() === 11
         )
     );
 });
@@ -58,7 +60,8 @@ test('guests can access public meet and greet form at /meetngreethonda and see f
         ->where('dealers', fn ($dealers) => collect($dealers)->contains('Krida Mataram')
             && collect($dealers)->contains('FIF Mataram')
             && collect($dealers)->contains('Daya Selaparang')
-            && collect($dealers)->count() === 12
+            && ! collect($dealers)->contains('NSS Mataram')
+            && collect($dealers)->count() === 11
         )
     );
 });
@@ -81,7 +84,11 @@ test('guests can submit meet and greet registration form via public route', func
         ->and($saved->no_registrasi)->toStartWith('MNG-'.now()->format('Ymd').'-')
         ->and($saved->dealer_asal)->toBe('FIF Mataram');
 
-    $response->assertRedirect(route('meetngreethonda.index', ['registered' => $saved->no_registrasi]));
+    $targetUrl = $response->headers->get('Location');
+    parse_str(parse_url($targetUrl, PHP_URL_QUERY) ?? '', $queryParams);
+    expect($queryParams)->toHaveKey('registered')
+        ->and(Crypt::decryptString($queryParams['registered']))->toBe($saved->no_registrasi);
+
     $response->assertSessionHas('success');
     $response->assertSessionHas('no_registrasi');
 
@@ -113,13 +120,17 @@ test('guests can submit meet and greet registration form even if dealer_id is se
         ->and($saved->dealer_asal)->toBe('SPS Mataram')
         ->and(is_int($saved->dealer_id) || is_null($saved->dealer_id))->toBeTrue();
 
-    $response->assertRedirect(route('meetngreethonda.index', ['registered' => $saved->no_registrasi]));
+    $targetUrl = $response->headers->get('Location');
+    parse_str(parse_url($targetUrl, PHP_URL_QUERY) ?? '', $queryParams);
+    expect($queryParams)->toHaveKey('registered')
+        ->and(Crypt::decryptString($queryParams['registered']))->toBe($saved->no_registrasi);
 });
 
-test('guests can view public registration success page with registered parameter', function () {
+test('guests can view public registration success page with encrypted registered parameter', function () {
     $item = MeetAndGreet::factory()->create();
+    $encrypted = Crypt::encryptString($item->no_registrasi);
 
-    $response = $this->get(route('meetngreethonda.index', ['registered' => $item->no_registrasi]));
+    $response = $this->get(route('meetngreethonda.index', ['registered' => $encrypted]));
 
     $response->assertOk();
     $response->assertInertia(fn (Assert $page) => $page
@@ -127,6 +138,20 @@ test('guests can view public registration success page with registered parameter
         ->where('registeredNo', $item->no_registrasi)
         ->where('registrationSuccess.no_registrasi', $item->no_registrasi)
         ->where('registrationSuccess.nama_konsumen', $item->nama_konsumen)
+    );
+});
+
+test('unencrypted or guessed registration parameters do not reveal consumer registration data', function () {
+    $item = MeetAndGreet::factory()->create();
+
+    // Trying to guess directly by plaintext registration number
+    $response = $this->get(route('meetngreethonda.index', ['registered' => $item->no_registrasi]));
+
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('meet-and-greet/public')
+        ->where('registeredNo', null)
+        ->where('registrationSuccess', null)
     );
 });
 
