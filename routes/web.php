@@ -50,6 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pameran/{pameran}/approve-kabag', [PameranController::class, 'approveKabag'])->name('pameran.approve-kabag');
     Route::post('pameran/{pameran}/reject', [PameranController::class, 'reject'])->name('pameran.reject');
     Route::resource('pameran', PameranController::class)->except(['show', 'edit']);
+    Route::get('meet-and-greet/export', [MeetAndGreetController::class, 'export'])->name('meet-and-greet.export');
     Route::resource('meet-and-greet', MeetAndGreetController::class)->except(['create', 'show', 'edit']);
     Route::get('api/geocode/search', [GeocodeController::class, 'search'])->name('geocode.search');
     Route::get('api/geocode/reverse', [GeocodeController::class, 'reverse'])->name('geocode.reverse');

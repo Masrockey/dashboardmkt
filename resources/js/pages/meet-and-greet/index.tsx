@@ -320,6 +320,16 @@ export default function MeetAndGreetIndex({
         });
     };
 
+    const handleExportExcel = () => {
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('search', searchQuery);
+        if (selectedDealerFilter && selectedDealerFilter !== 'all') {
+            params.append('dealer_asal', selectedDealerFilter);
+        }
+        const qs = params.toString();
+        window.location.href = `/meet-and-greet/export${qs ? `?${qs}` : ''}`;
+    };
+
     return (
         <>
             <Head title="Meet & Greet" />
@@ -341,10 +351,20 @@ export default function MeetAndGreetIndex({
                         </p>
                     </div>
 
-                    <Button onClick={handleOpenCreate} className="gap-2 self-start sm:self-auto shadow-xs">
-                        <Plus className="size-4" />
-                        Tambah Konsumen
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                        <Button
+                            variant="outline"
+                            onClick={handleExportExcel}
+                            className="gap-2 shadow-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                        >
+                            <Download className="size-4 text-emerald-600 dark:text-emerald-400" />
+                            Export Excel (.xlsx)
+                        </Button>
+                        <Button onClick={handleOpenCreate} className="gap-2 shadow-xs">
+                            <Plus className="size-4" />
+                            Tambah Konsumen
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filters & Search */}

@@ -13,31 +13,38 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Color;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MeetAndGreetController extends Controller
 {
     /**
-     * Display a listing of the Meet & Greet records.
+     * Build the query for Meet & Greet based on request filters and user role.
      */
-    public function index(Request $request): Response
+    private function buildQuery(Request $request, $user): Builder
     {
-        $user = $request->user();
         $search = $request->string('search')->toString();
         $dealerFilter = $request->input('dealer_asal') ?: $request->input('dealer_id');
 
-        $meetAndGreets = MeetAndGreet::query()
+        return MeetAndGreet::query()
             ->with([
                 'dealer:id,kode_dealer,nama_dealer',
                 'createdByUser:id,name',
             ])
-            ->when($user->isDealerOnly(), function (Builder $query) use ($user) {
+            ->when($user && $user->isDealerOnly(), function (Builder $query) use ($user) {
                 if ($user->dealer_id) {
                     $query->where('dealer_id', $user->dealer_id);
                 } else {
                     $query->whereRaw('1 = 0');
                 }
             })
-            ->when($dealerFilter && ! $user->isDealerOnly(), function (Builder $query) use ($dealerFilter) {
+            ->when($dealerFilter && ! ($user && $user->isDealerOnly()), function (Builder $query) use ($dealerFilter) {
                 if (is_numeric($dealerFilter)) {
                     $query->where('dealer_id', $dealerFilter);
                 } else {
@@ -58,7 +65,19 @@ class MeetAndGreetController extends Controller
                                 ->orWhere('kode_dealer', 'like', "%{$search}%");
                         });
                 });
-            })
+            });
+    }
+
+    /**
+     * Display a listing of the Meet & Greet records.
+     */
+    public function index(Request $request): Response
+    {
+        $user = $request->user();
+        $search = $request->string('search')->toString();
+        $dealerFilter = $request->input('dealer_asal') ?: $request->input('dealer_id');
+
+        $meetAndGreets = $this->buildQuery($request, $user)
             ->latest('id')
             ->paginate(10)
             ->withQueryString();
@@ -86,6 +105,170 @@ class MeetAndGreetController extends Controller
                 'dealer_id' => $dealerFilter,
                 'dealer_asal' => $dealerFilter,
             ],
+        ]);
+    }
+
+    /**
+     * Export Meet & Greet records to an Excel (.xlsx) spreadsheet.
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $user = $request->user();
+        $query = $this->buildQuery($request, $user);
+        $records = $query->latest('id')->get();
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Meet & Greet');
+
+        // Document properties
+        $spreadsheet->getProperties()
+            ->setCreator('Astra Motor NTB')
+            ->setTitle('Data Meet & Greet Honda');
+
+        // Title Header (Row 1 & 2)
+        $sheet->mergeCells('A1:L1');
+        $sheet->setCellValue('A1', 'DATA KONSUMEN MEET & GREET HONDA - MANDALIKA GP');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->setColor(new Color('CC0000'));
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $filterInfo = 'Tanggal Ekspor: '.now()->translatedFormat('d F Y H:i').' WITA';
+        $search = $request->string('search')->toString();
+        $dealerFilter = $request->input('dealer_asal') ?: $request->input('dealer_id');
+        if ($dealerFilter) {
+            $filterInfo .= ' | Filter Dealer: '.$dealerFilter;
+        }
+        if ($search !== '') {
+            $filterInfo .= ' | Pencarian: '.$search;
+        }
+        $filterInfo .= ' | Total: '.$records->count().' Konsumen';
+
+        $sheet->mergeCells('A2:L2');
+        $sheet->setCellValue('A2', $filterInfo);
+        $sheet->getStyle('A2')->getFont()->setItalic(true)->setSize(10)->setColor(new Color('666666'));
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Table Header (Row 4)
+        $headers = [
+            'NO',
+            'NO REGISTRASI',
+            'NAMA DEALER ASAL',
+            'KODE DEALER',
+            'NAMA KONSUMEN',
+            'NO WHATSAPP / HP',
+            'ALAMAT KONSUMEN',
+            'TIPE MOTOR',
+            'NO PLAT POLISI',
+            'BERKAS STNK',
+            'WAKTU INPUT',
+            'DIINPUT OLEH',
+        ];
+
+        $col = 'A';
+        foreach ($headers as $headerText) {
+            $sheet->setCellValue($col.'4', $headerText);
+            $col++;
+        }
+
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['argb' => 'FFFFFFFF'],
+                'size' => 10,
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['argb' => 'FFDC2626'], // Honda Red
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FFB91C1C'],
+                ],
+            ],
+        ];
+        $sheet->getStyle('A4:L4')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(4)->setRowHeight(28);
+
+        // Data Rows (Row 5 onwards)
+        $row = 5;
+        foreach ($records as $index => $item) {
+            $stnkUrl = $item->stnk_url ? url($item->stnk_url) : ($item->stnk_path ? url(Storage::url($item->stnk_path)) : null);
+            $createdByName = $item->createdByUser?->name ?? 'Pendaftaran Publik (Mandiri)';
+            $waktuInput = $item->created_at ? $item->created_at->translatedFormat('d M Y H:i') : '-';
+
+            $sheet->setCellValue('A'.$row, $index + 1);
+            $sheet->setCellValueExplicit('B'.$row, $item->no_registrasi ?? '-', DataType::TYPE_STRING);
+            $sheet->setCellValue('C'.$row, $item->dealer_asal ?: ($item->dealer?->nama_dealer ?? '-'));
+            $sheet->setCellValueExplicit('D'.$row, $item->dealer?->kode_dealer ?? '-', DataType::TYPE_STRING);
+            $sheet->setCellValue('E'.$row, $item->nama_konsumen);
+            $sheet->setCellValueExplicit('F'.$row, $item->no_hp, DataType::TYPE_STRING);
+            $sheet->setCellValue('G'.$row, $item->alamat);
+            $sheet->setCellValue('H'.$row, $item->tipe_motor);
+            $sheet->setCellValueExplicit('I'.$row, $item->no_plat, DataType::TYPE_STRING);
+
+            if ($stnkUrl) {
+                $sheet->setCellValue('J'.$row, 'Lihat STNK');
+                $sheet->getCell('J'.$row)->getHyperlink()->setUrl($stnkUrl);
+                $sheet->getStyle('J'.$row)->getFont()->setColor(new Color('0000FF'))->setUnderline(true);
+            } else {
+                $sheet->setCellValue('J'.$row, 'Tidak Ada');
+            }
+
+            $sheet->setCellValue('K'.$row, $waktuInput);
+            $sheet->setCellValue('L'.$row, $createdByName);
+
+            if ($index % 2 === 1) {
+                $sheet->getStyle('A'.$row.':L'.$row)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('FFF9FAFB');
+            }
+
+            $sheet->getRowDimension($row)->setRowHeight(22);
+            $row++;
+        }
+
+        $lastRow = max(5, $row - 1);
+
+        $dataBorderStyle = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FFE5E7EB'],
+                ],
+            ],
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+        ];
+        $sheet->getStyle('A5:L'.$lastRow)->applyFromArray($dataBorderStyle);
+
+        $sheet->getStyle('A5:A'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('B5:B'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('D5:D'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('F5:F'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('I5:I'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('J5:J'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('K5:K'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        foreach (range('A', 'L') as $columnID) {
+            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        }
+
+        $filename = 'Data-Meet-And-Greet-Honda-'.now()->format('Ymd-His').'.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 

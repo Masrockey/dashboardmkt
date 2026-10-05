@@ -212,3 +212,50 @@ test('users can search meet and greet records by no_registrasi', function () {
         ->has('meetAndGreets.data', 1)
     );
 });
+
+test('authenticated users can export meet and greet data to xlsx spreadsheet', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+
+    MeetAndGreet::create([
+        'dealer_asal' => 'SO Gerung',
+        'nama_konsumen' => 'Export User 1',
+        'alamat' => 'Alamat Export 1',
+        'no_hp' => '081234567890',
+        'tipe_motor' => 'PCX 160',
+        'no_plat' => 'DR 1111 EX',
+    ]);
+
+    MeetAndGreet::create([
+        'dealer_asal' => 'SPS Mataram',
+        'nama_konsumen' => 'Export User 2',
+        'alamat' => 'Alamat Export 2',
+        'no_hp' => '089876543210',
+        'tipe_motor' => 'ADV 160',
+        'no_plat' => 'DR 2222 EX',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('meet-and-greet.export'));
+
+    $response->assertOk();
+    $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect($response->headers->get('content-disposition'))->toContain('.xlsx');
+});
+
+test('authenticated users can export filtered meet and greet data to xlsx', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+
+    MeetAndGreet::create([
+        'dealer_asal' => 'SO Gerung',
+        'nama_konsumen' => 'User Gerung',
+        'alamat' => 'Alamat Gerung',
+        'no_hp' => '081234567891',
+        'tipe_motor' => 'Beat',
+        'no_plat' => 'DR 3333 EX',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('meet-and-greet.export', ['dealer_asal' => 'SO Gerung']));
+
+    $response->assertOk();
+    $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect($response->headers->get('content-disposition'))->toContain('.xlsx');
+});
