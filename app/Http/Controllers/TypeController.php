@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\TypeStoreRequest;
 use App\Http\Requests\TypeUpdateRequest;
+use App\Models\Category;
 use App\Models\Segment;
 use App\Models\Type;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,13 +23,16 @@ class TypeController extends Controller
         $search = $request->string('search')->toString();
 
         $types = Type::query()
-            ->with('segment')
+            ->with(['segment', 'category'])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $subQuery) use ($search) {
                     $subQuery->where('nama_type', 'like', "%{$search}%")
                         ->orWhere('nama_pasar', 'like', "%{$search}%")
                         ->orWhereHas('segment', function (Builder $segQuery) use ($search) {
                             $segQuery->where('nama_segment', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('category', function (Builder $catQuery) use ($search) {
+                            $catQuery->where('nama_kategori', 'like', "%{$search}%");
                         });
                 });
             })
@@ -40,9 +44,14 @@ class TypeController extends Controller
             ->orderBy('nama_segment')
             ->get(['id', 'nama_segment']);
 
+        $categories = Category::query()
+            ->orderBy('nama_kategori')
+            ->get(['id', 'nama_kategori']);
+
         return Inertia::render('types/index', [
             'types' => $types,
             'segments' => $segments,
+            'categories' => $categories,
             'filters' => [
                 'search' => $search,
             ],

@@ -1,7 +1,11 @@
+import type { Category } from './category';
+
 export interface Dealer {
     id: number;
     kode_dealer: string;
     nama_dealer: string;
+    category_id?: number | null;
+    category?: Category | null;
     created_at: string;
     updated_at: string;
 }

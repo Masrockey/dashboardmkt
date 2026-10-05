@@ -35,6 +35,7 @@ class DealerUpdateRequest extends FormRequest
                 Rule::unique('dealers', 'kode_dealer')->ignore($dealer),
             ],
             'nama_dealer' => ['required', 'string', 'max:255'],
+            'category_id' => ['nullable', 'exists:categories,id'],
         ];
     }
 
@@ -48,6 +49,7 @@ class DealerUpdateRequest extends FormRequest
         return [
             'kode_dealer' => 'kode dealer',
             'nama_dealer' => 'nama dealer',
+            'category_id' => 'kategori',
         ];
     }
 }

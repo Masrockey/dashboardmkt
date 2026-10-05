@@ -25,6 +25,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import {
     Table,
@@ -36,16 +43,17 @@ import {
 } from '@/components/ui/table';
 import { dashboard } from '@/routes';
 import dealersRoute from '@/routes/dealers';
-import type { Dealer, PaginatedDealers } from '@/types';
+import type { Category, Dealer, PaginatedDealers } from '@/types';
 
 interface DealersIndexProps {
     dealers: PaginatedDealers;
+    categories: Category[];
     filters: {
         search?: string;
     };
 }
 
-export default function DealersIndex({ dealers, filters }: DealersIndexProps) {
+export default function DealersIndex({ dealers, categories, filters }: DealersIndexProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -53,15 +61,25 @@ export default function DealersIndex({ dealers, filters }: DealersIndexProps) {
     const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
 
     // Create Form
-    const createForm = useForm({
+    const createForm = useForm<{
+        kode_dealer: string;
+        nama_dealer: string;
+        category_id: string | number;
+    }>({
         kode_dealer: '',
         nama_dealer: '',
+        category_id: '',
     });
 
     // Edit Form
-    const editForm = useForm({
+    const editForm = useForm<{
+        kode_dealer: string;
+        nama_dealer: string;
+        category_id: string | number;
+    }>({
         kode_dealer: '',
         nama_dealer: '',
+        category_id: '',
     });
 
     // Delete Form
@@ -115,6 +133,7 @@ export default function DealersIndex({ dealers, filters }: DealersIndexProps) {
         editForm.setData({
             kode_dealer: dealer.kode_dealer,
             nama_dealer: dealer.nama_dealer,
+            category_id: dealer.category_id ? String(dealer.category_id) : '',
         });
         editForm.clearErrors();
         setIsEditOpen(true);
@@ -208,13 +227,14 @@ export default function DealersIndex({ dealers, filters }: DealersIndexProps) {
                                 <TableHead className="w-16 text-center">No</TableHead>
                                 <TableHead>Kode Dealer</TableHead>
                                 <TableHead>Nama Dealer</TableHead>
+                                <TableHead>Kategori</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {dealers.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="py-12 text-center">
+                                    <TableCell colSpan={5} className="py-12 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <div className="rounded-full bg-neutral-100 p-3 dark:bg-neutral-800">
                                                 <Building2 className="size-6 text-neutral-500 dark:text-neutral-400" />
@@ -257,6 +277,15 @@ export default function DealersIndex({ dealers, filters }: DealersIndexProps) {
                                             </TableCell>
                                             <TableCell className="font-medium text-neutral-900 dark:text-neutral-100">
                                                 {dealer.nama_dealer}
+                                            </TableCell>
+                                            <TableCell>
+                                                {dealer.category ? (
+                                                    <Badge variant="secondary" className="font-semibold text-xs">
+                                                        {dealer.category.nama_kategori}
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-xs text-neutral-400 italic">-</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex items-center justify-end gap-1.5">
@@ -372,6 +401,28 @@ export default function DealersIndex({ dealers, filters }: DealersIndexProps) {
                                 />
                                 <InputError message={createForm.errors.nama_dealer} />
                             </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="create_category_id">Kategori (Opsional)</Label>
+                                <Select
+                                    value={createForm.data.category_id ? String(createForm.data.category_id) : 'none'}
+                                    onValueChange={(val) => createForm.setData('category_id', val === 'none' ? '' : val)}
+                                    disabled={createForm.processing}
+                                >
+                                    <SelectTrigger id="create_category_id" className="w-full">
+                                        <SelectValue placeholder="-- Pilih Kategori (Opsional) --" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Tanpa Kategori (Kosong) --</SelectItem>
+                                        {categories.map((c) => (
+                                            <SelectItem key={c.id} value={String(c.id)}>
+                                                {c.nama_kategori}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={createForm.errors.category_id} />
+                            </div>
                         </div>
 
                         <DialogFooter>
@@ -422,6 +473,28 @@ export default function DealersIndex({ dealers, filters }: DealersIndexProps) {
                                     disabled={editForm.processing}
                                 />
                                 <InputError message={editForm.errors.nama_dealer} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="edit_category_id">Kategori (Opsional)</Label>
+                                <Select
+                                    value={editForm.data.category_id ? String(editForm.data.category_id) : 'none'}
+                                    onValueChange={(val) => editForm.setData('category_id', val === 'none' ? '' : val)}
+                                    disabled={editForm.processing}
+                                >
+                                    <SelectTrigger id="edit_category_id" className="w-full">
+                                        <SelectValue placeholder="-- Pilih Kategori (Opsional) --" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Tanpa Kategori (Kosong) --</SelectItem>
+                                        {categories.map((c) => (
+                                            <SelectItem key={c.id} value={String(c.id)}>
+                                                {c.nama_kategori}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={editForm.errors.category_id} />
                             </div>
                         </div>
 

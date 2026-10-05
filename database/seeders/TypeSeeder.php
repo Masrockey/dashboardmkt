@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\R2;
 use App\Models\Segment;
 use App\Models\Type;
 use Illuminate\Database\Seeder;
@@ -376,12 +379,78 @@ class TypeSeeder extends Seeder
             ['nama_type' => 'X1H02N32L3 A/T', 'segment' => 'AT HIGH', 'nama_pasar' => 'VARIO EVO 160 CBS NITRO'],
         ];
 
+        $categories = Category::all()->keyBy(fn ($c) => strtoupper($c->nama_kategori));
+        $brands = Brand::with('category')->get()->keyBy(fn ($b) => strtoupper(trim($b->nama_brand)));
+        $othersCategory = $categories->get('OTHERS');
+
+        $hondaCatId = $categories->get('HONDA')?->id;
+        $yamahaCatId = $categories->get('YAMAHA')?->id;
+        $suzukiCatId = $categories->get('SUZUKI')?->id;
+        $othersCatId = $othersCategory?->id;
+
+        // Lookup from R2
+        $r2TypeToCat = [];
+        $r2PasarToCat = [];
+        foreach (R2::select('type', 'pkb_desc', 'nama_pasar', 'mrk_desc')->get() as $r) {
+            $mrkClean = strtoupper(trim((string) $r->mrk_desc));
+            $catId = $categories->get($mrkClean)?->id ?? $brands->get($mrkClean)?->category?->id ?? $othersCatId;
+            if (! $catId) {
+                continue;
+            }
+
+            if (! empty($r->type)) {
+                $key = strtoupper(preg_replace('/[^A-Z0-9]/', '', $r->type));
+                $r2TypeToCat[$key] = $catId;
+            }
+            if (! empty($r->pkb_desc)) {
+                $key = strtoupper(preg_replace('/[^A-Z0-9]/', '', $r->pkb_desc));
+                $r2TypeToCat[$key] = $catId;
+            }
+            if (! empty($r->nama_pasar)) {
+                $key = strtoupper(preg_replace('/[^A-Z0-9]/', '', $r->nama_pasar));
+                $r2PasarToCat[$key] = $catId;
+            }
+        }
+
         foreach ($typesData as $item) {
             $segmentName = strtoupper(trim($item['segment']));
             $segment = Segment::firstOrCreate(['nama_segment' => $segmentName]);
 
+            $rawType = strtoupper(trim($item['nama_type']));
+            $normType = preg_replace('/[^A-Z0-9]/', '', $rawType);
+            $rawPasar = strtoupper(trim((string) $item['nama_pasar']));
+            $normPasar = preg_replace('/[^A-Z0-9]/', '', $rawPasar);
+
+            $catId = null;
+            if ($normType !== '' && isset($r2TypeToCat[$normType])) {
+                $catId = $r2TypeToCat[$normType];
+            } elseif ($normPasar !== '' && isset($r2PasarToCat[$normPasar])) {
+                $catId = $r2PasarToCat[$normPasar];
+            } elseif (
+                preg_match('/(HONDA|BEAT|VARIO|SCOOPY|PCX|ADV|GENIO|STYLO|CRF|CBR|CB\d+|CB\s|SUPRA|REVO|BLADE|SPACY|CS1|TIGER|MEGA\s*PRO|VERZA|SONIC|GTR|EM1|FORZA|REBEL|MONKEY|DAX|CT125|C125|ASTREA|WIN|KIRANA|KARISMA|GL\s*PRO|GL\s*MAX|SH150)/i', $rawPasar)
+                || preg_match('/^(X1H|H1B|F1C|L1F|L1K|T4G|V1J|M1K|C1M|N1N|AFX|CRF|CMX|A5C|R5F|P5E|H5C|T5C|GL200|C125|SH150)/i', $rawType)
+            ) {
+                $catId = $hondaCatId;
+            } elseif (
+                preg_match('/(YAMAHA|NMAX|AEROX|JUPITER|JUPIETR|MIO|VIXION|V-IXION|BYSON|XEON|FINO|VEGA|X-RIDE|XRIDE|FAZZIO|FAZIO|FILANO|LEXI|XMAX|FREEGO|FREE\s*GO|WR\s*155|WR155|R15|R\s*15|R25|R\s*25|MT-25|MT\s*25|MT-15|MT\s*15|XSR|GEAR|FORCE|TZR|SCORPIO|LEXAM|SIGMA|ALFA|CRYPTON|TOUCH|TIARA|YT\s*115|XABRE|GT\s*125|ECONOS)/i', $rawPasar)
+                || preg_match('/^(BBP|BTD|BPA|2PV|BJM|BLS|BKU|BEJ|BXY|BTE|D09|BWP|BPN|BPV|B3M|BRJ|SE88|1DY|1PA|1YD|1LB|2DP|2PK|2SV|2SX|2TP|2UP|45P|54P|5D9|50S|50C|55S|54D|44D|31B|3C1|1S7|1FD|1KP|BJ8|2SX|RG10|RG\s*10|B04|2DP2|B8D)/i', $rawType)
+            ) {
+                $catId = $yamahaCatId;
+            } elseif (
+                preg_match('/(SUZUKI|SATRIA|GSX|SMASH|ADDRESS|ADRESS|NEX|BURGMAN|AVENIS|V-STROM|SHOGUN|SPIN|SKYWAVE|SKYDRIVE|THUNDER|INAZUMA|HAYATE|LETS|RAIDER|TORNADO|CRYSTAL|RC\s*100|BRAVO|TS\s*125|BANDIT|SHOOTER|GSF)/i', $rawPasar)
+                || preg_match('/^(UZ125|GSX|WOLF|GEMMA|FU150|FW110|FV\s*110|UK\s*110|GSF)/i', $rawType)
+            ) {
+                $catId = $suzukiCatId;
+            } elseif (
+                preg_match('/(KAWASAKI|KAWAWAKI|NINJA|KLX|D-TRACKER|W175|VERSYS|VULCAN|ZX|Z125|Z250|KSR|ESTRELLA|ELIMINATOR|VESPA|PRIMAVERA|SPRINT|LX\s*IGET|KTM|BENELLI|HARLEY|VIAR|TVS|BAJAJ|PIAGGIO|KYMCO|GESITS|POLYTRON|KAISAR|TRISEDA|TOSSA|NOZOMI|AZABU|TM\s*\d+|VR\s*\d+)/i', $rawPasar)
+                || preg_match('/^(ZX|BJ175|BJ230|BJ250|LX150|LX230|LX232|LX250|LE250|KSR|BR125|BR250|ER250|EX252|V\s*\d+|VR\s*\d+|TM\s*\d+|KAISAR|AZABU|PRIMAVERA|VESPA)/i', $rawType)
+            ) {
+                $catId = $othersCatId;
+            }
+
             Type::create([
                 'nama_type' => trim($item['nama_type']),
+                'category_id' => $catId,
                 'segment_id' => $segment->id,
                 'nama_pasar' => trim($item['nama_pasar']),
             ]);

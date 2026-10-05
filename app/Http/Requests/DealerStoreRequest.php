@@ -25,6 +25,7 @@ class DealerStoreRequest extends FormRequest
         return [
             'kode_dealer' => ['required', 'string', 'max:50', 'unique:dealers,kode_dealer'],
             'nama_dealer' => ['required', 'string', 'max:255'],
+            'category_id' => ['nullable', 'exists:categories,id'],
         ];
     }
 
@@ -38,6 +39,7 @@ class DealerStoreRequest extends FormRequest
         return [
             'kode_dealer' => 'kode dealer',
             'nama_dealer' => 'nama dealer',
+            'category_id' => 'kategori',
         ];
     }
 }

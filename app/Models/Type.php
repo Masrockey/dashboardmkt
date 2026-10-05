@@ -17,9 +17,18 @@ class Type extends Model
      */
     protected $fillable = [
         'nama_type',
+        'category_id',
         'segment_id',
         'nama_pasar',
     ];
+
+    /**
+     * Get the category associated with the type.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     /**
      * Get the segment associated with the type.

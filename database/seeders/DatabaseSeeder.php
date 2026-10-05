@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\UserRole;
+use App\Models\Category;
 use App\Models\Dealer;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -50,13 +51,22 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        $this->call([
+            CategorySeeder::class,
+            SegmentSeeder::class,
+            BrandSeeder::class,
+            KabupatenSeeder::class,
+        ]);
+
+        $hondaCategory = Category::where('nama_kategori', 'HONDA')->first();
+
         $dealers = [
-            ['kode_dealer' => '9226', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Ampenan'],
-            ['kode_dealer' => 'N02', 'nama_dealer' => 'Astra Motor Mataram - Main Dealer'],
-            ['kode_dealer' => '9224', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Bima'],
-            ['kode_dealer' => '9699', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Brawijaya'],
-            ['kode_dealer' => '15583', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Kopang'],
-            ['kode_dealer' => '9704', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Masbagik'],
+            ['kode_dealer' => '9226', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Ampenan', 'category_id' => $hondaCategory?->id],
+            ['kode_dealer' => 'N02', 'nama_dealer' => 'Astra Motor Mataram - Main Dealer', 'category_id' => $hondaCategory?->id],
+            ['kode_dealer' => '9224', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Bima', 'category_id' => $hondaCategory?->id],
+            ['kode_dealer' => '9699', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Brawijaya', 'category_id' => $hondaCategory?->id],
+            ['kode_dealer' => '15583', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Kopang', 'category_id' => $hondaCategory?->id],
+            ['kode_dealer' => '9704', 'nama_dealer' => 'PT. Astra International Tbk-Honda - Masbagik', 'category_id' => $hondaCategory?->id],
         ];
 
         foreach ($dealers as $dealer) {
@@ -64,10 +74,6 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call([
-            SegmentSeeder::class,
-            CategorySeeder::class,
-            BrandSeeder::class,
-            KabupatenSeeder::class,
             TypeSeeder::class,
         ]);
     }

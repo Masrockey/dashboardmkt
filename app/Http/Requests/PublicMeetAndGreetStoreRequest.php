@@ -1,0 +1,74 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+
+class PublicMeetAndGreetStoreRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'dealer_id' => ['required', 'exists:dealers,id'],
+            'nama_konsumen' => ['required', 'string', 'max:255'],
+            'alamat' => ['required', 'string', 'max:1000'],
+            'no_hp' => ['required', 'string', 'max:30'],
+            'tipe_motor' => ['required', 'string', 'max:100'],
+            'no_plat' => ['required', 'string', 'max:30'],
+            'stnk' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
+        ];
+    }
+
+    /**
+     * Custom attribute names for validation.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'dealer_id' => 'Nama Dealer Asal',
+            'nama_konsumen' => 'Nama Konsumen sesuai ID',
+            'alamat' => 'Alamat',
+            'no_hp' => 'Nomor HP',
+            'tipe_motor' => 'Tipe Motor',
+            'no_plat' => 'Nomor Plat',
+            'stnk' => 'File STNK',
+        ];
+    }
+
+    /**
+     * Custom validation messages.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'dealer_id.required' => 'Pilih salah satu Nama Dealer Asal.',
+            'dealer_id.exists' => 'Dealer yang dipilih tidak valid.',
+            'nama_konsumen.required' => 'Nama Konsumen sesuai ID wajib diisi.',
+            'alamat.required' => 'Alamat lengkap wajib diisi.',
+            'no_hp.required' => 'Nomor HP aktif wajib diisi.',
+            'tipe_motor.required' => 'Pilih atau masukkan tipe motor Honda Anda.',
+            'no_plat.required' => 'Nomor Plat kendaraan wajib diisi.',
+            'stnk.required' => 'Wajib mengunggah berkas foto atau dokumen STNK.',
+            'stnk.mimes' => 'Format berkas STNK harus berupa JPG, PNG, WEBP, atau PDF.',
+            'stnk.max' => 'Ukuran berkas STNK maksimal 5 MB.',
+        ];
+    }
+}

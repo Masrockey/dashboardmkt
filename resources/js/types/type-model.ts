@@ -1,8 +1,11 @@
+import type { Category } from './category';
 import type { Segment } from './segment';
 
 export interface TypeItem {
     id: number;
     nama_type: string;
+    category_id: number | null;
+    category?: Category | null;
     segment_id: number | null;
     segment?: Segment | null;
     nama_pasar: string | null;

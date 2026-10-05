@@ -1,0 +1,619 @@
+<!DOCTYPE html><html class="light" lang="id" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Anybody:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "primary": "#dc2626",
+          "primary-hover": "#b91c1c",
+          "primary-container": "#dc2626",
+          "on-primary-container": "#ffffff",
+          "secondary": "#0284c7",
+          "surface": "#ffffff",
+          "background": "#f8f9fa",
+          "surface-card": "#ffffff",
+          "border-subtle": "#e5e7eb",
+          "border-strong": "#d1d5db",
+          "text-main": "#111827",
+          "text-muted": "#4b5563",
+          "text-subtle": "#6b7280"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-lg": "1.5rem",
+          "space-xs": "0.25rem",
+          "margin": "1rem",
+          "space-md": "1rem",
+          "gutter-desktop": "2rem",
+          "margin-desktop": "3rem",
+          "space-xl": "2.5rem",
+          "gutter": "1.25rem",
+          "space-sm": "0.5rem",
+          "space-2xl": "4rem"
+        },
+        "fontFamily": {
+          "display-xl-mobile": [
+            "Anybody"
+          ],
+          "label-lg": [
+            "Space Grotesk"
+          ],
+          "label-sm": [
+            "Space Grotesk"
+          ],
+          "body-lg": [
+            "Space Grotesk"
+          ],
+          "title-md": [
+            "Space Grotesk"
+          ],
+          "headline-md": [
+            "Anybody"
+          ],
+          "display-xl": [
+            "Anybody"
+          ],
+          "body-md": [
+            "Space Grotesk"
+          ],
+          "headline-lg-mobile": [
+            "Anybody"
+          ],
+          "title-lg": [
+            "Space Grotesk"
+          ],
+          "headline-lg": [
+            "Anybody"
+          ]
+        },
+        "fontSize": {
+          "display-xl-mobile": [
+            "38px",
+            {
+              "lineHeight": "42px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "900"
+            }
+          ],
+          "label-lg": [
+            "14px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "0.08em",
+              "fontWeight": "700"
+            }
+          ],
+          "label-sm": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.08em",
+              "fontWeight": "700"
+            }
+          ],
+          "body-lg": [
+            "16px",
+            {
+              "lineHeight": "24px",
+              "fontWeight": "400"
+            }
+          ],
+          "title-md": [
+            "18px",
+            {
+              "lineHeight": "24px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "headline-md": [
+            "28px",
+            {
+              "lineHeight": "34px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "700"
+            }
+          ],
+          "display-xl": [
+            "52px",
+            {
+              "lineHeight": "56px",
+              "letterSpacing": "-0.03em",
+              "fontWeight": "900"
+            }
+          ],
+          "body-md": [
+            "14px",
+            {
+              "lineHeight": "20px",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-lg-mobile": [
+            "28px",
+            {
+              "lineHeight": "32px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "800"
+            }
+          ],
+          "title-lg": [
+            "22px",
+            {
+              "lineHeight": "28px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "700"
+            }
+          ],
+          "headline-lg": [
+            "38px",
+            {
+              "lineHeight": "42px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "800"
+            }
+          ]
+        }
+      },
+    },
+  }</script></head><body class="bg-[#f8f9fa] font-body-md text-[#111827] antialiased selection:bg-red-600 selection:text-white"><main class="w-full bg-[#f8f9fa]"><div class="flex flex-col w-full">
+<!-- Telemetry Sub-Nav Strip -->
+<section class="w-full bg-white border-b border-gray-200 px-4 lg:px-12 py-3 shadow-xs">
+<div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-gray-600 font-label-sm text-label-sm">
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-red-600 text-white font-headline-md italic uppercase text-xs shadow-xs">
+          PADDOCK GATE NTB
+        </span>
+<span class="text-gray-900 font-bold tracking-wide">MANDALIKA GP EXCLUSIVE FAN ZONE</span>
+</div>
+<div class="flex items-center gap-4 text-xs">
+<span class="flex items-center gap-1 text-red-600 font-bold bg-red-50 border border-red-200 px-2.5 py-1">
+<span class="material-symbols-outlined text-sm">alarm</span>
+          BATAS PENDAFTARAN: 05 OKT 2026 - 23:59 WITA
+        </span>
+<span class="hidden sm:inline text-gray-300">/</span>
+<span class="text-gray-900 font-semibold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>STATUS: VERIFIKASI DOKUMEN AKTIF</span>
+</div>
+</div>
+</section>
+<!-- Hero Header Section with Clean White Framing -->
+<section class="relative w-full bg-white border-b border-gray-200 px-4 lg:px-12 py-8 overflow-hidden"><div class="max-w-7xl mx-auto w-full mb-8 relative z-10 overflow-hidden shadow-md bg-white border border-gray-200 rounded-sm"><div class="relative w-full aspect-[16/6] md:aspect-[8/3] overflow-hidden"><img alt="Astra Honda Racing Team - Mario Aji, Veda Pratama, Resky, Maulana, Badly, Bintang - Satu HATI. Melesat Lebih Cepat" class="w-full h-full object-cover object-center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYAKHTicHmiVB2xXVLuOVCZVkK0Jd1Yz-0gtzvKIKL4gs6oyRgY4XlKg4qjkR8_gRmAISMzFaYSwV_Nia-m2LfrRtD9ou2CgKZ0I2fV95L9zf48JNosNfmE009WxcqFeqS-I3aIal4q0Bek84KzVLetrw2DAvQd8eWmuR9GuRZvivZ-fptsaNFi-t6mKMerqjRou4rvEvMaLfSXllvAdoDo5ZH3eiCvUcwWGdf7r4XbxNb0S8LdOJ81wmVhKEiHXx87A"></div></div>
+<div class="max-w-7xl mx-auto flex flex-col gap-6 relative z-10">
+<div class="flex flex-wrap items-center gap-2.5">
+<span class="px-3 py-1 bg-gray-100 border border-gray-200 text-gray-800 font-label-sm text-label-sm uppercase tracking-wider font-bold">
+          PORTAL REGISTRASI RESMI
+        </span>
+<span class="px-3 py-1 bg-red-600 text-white font-label-sm text-label-sm uppercase tracking-wider font-bold shadow-xs">
+          HONDA VARIO SERIES ONLY
+        </span>
+<span class="px-3 py-1 bg-red-50 border border-red-200 text-red-700 font-label-sm text-label-sm uppercase tracking-widest font-bold flex items-center gap-1.5">
+<span class="w-2 h-2 bg-red-600"></span>
+          KONSUMEN DOMISILI NTB
+        </span>
+</div>
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+<div class="max-w-3xl">
+<p class="font-label-lg text-label-lg text-red-600 tracking-widest uppercase font-bold mb-1">ASTRA HONDA RACING TEAM • MEET &amp; GREET 2026</p>
+<h1 class="font-headline-lg text-headline-lg lg:text-display-xl font-display-xl uppercase italic font-black text-gray-900 tracking-tight leading-none mb-3">
+            REGISTRASI meet n greet&nbsp;<div><span style="color: rgb(220, 38, 38); letter-spacing: -0.03em;" class="">EKSKLUSIF&nbsp;</span><span style="color: rgb(220, 38, 38); letter-spacing: -0.03em;" class="">RIDERS HONDA</span><br></div></h1>
+
+</div>
+<!-- Telemetry Data Cockpit -->
+<div class="flex flex-col sm:flex-row items-stretch gap-2.5 bg-gray-50 border border-gray-200 p-2.5 self-start lg:self-end shadow-sm">
+
+<div class="bg-red-600 text-white px-4 py-2.5 flex flex-col justify-center shadow-xs">
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-wider opacity-90">Validasi</span>
+<span class="font-title-md text-title-md font-bold italic leading-tight">Wajib STNK Asli</span>
+</div>
+</div>
+</div>
+<!-- Quick Metrics Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3">
+<div class="bg-white border border-gray-200 px-4 py-3.5 flex items-center gap-3 shadow-xs">
+<span class="material-symbols-outlined text-red-600 text-2xl">calendar_month</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-gray-500 uppercase font-semibold">Waktu Pelaksanaan</span>
+<span class="font-title-md text-title-md text-gray-900 font-bold truncate">Rabu, 07 Okt 2026</span>
+</div>
+</div>
+<div class="bg-white border border-gray-200 px-4 py-3.5 flex items-center gap-3 shadow-xs">
+<span class="material-symbols-outlined text-red-600 text-2xl">pin_drop</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-gray-500 uppercase font-semibold">Paddock Venue</span>
+<span class="font-title-md text-title-md text-gray-900 font-bold truncate">Dapur Sasak, Udayana</span>
+</div>
+</div>
+<div class="bg-white border border-gray-200 px-4 py-3.5 flex items-center gap-3 shadow-xs">
+<span class="material-symbols-outlined text-red-600 text-2xl">schedule</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-gray-500 uppercase font-semibold">Masa Pendaftaran</span>
+<span class="font-title-md text-title-md text-gray-900 font-bold truncate">2 - 5 Okt 2026</span>
+</div>
+</div>
+<div class="bg-white border border-gray-200 px-4 py-3.5 flex items-center gap-3 shadow-xs">
+<span class="material-symbols-outlined text-red-600 text-2xl">two_wheeler</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-gray-500 uppercase font-semibold">Kategori Peserta</span>
+<span class="font-title-md text-title-md text-gray-900 font-bold truncate">Vario Series (NTB)</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Split Console Grid -->
+<section class="w-full px-4 lg:px-12 py-10">
+<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- LEFT COLUMN: High Velocity Registration Form (62% Desktop) -->
+<div class="lg:col-span-7 flex flex-col gap-6">
+<!-- Form Step Progress Tracker -->
+<div class="bg-white border border-gray-200 p-4 flex flex-col gap-3 shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 bg-red-600"></span>
+<span class="font-label-lg text-label-lg font-bold uppercase text-gray-900 tracking-wider">Formulir MEET n GREET<br></span>
+</div>
+<span class="font-label-sm text-label-sm text-red-600 font-mono font-bold tracking-widest">LANGKAH 1 DARI 2</span>
+</div>
+<!-- Racing Bar Step Indicator -->
+<div class="w-full h-2 bg-gray-100 overflow-hidden flex">
+<div class="w-1/2 h-full bg-red-600"></div>
+<div class="w-1/2 h-full bg-gray-200"></div>
+</div>
+<div class="flex items-center justify-between text-xs font-label-sm text-gray-500"><span class="text-gray-900 font-bold">1. Data Diri &amp; Domisili NTB</span><span class="text-gray-500">2. Spesifikasi &amp; Verifikasi STNK</span></div>
+</div>
+<!-- Form Shell -->
+<form class="bg-white border border-gray-200 p-6 sm:p-8 flex flex-col gap-6 shadow-sm" id="riderRegistrationForm" onsubmit="handleRegistrationSubmit(event)">
+<!-- Section 1 Header -->
+<div class="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2.5">
+<span class="font-title-md text-title-md font-bold uppercase italic text-gray-900">1. Data Konsumen &amp; Domisili</span>
+<span class="font-label-sm text-label-sm text-red-600 uppercase font-bold bg-red-50 border border-red-200 px-2 py-0.5">Area NTB Only</span>
+</div>
+<!-- Dealer Selector -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg uppercase tracking-wider text-gray-900 font-bold flex items-center justify-between" for="dealerName">
+<span class="">Nama Dealer Asal Pembelian / Servis <span class="text-red-600">*</span></span>
+<span class="font-label-sm text-label-sm text-gray-500 font-normal">Pilih Dealer NTB</span>
+</label>
+<div class="relative">
+<select class="w-full bg-[#f9fafb] text-gray-900 font-body-md text-body-md px-4 py-3 border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:bg-white cursor-pointer transition-colors" id="dealerName" required="">
+<option disabled="" selected="" value="">-- Pilih Jaringan Dealer Resmi Honda NTB --</option>
+<option value="Astra Motor Ampenan">Astra Motor Ampenan - Mataram</option>
+<option value="Astra Motor Mataram">Astra Motor Mataram (Jl. Pejanggik)</option>
+<option value="Krida Dinamik Mataram">Krida Motor Mataram</option>
+<option value="Nusantara Surya Sakti Mataram">Nusantara Surya Sakti (NSS) Mataram</option>
+<option value="Astra Motor Praya">Astra Motor Praya - Lombok Tengah</option>
+<option value="Astra Motor Selong">Astra Motor Selong - Lombok Timur</option>
+<option value="Astra Motor Sumbawa">Astra Motor Sumbawa Besar</option>
+<option value="Astra Motor Bima">Astra Motor Bima</option>
+<option value="Lainnya NTB">Dealer Resmi Honda Lainnya di NTB</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-3.5 pointer-events-none text-gray-500">expand_more</span>
+</div>
+<p class="font-label-sm text-label-sm text-gray-500">Pastikan unit motor Vario Anda terdaftar di jaringan dealer Astra Motor NTB.</p>
+</div>
+<!-- Full Name according to ID -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg uppercase tracking-wider text-gray-900 font-bold flex items-center justify-between" for="fullName">
+<span class="">Nama Konsumen Sesuai ID (e-KTP) <span class="text-red-600">*</span></span>
+<span class="font-label-sm text-label-sm text-gray-500 font-normal">Identitas Resmi</span>
+</label>
+<input class="w-full bg-[#f9fafb] text-gray-900 font-body-md text-body-md px-4 py-3 border border-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:bg-white transition-colors" id="fullName" placeholder="Contoh: Budi Pratama" required="" type="text">
+<p class="font-label-sm text-label-sm text-gray-500">Nama harus sama persis dengan e-KTP untuk pencocokan gelang akses paddock.</p>
+</div>
+<!-- Address -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg uppercase tracking-wider text-gray-900 font-bold" for="address">
+              Alamat Lengkap Domisili NTB <span class="text-red-600">*</span>
+</label>
+<textarea class="w-full bg-[#f9fafb] text-gray-900 font-body-md text-body-md px-4 py-3 border border-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:bg-white transition-colors" id="address" placeholder="Contoh: Jl. Majapahit No. 88, Kekalik Jaya, Kec. Sekarbela, Kota Mataram, Nusa Tenggara Barat" required="" rows="3"></textarea>
+<p class="font-label-sm text-label-sm text-gray-500">Terbuka untuk warga berdomisili di Pulau Lombok, Sumbawa, Bima, dan sekitarnya.</p>
+</div>
+<!-- Phone / WhatsApp -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg uppercase tracking-wider text-gray-900 font-bold flex items-center justify-between" for="phoneNumber">
+<span class="">Nomor Handphone / WhatsApp <span class="text-red-600">*</span></span>
+<span class="font-label-sm text-label-sm text-red-600 font-bold">Notifikasi Paddock Pass</span>
+</label>
+<div class="flex items-stretch">
+<div class="bg-gray-100 border border-r-0 border-gray-300 text-gray-700 px-4 py-3 font-title-md text-title-md font-bold flex items-center select-none">
+                +62
+              </div>
+<input class="w-full bg-[#f9fafb] text-gray-900 font-body-md text-body-md px-4 py-3 border border-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:bg-white transition-colors" id="phoneNumber" pattern="[0-9]{8,13}" placeholder="81234567890" required="" type="tel">
+</div>
+<p class="font-label-sm text-label-sm text-gray-500">Undangan barcode resmi dan briefing paddock akan dikirimkan langsung ke nomor ini.</p>
+</div>
+<!-- Section 2 Header -->
+<div class="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2.5 mt-2">
+<span class="font-title-md text-title-md font-bold uppercase italic text-gray-900">2. Spesifikasi Unit Honda Vario</span>
+<span class="font-label-sm text-label-sm text-red-600 font-bold uppercase bg-red-50 border border-red-200 px-2 py-0.5">Wajib Vario Series</span>
+</div>
+<!-- Two Column: Vario Model & Plate Number -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Vario Type Selection -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg uppercase tracking-wider text-gray-900 font-bold" for="motorType">
+                Tipe Honda Vario <span class="text-red-600">*</span>
+</label>
+<div class="relative">
+<select class="w-full bg-[#f9fafb] text-gray-900 font-body-md text-body-md px-4 py-3 border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:bg-white cursor-pointer transition-colors" id="motorType" required="">
+<option disabled="" selected="" value="">-- Pilih Varian Vario --</option>
+<option value="Honda Vario 160 ABS/CBS">Honda Vario 160 (All Type)</option>
+<option value="Honda Vario 125 ESP">Honda Vario 125 (All Type)</option>
+<option value="Honda Vario 150 eSP">Honda Vario 150 eSP</option>
+<option value="Honda Vario 110 Series">Honda Vario 110 FI / Karbu</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-3.5 pointer-events-none text-gray-500">expand_more</span>
+</div>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-gray-600">
+<span class="material-symbols-outlined text-xs text-red-600">verified</span>
+                Hanya pemilik Honda Vario Series
+              </span>
+</div>
+<!-- License Plate -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg uppercase tracking-wider text-gray-900 font-bold" for="plateNumber">
+                Nomor Plat Polisi <span class="text-red-600">*</span>
+</label>
+<input class="w-full bg-[#f9fafb] text-gray-900 font-title-md text-title-md uppercase font-bold tracking-widest px-4 py-3 border border-gray-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:bg-white transition-colors" id="plateNumber" placeholder="DR 1234 XX" required="" type="text">
+<p class="font-label-sm text-label-sm text-gray-500">Contoh: DR (Lombok) atau EA (Sumbawa).</p>
+</div>
+</div>
+<!-- STNK Upload Box -->
+<div class="flex flex-col gap-2">
+<label class="font-label-lg text-label-lg uppercase tracking-wider text-gray-900 font-bold flex items-center justify-between">
+<span class="">Upload Foto STNK Asli Honda Vario <span class="text-red-600">*</span></span>
+<span class="font-label-sm text-label-sm text-red-600 uppercase font-bold">Maks. 5 MB (JPG/PNG/PDF)</span>
+</label>
+<div class="relative group bg-gray-50 border-2 border-dashed border-gray-300 rounded-sm p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-red-50/40 hover:border-red-400" id="dropZone">
+<input accept="image/jpeg,image/png,application/pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" id="stnkFile" onchange="handleFileSelect(event)" required="" type="file">
+<div class="flex flex-col items-center gap-2 pointer-events-none" id="dropZoneContent">
+<div class="w-12 h-12 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-3xl">document_scanner</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-md text-title-md font-bold text-gray-900">Klik atau Seret Foto STNK ke Sini</span>
+<span class="font-label-sm text-label-sm text-gray-500">Pastikan Nomor Rangka, Nomor Mesin, dan Plat terlihat jernih</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="px-2.5 py-0.5 bg-white border border-gray-200 text-gray-600 font-label-sm text-label-sm uppercase font-mono shadow-xs">Format: JPG, PNG, PDF</span>
+</div>
+</div>
+<!-- Preview State Container -->
+<div class="hidden flex-col items-center gap-2 pointer-events-none" id="fileSelectedState">
+<span class="material-symbols-outlined text-4xl text-emerald-600">check_circle</span>
+<span class="font-title-md text-title-md text-gray-900 font-bold" id="fileNameLabel">stnk_motor_vario.jpg</span>
+<span class="font-label-sm text-label-sm text-emerald-600 font-bold">File STNK berhasil dipilih • Siap diverifikasi panitia</span>
+</div>
+</div>
+<div class="bg-gray-50 border border-gray-200 p-3 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-red-600 text-lg shrink-0 mt-0.5">info</span>
+<p class="font-label-sm text-label-sm text-gray-600">
+                STNK wajib atas nama sendiri atau keluarga serumah (dapat dibuktikan dengan KK saat verifikasi ulang di venue Dapur Sasak, Udayana).
+              </p>
+</div>
+</div>
+<!-- Section 3 Header: Social Media & Verification Requirement -->
+<!-- Instagram Username -->
+<!-- Checkbox: Instagram Action Tasks -->
+<!-- Submit CTA Button -->
+<div class="flex flex-col sm:flex-row items-center gap-4 pt-2">
+<button class="w-full sm:w-auto flex-1 bg-red-600 hover:bg-red-700 text-white px-8 py-4 font-headline-md text-headline-md uppercase italic font-black tracking-wider flex items-center justify-center gap-3 transition-all hover:shadow-lg active:translate-y-0 shadow-md cursor-pointer" id="submitBtn" type="submit">
+<span class="">KIRIM REGISTRASI SEKARANG</span>
+<span class="material-symbols-outlined text-2xl font-bold">sports_motorsports</span>
+</button>
+</div>
+<!-- Submission Feedback Box (Hidden initially) -->
+<div class="hidden bg-emerald-50 border border-emerald-200 p-5 flex flex-col gap-2 rounded-sm" id="formSuccessAlert">
+<div class="flex items-center gap-2 text-emerald-700">
+<span class="material-symbols-outlined text-2xl">check_circle</span>
+<span class="font-title-md text-title-md font-bold uppercase">Registrasi Berhasil Terkirim!</span>
+</div>
+<p class="font-body-md text-body-md text-gray-800">
+              Terima kasih! Data registrasi Anda telah tersimpan di sistem pit wall AHRT NTB. Tim kami akan melakukan validasi STNK dan mengirim konfirmasi via WhatsApp dalam 1x24 jam.
+            </p>
+<div class="flex items-center gap-4 mt-2 font-label-sm text-label-sm text-gray-600 font-mono">
+<span class="">REF-CODE: <strong class="text-red-600 font-bold">#HND-VARIO-8892</strong></span>
+<span class="">•</span>
+<span class="font-semibold text-emerald-700">STATUS: MENUNGGU VERIFIKASI ADMIN</span>
+</div>
+</div>
+</form>
+</div>
+<!-- RIGHT COLUMN: Sticky Event & Rider Information Display (38% Desktop) -->
+<div class="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-28">
+<!-- Lineup Highlight: Riders Honda (Moto2, Moto3 & Moto4 Asia Cup) -->
+<div class="bg-white border border-gray-200 p-6 shadow-sm flex flex-col gap-5">
+<div class="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 bg-red-600"></span>
+<span class="font-title-md text-title-md font-bold uppercase italic text-gray-900">Official Riders Lineup</span>
+</div>
+<span class="font-label-sm text-label-sm text-red-600 font-bold bg-red-50 border border-red-200 px-2 py-0.5">AHRT HEROES</span>
+</div>
+<!-- Hero Riders Preview Image Card -->
+<div class="relative w-full overflow-hidden bg-gray-100 border border-gray-200">
+<img class="w-full h-56 object-cover object-top hover:scale-105 transition-transform duration-500" data-alt="High-impact official poster composition of Astra Honda Racing Team motorcycle racers Mario Aji and Veda Pratama in official white and red racing suits, flanked by young talent Resky, Maulana, Badly, and Bintang in red Honda team polo shirts, with grand prix racing motorcycles zooming in the background under dynamic track stadium spotlights, intense motorsport atmosphere, cinematic dark navy and racing red tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoiD8yX3hnewjP99vbHehq6J1YymruZncjI737XLmbRwRmVd0ZbT8SzrZxddizzyaFF_ZMdMdV1J2_jvMmSM4OnyUnUELgrKcPibV6k16UaTbD5P-lkj15i5AuckpAzu2iGQ7LJiv3LK_z4FZ9KZeL_o5EoXZF_-0Fy9UM2wcxboCv-uCdheyQG2DWdz1rI2700k-f_SSXvICw1unI3e99LtYRMmpyFfYPfY5h4mnZ9lWAJC5ZKkNKS6dFPFgVKncMlA">
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+<span class="bg-red-600 text-white font-headline-md text-sm italic font-black px-2.5 py-1 uppercase shadow-xs">
+                Astra Honda Racing Team
+              </span>
+<span class="bg-white/90 text-gray-900 font-label-sm text-label-sm px-2 py-1 font-bold backdrop-blur-xs">
+                MANDALIKA 2026
+              </span>
+</div>
+</div>
+<!-- Rider Grid List -->
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Rider 1: Mario Aji -->
+<div class="bg-gray-50 border border-gray-200 p-3 flex flex-col">
+<div class="flex items-center justify-between mb-1">
+<span class="px-1.5 py-0.5 bg-white border border-gray-200 font-headline-md text-headline-md text-red-600 font-black italic">#64</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 bg-red-600 text-white font-bold">MOTO2</span>
+</div>
+<span class="font-title-md text-title-md font-bold uppercase text-gray-900 italic leading-tight">MARIO AJI</span>
+<span class="font-label-sm text-label-sm text-gray-500">Honda Team Asia • Moto2</span>
+</div>
+<!-- Rider 2: Veda Pratama -->
+<div class="bg-gray-50 border border-gray-200 p-3 flex flex-col">
+<div class="flex items-center justify-between mb-1">
+<span class="px-1.5 py-0.5 bg-white border border-gray-200 font-headline-md text-headline-md text-red-600 font-black italic">#9</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 bg-red-600 text-white font-bold">MOTO3</span>
+</div>
+<span class="font-title-md text-title-md font-bold uppercase text-gray-900 italic leading-tight">VEDA PRATAMA</span>
+<span class="font-label-sm text-label-sm text-gray-500">Red Bull MotoGP Rookies Cup</span>
+</div>
+<!-- Rider 3: Resky & Maulana -->
+<div class="bg-gray-50 border border-gray-200 p-3 flex flex-col">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm text-red-600 font-bold">#22 • #17</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 bg-gray-200 text-gray-800 font-bold">MOTO4</span>
+</div>
+<span class="font-title-md text-title-md font-bold uppercase text-gray-900 italic leading-tight">RESKY &amp; MAULANA</span>
+<span class="font-label-sm text-label-sm text-gray-500">Asia Talent Cup Squad</span>
+</div>
+<!-- Rider 4: Badly & Bintang -->
+<div class="bg-gray-50 border border-gray-200 p-3 flex flex-col">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-sm text-label-sm text-red-600 font-bold">#13 • #3</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.5 bg-gray-200 text-gray-800 font-bold">MOTO4</span>
+</div>
+<span class="font-title-md text-title-md font-bold uppercase text-gray-900 italic leading-tight">BADLY &amp; BINTANG</span>
+<span class="font-label-sm text-label-sm text-gray-500">Astra Honda Racing School</span>
+</div>
+</div>
+</div>
+<!-- Syarat & Ketentuan Masuk Paddock Card -->
+<div class="bg-white border border-gray-200 p-6 shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2">
+<span class="font-title-md text-title-md font-bold uppercase italic text-gray-900">Syarat &amp; Ketentuan Acara</span>
+<span class="material-symbols-outlined text-red-600">rule</span>
+</div>
+<ul class="space-y-3 font-body-md text-body-md text-gray-700">
+<li class="flex items-start gap-3">
+<span class="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+<span class="">Pria / Wanita konsumen resmi pemilik sepeda motor <strong class="text-gray-900">Honda Vario Series</strong> domisili Nusa Tenggara Barat.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+<span class="">Menyukai dan berantusiasme tinggi terhadap dunia <strong class="text-gray-900">Racing &amp; Motorsport Indonesia</strong>.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+<span class="">Wajib dapat menunjukkan <strong class="text-gray-900">Fisik STNK Asli Honda Vario</strong> dan e-KTP yang cocok saat registrasi ulang di venue.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+<span class="">Follow akun resmi Instagram <strong class="text-red-600 font-bold">@hondantb.official</strong>.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+<span class="">Memberikan komentar <strong class="text-gray-900">"Honda"</strong> serta men-tag 3 teman pada postingan Meet &amp; Greet.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="w-2 h-2 mt-2 bg-red-600 shrink-0"></span>
+<span class="text-gray-700">Tim Honda NTB akan menghubungi melalui Direct Message (DM) Instagram dan WhatsApp untuk mengirimkan e-invitation pass resmi.</span>
+</li>
+</ul>
+<!-- Periode Pendaftaran Pill -->
+<div class="mt-2 p-3 bg-red-50 border border-red-200 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-gray-600 uppercase font-semibold">Periode Pendaftaran</span>
+<span class="font-title-md text-title-md text-red-600 font-bold">2 - 5 Oktober 2026</span>
+</div>
+<span class="material-symbols-outlined text-red-600 text-2xl">timer</span>
+</div>
+</div>
+<!-- Venue Location Map Card -->
+<div class="bg-white border border-gray-200 p-6 shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between pb-3 bg-gray-50 border border-gray-200 px-4 py-2">
+<span class="font-title-md text-title-md font-bold uppercase italic text-gray-900">Paddock Venue Map</span>
+<span class="font-label-sm text-label-sm text-red-600 font-mono font-bold">DAPUR SASAK</span>
+</div>
+<div class="w-full h-44 border border-gray-200 flex flex-col items-center justify-center p-4 text-center relative overflow-hidden bg-cover bg-center" data-alt="Satellite map location view of Dapur Sasak restaurant on Udayana street Mataram Lombok Nusa Tenggara Barat with telemetry HUD overlays, GPS route pins, and motorsport race paddock indicators." data-location="Dapur Sasak Udayana Mataram NTB" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBB9-44rzIlhHdzm0AHfhRdaD_OR5iL-lYYKuZVfzoxJOpPYz69DtxCk8zkIB-E-B8uiG81H1LJ1bGN8pqD8tjoMB2ycVkBlSHhpd1IdnvG4IumwjWYviJLoK5BLbEa7j22U6SxalXH4MzMwU3TVjLbMBEsZ9QeYnV5XYj2nDeAzguSUk0mmAxu-LOfusxkHiQlS-MNdnumFFZocC2NW4RdRDZmmovENjWA2w-KGKWKjcWdtEcu_Z6N')">
+<div class="absolute inset-0 bg-white/75 backdrop-blur-[1px]"></div>
+<div class="relative z-10 flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-red-600 text-4xl animate-bounce">location_on</span>
+<span class="font-title-md text-title-md font-bold text-gray-900 uppercase">Dapur Sasak, Udayana</span>
+<span class="font-label-sm text-label-sm text-gray-600 font-medium">Jl. Udayana, Mataram, Nusa Tenggara Barat</span>
+<span class="mt-2 px-3 py-1 bg-white border border-gray-300 text-gray-900 font-label-sm text-label-sm uppercase font-bold shadow-xs">Gate Open: 08:00 WITA</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-xs font-label-sm text-gray-600">
+<span class="font-medium">Parkir Khusus Vario Tersedia</span>
+<span class="text-red-600 font-bold">Akses Paddock Fan Area</span>
+</div>
+</div>
+<!-- Official Taglines & FIFASTRA Banner -->
+<div class="bg-white border border-gray-200 p-6 shadow-sm flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="font-headline-md text-headline-md text-red-600 font-black italic">#pakeMotorkuXaja</span>
+<span class="font-label-sm text-label-sm text-gray-700 font-bold uppercase tracking-wider">FIFASTRA</span>
+</div>
+<div class="p-4 bg-red-600 text-white flex flex-col gap-1 shadow-sm">
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-widest opacity-90">Satu HATI.</span>
+<span class="font-headline-md text-headline-md uppercase italic font-black leading-none tracking-tight">MELESAT LEBIH CEPAT</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider font-bold mt-1">Dukung Pembalap Indonesia di Mandalika!</span>
+</div>
+<div class="flex items-center justify-between text-gray-600 font-label-sm text-label-sm pt-2 border-t border-gray-100">
+<span class="font-medium">Instagram: @HondaNTB.Official</span>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+<span class="text-red-600 font-bold">LIVE ACCESS</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Client-side Script for Form Feedback & Dynamics -->
+<script>
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      const dropZoneContent = document.getElementById('dropZoneContent');
+      const fileSelectedState = document.getElementById('fileSelectedState');
+      const fileNameLabel = document.getElementById('fileNameLabel');
+
+      if (file) {
+        fileNameLabel.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+        dropZoneContent.classList.add('hidden');
+        fileSelectedState.classList.remove('hidden');
+        fileSelectedState.classList.add('flex');
+      }
+    }
+
+    function handleRegistrationSubmit(event) {
+      event.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      const formSuccessAlert = document.getElementById('formSuccessAlert');
+      const seatCount = document.getElementById('seatCount');
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <span class="material-symbols-outlined text-2xl animate-spin">refresh</span>
+        <span>MEMVERIFIKASI DATA STNK...</span>
+      `;
+
+      setTimeout(() => {
+        submitBtn.classList.add('hidden');
+        formSuccessAlert.classList.remove('hidden');
+
+        // Dynamically simulate decrementing seat quota
+        let currentSeats = parseInt(seatCount.textContent) || 45;
+        if (currentSeats > 1) {
+          seatCount.textContent = (currentSeats - 1).toString();
+        }
+
+        formSuccessAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 1200);
+    }
+  </script>
+</div></main>
+
+
+</body></html>

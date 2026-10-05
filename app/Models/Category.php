@@ -26,4 +26,12 @@ class Category extends Model
     {
         return $this->hasMany(Brand::class);
     }
+
+    /**
+     * Get the types for the category.
+     */
+    public function types(): HasMany
+    {
+        return $this->hasMany(Type::class);
+    }
 }

@@ -8,7 +8,9 @@ use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\JenisPameranController;
 use App\Http\Controllers\KabupatenController;
 use App\Http\Controllers\MarketingDashboardController;
+use App\Http\Controllers\MeetAndGreetController;
 use App\Http\Controllers\PameranController;
+use App\Http\Controllers\PublicMeetAndGreetController;
 use App\Http\Controllers\R2Controller;
 use App\Http\Controllers\SegmentController;
 use App\Http\Controllers\TypeController;
@@ -18,6 +20,9 @@ use App\Http\Middleware\EnsureMasterDataAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', 'login')->name('home');
+
+Route::get('/meetngreethonda', [PublicMeetAndGreetController::class, 'index'])->name('meetngreethonda.index');
+Route::post('/meetngreethonda', [PublicMeetAndGreetController::class, 'store'])->name('meetngreethonda.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
@@ -45,6 +50,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pameran/{pameran}/approve-kabag', [PameranController::class, 'approveKabag'])->name('pameran.approve-kabag');
     Route::post('pameran/{pameran}/reject', [PameranController::class, 'reject'])->name('pameran.reject');
     Route::resource('pameran', PameranController::class)->except(['show', 'edit']);
+    Route::resource('meet-and-greet', MeetAndGreetController::class)->except(['create', 'show', 'edit']);
     Route::get('api/geocode/search', [GeocodeController::class, 'search'])->name('geocode.search');
     Route::get('api/geocode/reverse', [GeocodeController::class, 'reverse'])->name('geocode.reverse');
 });

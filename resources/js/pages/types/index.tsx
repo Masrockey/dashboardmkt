@@ -42,17 +42,18 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import typesRoute from '@/routes/types';
-import type { PaginatedTypes, Segment, TypeItem } from '@/types';
+import type { Category, PaginatedTypes, Segment, TypeItem } from '@/types';
 
 interface TypesIndexProps {
     types: PaginatedTypes;
     segments: Segment[];
+    categories: Category[];
     filters: {
         search?: string;
     };
 }
 
-export default function TypesIndex({ types, segments, filters }: TypesIndexProps) {
+export default function TypesIndex({ types, segments, categories, filters }: TypesIndexProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -62,10 +63,12 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
     // Create Form
     const createForm = useForm<{
         nama_type: string;
+        category_id: string | number;
         segment_id: string | number;
         nama_pasar: string;
     }>({
         nama_type: '',
+        category_id: '',
         segment_id: '',
         nama_pasar: '',
     });
@@ -73,10 +76,12 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
     // Edit Form
     const editForm = useForm<{
         nama_type: string;
+        category_id: string | number;
         segment_id: string | number;
         nama_pasar: string;
     }>({
         nama_type: '',
+        category_id: '',
         segment_id: '',
         nama_pasar: '',
     });
@@ -120,6 +125,7 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
         e.preventDefault();
         createForm.transform((data) => ({
             ...data,
+            category_id: data.category_id === '' ? null : Number(data.category_id),
             segment_id: data.segment_id === '' ? null : Number(data.segment_id),
         }));
         createForm.post(typesRoute.store.url(), {
@@ -135,6 +141,7 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
         setSelectedType(item);
         editForm.setData({
             nama_type: item.nama_type,
+            category_id: item.category_id ? String(item.category_id) : '',
             segment_id: item.segment_id ? String(item.segment_id) : '',
             nama_pasar: item.nama_pasar || '',
         });
@@ -148,6 +155,7 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
 
         editForm.transform((data) => ({
             ...data,
+            category_id: data.category_id === '' ? null : Number(data.category_id),
             segment_id: data.segment_id === '' ? null : Number(data.segment_id),
         }));
         editForm.put(typesRoute.update.url(selectedType.id), {
@@ -192,7 +200,7 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
                             </h1>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Kelola data type, segment, dan nama pasar produk.
+                            Kelola data type, kategori, segment, dan nama pasar produk.
                         </p>
                     </div>
                     <Button onClick={handleOpenCreate} className="sm:w-auto">
@@ -207,7 +215,7 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                                placeholder="Cari type, segment, atau nama pasar..."
+                                placeholder="Cari type, kategori, segment, atau nama pasar..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-9 pr-8"
@@ -242,6 +250,7 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
                             <TableRow>
                                 <TableHead className="w-16">#</TableHead>
                                 <TableHead>Type</TableHead>
+                                <TableHead>Kategori</TableHead>
                                 <TableHead>Segment</TableHead>
                                 <TableHead>Nama Pasar</TableHead>
                                 <TableHead>Tanggal Dibuat</TableHead>
@@ -251,7 +260,7 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
                         <TableBody>
                             {types.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                                         Data type tidak ditemukan.
                                     </TableCell>
                                 </TableRow>
@@ -263,6 +272,17 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
                                         </TableCell>
                                         <TableCell className="font-semibold text-foreground">
                                             {item.nama_type}
+                                        </TableCell>
+                                        <TableCell>
+                                            {item.category ? (
+                                                <Badge variant="secondary" className="font-medium">
+                                                    {item.category.nama_kategori}
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">
+                                                    - Tanpa Kategori -
+                                                </span>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             {item.segment ? (
@@ -362,7 +382,7 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
                         <DialogHeader>
                             <DialogTitle>Tambah Type Baru</DialogTitle>
                             <DialogDescription>
-                                Masukkan nama type, pilih segment, dan isi nama pasar.
+                                Masukkan nama type, pilih kategori, pilih segment, dan isi nama pasar.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -378,6 +398,28 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
                                     autoFocus
                                 />
                                 <InputError message={createForm.errors.nama_type} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="create_category_id">Kategori</Label>
+                                <Select
+                                    value={createForm.data.category_id ? String(createForm.data.category_id) : 'none'}
+                                    onValueChange={(val) => createForm.setData('category_id', val === 'none' ? '' : val)}
+                                    disabled={createForm.processing}
+                                >
+                                    <SelectTrigger id="create_category_id" className="w-full">
+                                        <SelectValue placeholder="Pilih Kategori" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Tanpa Kategori --</SelectItem>
+                                        {categories.map((c) => (
+                                            <SelectItem key={c.id} value={String(c.id)}>
+                                                {c.nama_kategori}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={createForm.errors.category_id} />
                             </div>
 
                             <div className="space-y-1.5">
@@ -437,7 +479,7 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
                         <DialogHeader>
                             <DialogTitle>Edit Type</DialogTitle>
                             <DialogDescription>
-                                Perbarui nama type, segment, atau nama pasar.
+                                Perbarui nama type, kategori, segment, atau nama pasar.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -452,6 +494,28 @@ export default function TypesIndex({ types, segments, filters }: TypesIndexProps
                                     autoFocus
                                 />
                                 <InputError message={editForm.errors.nama_type} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="edit_category_id">Kategori</Label>
+                                <Select
+                                    value={editForm.data.category_id ? String(editForm.data.category_id) : 'none'}
+                                    onValueChange={(val) => editForm.setData('category_id', val === 'none' ? '' : val)}
+                                    disabled={editForm.processing}
+                                >
+                                    <SelectTrigger id="edit_category_id" className="w-full">
+                                        <SelectValue placeholder="Pilih Kategori" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Tanpa Kategori --</SelectItem>
+                                        {categories.map((c) => (
+                                            <SelectItem key={c.id} value={String(c.id)}>
+                                                {c.nama_kategori}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={editForm.errors.category_id} />
                             </div>
 
                             <div className="space-y-1.5">

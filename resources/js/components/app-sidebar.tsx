@@ -6,6 +6,7 @@ import {
     Building2,
     CalendarDays,
     FolderKanban,
+    Handshake,
     Layers,
     LayoutGrid,
     Map,
@@ -34,6 +35,7 @@ import dealers from '@/routes/dealers';
 import jenisPameran from '@/routes/jenis-pameran';
 import kabupatens from '@/routes/kabupatens';
 import marketing from '@/routes/marketing';
+import meetAndGreet from '@/routes/meet-and-greet';
 import pameran from '@/routes/pameran';
 import segments from '@/routes/segments';
 import types from '@/routes/types';
@@ -55,6 +57,11 @@ const pcdNavItems: NavItem[] = [
         title: 'Jenis Channel',
         href: jenisPameran.index(),
         icon: MapPin,
+    },
+    {
+        title: 'Meet & Greet',
+        href: meetAndGreet.index(),
+        icon: Handshake,
     },
 ];
 
@@ -135,7 +142,10 @@ export function AppSidebar() {
                 title: 'PCD',
                 items: isDealerOrKabagOnly
                     ? pcdNavItems.filter(
-                        (item) => item.title === 'Dashboard Channel' || item.title === 'Channel',
+                        (item) =>
+                            item.title === 'Dashboard Channel' ||
+                            item.title === 'Channel' ||
+                            item.title === 'Meet & Greet',
                     )
                     : pcdNavItems,
             },

@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\DealerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Dealer extends Model
@@ -20,7 +21,18 @@ class Dealer extends Model
     protected $fillable = [
         'kode_dealer',
         'nama_dealer',
+        'category_id',
     ];
+
+    /**
+     * Get the category associated with the dealer.
+     *
+     * @return BelongsTo<Category, $this>
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     /**
      * Get the users associated with the dealer.

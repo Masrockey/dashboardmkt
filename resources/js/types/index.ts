@@ -11,3 +11,4 @@ export type * from './type-model';
 export type * from './ui';
 export type * from './user';
 export type * from './r2';
+export type * from './meet-and-greet';

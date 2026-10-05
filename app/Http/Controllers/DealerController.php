@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\DealerStoreRequest;
 use App\Http\Requests\DealerUpdateRequest;
+use App\Models\Category;
 use App\Models\Dealer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -21,18 +22,27 @@ class DealerController extends Controller
         $search = $request->string('search')->toString();
 
         $dealers = Dealer::query()
+            ->with('category')
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $subQuery) use ($search) {
                     $subQuery->where('kode_dealer', 'like', "%{$search}%")
-                        ->orWhere('nama_dealer', 'like', "%{$search}%");
+                        ->orWhere('nama_dealer', 'like', "%{$search}%")
+                        ->orWhereHas('category', function (Builder $catQuery) use ($search) {
+                            $catQuery->where('nama_kategori', 'like', "%{$search}%");
+                        });
                 });
             })
             ->latest('id')
             ->paginate(10)
             ->withQueryString();
 
+        $categories = Category::query()
+            ->orderBy('nama_kategori')
+            ->get(['id', 'nama_kategori']);
+
         return Inertia::render('dealers/index', [
             'dealers' => $dealers,
+            'categories' => $categories,
             'filters' => [
                 'search' => $search,
             ],

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Dealer;
 use App\Models\User;
 
@@ -17,18 +18,38 @@ test('authenticated users can view the dealers page', function () {
     $response->assertOk();
 });
 
-test('authenticated users can create a dealer with valid data', function () {
+test('authenticated users can create a dealer with valid data including category', function () {
     $user = User::factory()->create();
+    $category = Category::firstOrCreate(['nama_kategori' => 'HONDA']);
 
     $response = $this->actingAs($user)->post(route('dealers.store'), [
         'kode_dealer' => 'DLR001',
         'nama_dealer' => 'Dealer Maju Sentosa',
+        'category_id' => $category->id,
     ]);
 
     $response->assertRedirect(route('dealers.index'));
     $this->assertDatabaseHas('dealers', [
         'kode_dealer' => 'DLR001',
         'nama_dealer' => 'Dealer Maju Sentosa',
+        'category_id' => $category->id,
+    ]);
+});
+
+test('authenticated users can create a dealer without category (null category)', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->post(route('dealers.store'), [
+        'kode_dealer' => 'DLR_NOCAT',
+        'nama_dealer' => 'Dealer Tanpa Kategori',
+        'category_id' => null,
+    ]);
+
+    $response->assertRedirect(route('dealers.index'));
+    $this->assertDatabaseHas('dealers', [
+        'kode_dealer' => 'DLR_NOCAT',
+        'nama_dealer' => 'Dealer Tanpa Kategori',
+        'category_id' => null,
     ]);
 });
 
