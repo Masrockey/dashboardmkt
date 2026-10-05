@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PublicMeetAndGreetStoreRequest;
 use App\Models\Dealer;
 use App\Models\MeetAndGreet;
+use App\Models\Setting;
 use App\Models\Type;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Builder;
@@ -64,6 +65,8 @@ class PublicMeetAndGreetController extends Controller
             'dealerOptions' => MeetAndGreet::DEALER_ASAL_OPTIONS,
             'motorcycleTypes' => $motorcycleTypes,
             'status' => session('success'),
+            'errorMessage' => session('error'),
+            'isRegistrationOpen' => Setting::isMeetAndGreetPublicOpen(),
             'registeredNo' => $actualNoRegistrasi,
             'registrationSuccess' => $registrationSuccess,
         ]);
@@ -74,6 +77,12 @@ class PublicMeetAndGreetController extends Controller
      */
     public function store(PublicMeetAndGreetStoreRequest $request): RedirectResponse
     {
+        if (! Setting::isMeetAndGreetPublicOpen()) {
+            return redirect()
+                ->route('meetngreethonda.index')
+                ->with('error', 'Mohon maaf, pendaftaran formulir Meet & Greet saat ini sedang ditutup.');
+        }
+
         $data = $request->validated();
 
         if (empty($data['dealer_id']) && ! empty($data['dealer_asal'])) {

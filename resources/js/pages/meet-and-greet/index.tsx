@@ -35,14 +35,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import {
     Table,
     TableBody,
@@ -74,6 +69,8 @@ interface MeetAndGreetIndexProps {
     dealers?: string[] | Dealer[];
     dealerOptions?: string[];
     motorcycleTypes: string[];
+    isRegistrationOpen?: boolean;
+    canToggleRegistration?: boolean;
     filters: {
         search?: string;
         dealer_id?: string;
@@ -86,6 +83,8 @@ export default function MeetAndGreetIndex({
     dealers,
     dealerOptions,
     motorcycleTypes,
+    isRegistrationOpen = true,
+    canToggleRegistration = true,
     filters,
 }: MeetAndGreetIndexProps) {
     const availableDealerOptions: readonly string[] =
@@ -123,6 +122,19 @@ export default function MeetAndGreetIndex({
     const [createStnkFileName, setCreateStnkFileName] = useState<string | null>(null);
     const [editStnkPreview, setEditStnkPreview] = useState<string | null>(null);
     const [editStnkFileName, setEditStnkFileName] = useState<string | null>(null);
+    const [isTogglingRegistration, setIsTogglingRegistration] = useState(false);
+
+    const handleToggleRegistration = (checked: boolean) => {
+        setIsTogglingRegistration(true);
+        router.post(
+            '/meet-and-greet/toggle-status',
+            { is_open: checked },
+            {
+                preserveScroll: true,
+                onFinish: () => setIsTogglingRegistration(false),
+            },
+        );
+    };
 
     // Create Form
     const createForm = useForm<{
@@ -351,7 +363,54 @@ export default function MeetAndGreetIndex({
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                    <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+                        {canToggleRegistration && (
+                            <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 shadow-xs dark:border-neutral-800 dark:bg-neutral-900">
+                                <div className="flex flex-col text-left">
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                        Form Publik
+                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                        <span
+                                            className={`inline-block size-2 rounded-full ${
+                                                isRegistrationOpen
+                                                    ? 'bg-emerald-500 animate-pulse'
+                                                    : 'bg-rose-500'
+                                            }`}
+                                        />
+                                        <span
+                                            className={`text-xs font-bold ${
+                                                isRegistrationOpen
+                                                    ? 'text-emerald-700 dark:text-emerald-400'
+                                                    : 'text-rose-700 dark:text-rose-400'
+                                            }`}
+                                        >
+                                            {isRegistrationOpen ? 'Dibuka (ON)' : 'Ditutup (OFF)'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <Switch
+                                    checked={isRegistrationOpen}
+                                    onCheckedChange={handleToggleRegistration}
+                                    disabled={isTogglingRegistration}
+                                    title={
+                                        isRegistrationOpen
+                                            ? 'Pendaftaran sedang ON (publik bisa isi form). Klik untuk mengubah ke OFF'
+                                            : 'Pendaftaran sedang OFF (publik tidak bisa isi form). Klik untuk mengubah ke ON'
+                                    }
+                                />
+                                <a
+                                    href="/meetngreethonda"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors"
+                                    title="Buka Form Publik (Tab Baru)"
+                                >
+                                    <ExternalLink className="size-3.5" />
+                                </a>
+                            </div>
+                        )}
+
                         <Button
                             variant="outline"
                             onClick={handleExportExcel}

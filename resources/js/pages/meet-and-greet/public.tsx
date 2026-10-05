@@ -10,6 +10,7 @@ import {
     Copy,
     FileText,
     Info,
+    Lock,
     MapPin,
     Printer,
     RefreshCw,
@@ -60,6 +61,8 @@ interface PublicMeetAndGreetProps {
     dealerOptions?: string[];
     motorcycleTypes: string[];
     status?: string;
+    errorMessage?: string;
+    isRegistrationOpen?: boolean;
     registeredNo?: string;
     registrationSuccess?: RegistrationSuccessData | null;
 }
@@ -69,6 +72,8 @@ export default function PublicMeetAndGreet({
     dealerOptions,
     motorcycleTypes,
     status,
+    errorMessage,
+    isRegistrationOpen = true,
     registeredNo,
     registrationSuccess,
 }: PublicMeetAndGreetProps) {
@@ -175,6 +180,10 @@ export default function PublicMeetAndGreet({
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
 
+        if (!isRegistrationOpen) {
+            return;
+        }
+
         // Ensure standard phone with 0 prefix for backend storage
         const phoneFormatted = form.data.no_hp.startsWith('0')
             ? form.data.no_hp
@@ -266,8 +275,12 @@ export default function PublicMeetAndGreet({
                                 </span>
                                 <span className="hidden sm:inline text-gray-300">/</span>
                                 <span className="text-gray-900 font-semibold flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                    {isSuccessSubmitted ? 'STATUS: PENDAFTARAN RESMI BERHASIL' : 'STATUS: VERIFIKASI DOKUMEN AKTIF'}
+                                    <span className={`w-2 h-2 rounded-full ${isSuccessSubmitted ? 'bg-emerald-500' : isRegistrationOpen ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                    {isSuccessSubmitted
+                                        ? 'STATUS: PENDAFTARAN RESMI BERHASIL'
+                                        : isRegistrationOpen
+                                            ? 'STATUS: VERIFIKASI DOKUMEN AKTIF'
+                                            : 'STATUS: PENDAFTARAN DITUTUP'}
                                 </span>
                             </div>
                         </div>
@@ -296,6 +309,12 @@ export default function PublicMeetAndGreet({
                                     <span className="w-2 h-2 bg-red-600"></span>
                                     KONSUMEN DOMISILI NTB
                                 </span>
+                                {!isRegistrationOpen && !isSuccessSubmitted && (
+                                    <span className="px-3 py-1 bg-red-600 text-white text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5 shadow-xs">
+                                        <Lock className="size-3" />
+                                        PENDAFTARAN DITUTUP
+                                    </span>
+                                )}
                             </div>
 
                             {/* Headline & Title */}
@@ -323,6 +342,14 @@ export default function PublicMeetAndGreet({
 
                                 {/* Telemetry Data Cockpit */}
                                 <div className="flex flex-col sm:flex-row items-stretch gap-2.5 bg-gray-50 border border-gray-200 p-2.5 self-start lg:self-end shadow-xs">
+                                    <div className={`${isRegistrationOpen ? 'bg-red-600' : 'bg-gray-800'} text-white px-4 py-2.5 flex flex-col justify-center shadow-xs`}>
+                                        <span className="text-[11px] uppercase font-bold tracking-wider opacity-90">
+                                            Status Pendaftaran
+                                        </span>
+                                        <span className="text-lg font-bold italic leading-tight">
+                                            {isRegistrationOpen ? 'Dibuka untuk Publik' : 'Pendaftaran Ditutup'}
+                                        </span>
+                                    </div>
                                     <div className="bg-red-600 text-white px-4 py-2.5 flex flex-col justify-center shadow-xs">
                                         <span className="text-[11px] uppercase font-bold tracking-wider opacity-90">
                                             Validasi
@@ -370,6 +397,24 @@ export default function PublicMeetAndGreet({
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Notice Banner when Closed */}
+                            {!isRegistrationOpen && !isSuccessSubmitted && (
+                                <div className="flex items-center gap-3 bg-red-50 border-l-4 border-red-600 p-4 text-red-950 shadow-xs">
+                                    <AlertCircle className="size-6 shrink-0 text-red-600" />
+                                    <div className="text-sm">
+                                        <strong className="font-bold uppercase tracking-wider text-red-700">Pemberitahuan: </strong>
+                                        Pendaftaran formulir Meet &amp; Greet Honda saat ini sedang <strong>DITUTUP</strong>. Publik tidak dapat mengisi atau mengirimkan formulir pendaftaran baru.
+                                    </div>
+                                </div>
+                            )}
+
+                            {errorMessage && (
+                                <div className="flex items-center gap-3 bg-amber-50 border-l-4 border-amber-600 p-4 text-amber-950 shadow-xs">
+                                    <AlertCircle className="size-6 shrink-0 text-amber-600" />
+                                    <div className="text-sm font-semibold">{errorMessage}</div>
+                                </div>
+                            )}
                         </div>
                     </section>
 
@@ -582,8 +627,40 @@ export default function PublicMeetAndGreet({
                             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                                 {/* LEFT COLUMN: High Velocity Registration Form (62% Desktop) */}
                                 <div className="lg:col-span-7 flex flex-col gap-6">
-                                    {/* Form Step Progress Tracker */}
-                                    <div className="bg-white border border-gray-200 p-4 flex flex-col gap-3 shadow-xs">
+                                    {!isRegistrationOpen ? (
+                                        <div className="bg-white border-2 border-red-200 p-8 sm:p-12 flex flex-col items-center text-center gap-6 shadow-xs">
+                                            <div className="size-20 rounded-full bg-red-50 border-2 border-red-100 flex items-center justify-center text-red-600 shadow-xs">
+                                                <Lock className="size-10" />
+                                            </div>
+                                            <div className="max-w-md flex flex-col gap-2">
+                                                <span className="inline-block bg-red-100 text-red-700 border border-red-200 text-xs font-bold uppercase tracking-wider px-3 py-1 self-center">
+                                                    Pendaftaran Nonaktif
+                                                </span>
+                                                <h2 className="text-2xl sm:text-3xl font-black text-gray-900 uppercase italic">
+                                                    Formulir Pendaftaran Ditutup
+                                                </h2>
+                                                <p className="text-sm text-gray-600 leading-relaxed">
+                                                    Mohon maaf, saat ini pendaftaran online Meet &amp; Greet Honda ditutup oleh panitia. Publik tidak dapat mengisi atau mengirimkan formulir pendaftaran ini.
+                                                </p>
+                                            </div>
+                                            <div className="w-full bg-gray-50 border border-gray-200 p-5 text-xs text-gray-700 text-left flex flex-col gap-2.5">
+                                                <div className="font-bold text-gray-900 uppercase tracking-wider text-xs">
+                                                    Informasi Bagi Konsumen:
+                                                </div>
+                                                <p className="flex items-start gap-2">
+                                                    <span className="text-red-600 font-bold">•</span>
+                                                    <span>Untuk konsumen yang telah memiliki nomor registrasi, tiket registrasi tetap sah dan dapat dicetak melalui tautan bukti registrasi Anda.</span>
+                                                </p>
+                                                <p className="flex items-start gap-2">
+                                                    <span className="text-red-600 font-bold">•</span>
+                                                    <span>Silakan hubungi dealer Honda terdekat atau pantau kanal resmi Instagram <strong>@hondantb.official</strong> untuk informasi pembukaan pendaftaran.</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Form Step Progress Tracker */}
+                                            <div className="bg-white border border-gray-200 p-4 flex flex-col gap-3 shadow-xs">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <span className="w-2.5 h-2.5 bg-red-600"></span>
@@ -917,7 +994,9 @@ export default function PublicMeetAndGreet({
                                             </button>
                                         </div>
                                     </form>
-                                </div>
+                                </>
+                            )}
+                        </div>
 
                                 {/* RIGHT COLUMN: Sticky Event & Rider Information Display (38% Desktop) */}
                                 <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-14">

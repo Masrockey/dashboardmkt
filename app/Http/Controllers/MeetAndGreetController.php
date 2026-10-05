@@ -6,6 +6,7 @@ use App\Http\Requests\MeetAndGreetStoreRequest;
 use App\Http\Requests\MeetAndGreetUpdateRequest;
 use App\Models\Dealer;
 use App\Models\MeetAndGreet;
+use App\Models\Setting;
 use App\Models\Type;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -100,6 +101,8 @@ class MeetAndGreetController extends Controller
             'dealers' => MeetAndGreet::DEALER_ASAL_OPTIONS,
             'dealerOptions' => MeetAndGreet::DEALER_ASAL_OPTIONS,
             'motorcycleTypes' => $motorcycleTypes,
+            'isRegistrationOpen' => Setting::isMeetAndGreetPublicOpen(),
+            'canToggleRegistration' => ! ($user && $user->isDealerOnly()),
             'filters' => [
                 'search' => $search,
                 'dealer_id' => $dealerFilter,
@@ -270,6 +273,33 @@ class MeetAndGreetController extends Controller
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'Cache-Control' => 'max-age=0',
         ]);
+    }
+
+    /**
+     * Toggle the public Meet & Greet registration status.
+     */
+    public function toggleStatus(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        if ($user && $user->isDealerOnly()) {
+            abort(403, 'Hanya admin yang dapat mengubah status pendaftaran.');
+        }
+
+        $request->validate([
+            'is_open' => ['nullable', 'boolean'],
+        ]);
+
+        if ($request->has('is_open')) {
+            $newState = $request->boolean('is_open');
+        } else {
+            $newState = ! Setting::isMeetAndGreetPublicOpen();
+        }
+
+        Setting::setMeetAndGreetPublicOpen($newState);
+
+        $statusText = $newState ? 'dibuka' : 'ditutup';
+
+        return back()->with('success', "Status pendaftaran formulir publik Meet & Greet berhasil {$statusText}.");
     }
 
     /**

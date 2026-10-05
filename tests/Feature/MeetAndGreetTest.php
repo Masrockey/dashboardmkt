@@ -3,6 +3,7 @@
 use App\Enums\UserRole;
 use App\Models\Dealer;
 use App\Models\MeetAndGreet;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
@@ -258,4 +259,102 @@ test('authenticated users can export filtered meet and greet data to xlsx', func
     $response->assertOk();
     $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     expect($response->headers->get('content-disposition'))->toContain('.xlsx');
+});
+
+test('authorized users can toggle meet and greet registration status on and off', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+
+    // Initially open (default true)
+    expect(Setting::isMeetAndGreetPublicOpen())->toBeTrue();
+
+    // Toggle to OFF
+    $response = $this->actingAs($user)->post(route('meet-and-greet.toggle-status'), [
+        'is_open' => false,
+    ]);
+
+    $response->assertRedirect();
+    expect(Setting::isMeetAndGreetPublicOpen())->toBeFalse();
+
+    // Toggle back to ON
+    $response = $this->actingAs($user)->post(route('meet-and-greet.toggle-status'), [
+        'is_open' => true,
+    ]);
+
+    $response->assertRedirect();
+    expect(Setting::isMeetAndGreetPublicOpen())->toBeTrue();
+});
+
+test('dealer only users cannot toggle registration status', function () {
+    $dealer = Dealer::create([
+        'kode_dealer' => 'D001',
+        'nama_dealer' => 'Test Dealer',
+    ]);
+    $dealerUser = User::factory()->create([
+        'role' => UserRole::Dealer,
+        'dealer_id' => $dealer->id,
+    ]);
+
+    $response = $this->actingAs($dealerUser)->post(route('meet-and-greet.toggle-status'), [
+        'is_open' => false,
+    ]);
+
+    $response->assertForbidden();
+});
+
+test('public registration is rejected when registration is toggled off', function () {
+    Setting::setMeetAndGreetPublicOpen(false);
+
+    // Public index displays registration as closed
+    $response = $this->get(route('meetngreethonda.index'));
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('meet-and-greet/public')
+        ->where('isRegistrationOpen', false)
+    );
+
+    // Public store submission is rejected and redirected with error
+    Storage::fake('public');
+    $storeResponse = $this->post(route('meetngreethonda.store'), [
+        'dealer_asal' => 'FIF Mataram',
+        'nama_konsumen' => 'Hendra Setiawan',
+        'alamat' => 'Jl. Majapahit No. 10',
+        'no_hp' => '081234567899',
+        'tipe_motor' => 'PCX 160',
+        'no_plat' => 'DR 9999 ZZ',
+        'stnk' => UploadedFile::fake()->image('stnk_hendra.jpg'),
+    ]);
+
+    $storeResponse->assertRedirect(route('meetngreethonda.index'));
+    $storeResponse->assertSessionHas('error');
+    $this->assertDatabaseMissing('meet_and_greets', [
+        'nama_konsumen' => 'Hendra Setiawan',
+    ]);
+});
+
+test('public registration is accepted when registration is toggled on', function () {
+    Setting::setMeetAndGreetPublicOpen(true);
+
+    $response = $this->get(route('meetngreethonda.index'));
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('meet-and-greet/public')
+        ->where('isRegistrationOpen', true)
+    );
+
+    Storage::fake('public');
+    $storeResponse = $this->post(route('meetngreethonda.store'), [
+        'dealer_asal' => 'FIF Mataram',
+        'nama_konsumen' => 'Rina Wijaya',
+        'alamat' => 'Jl. Sandubaya No. 8',
+        'no_hp' => '087712345678',
+        'tipe_motor' => 'ADV 160',
+        'no_plat' => 'DR 8888 RW',
+        'stnk' => UploadedFile::fake()->image('stnk_rina.jpg'),
+    ]);
+
+    $storeResponse->assertSessionHas('success');
+    $this->assertDatabaseHas('meet_and_greets', [
+        'nama_konsumen' => 'Rina Wijaya',
+        'no_plat' => 'DR 8888 RW',
+    ]);
 });
