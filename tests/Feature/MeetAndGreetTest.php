@@ -94,6 +94,28 @@ test('guests can submit meet and greet registration form via public route', func
     ]);
 });
 
+test('guests can submit meet and greet registration form even if dealer_id is sent as string like SPS Mataram', function () {
+    Storage::fake('public');
+
+    $response = $this->post(route('meetngreethonda.store'), [
+        'dealer_asal' => 'SPS Mataram',
+        'dealer_id' => 'SPS Mataram',
+        'nama_konsumen' => 'Geofani Gerry',
+        'alamat' => 'Jln Langka No. 21',
+        'no_hp' => '0859106667723',
+        'tipe_motor' => 'ADV 160',
+        'no_plat' => 'DR 123 RE',
+        'stnk' => UploadedFile::fake()->image('stnk.png'),
+    ]);
+
+    $saved = MeetAndGreet::where('nama_konsumen', 'Geofani Gerry')->first();
+    expect($saved)->not->toBeNull()
+        ->and($saved->dealer_asal)->toBe('SPS Mataram')
+        ->and(is_int($saved->dealer_id) || is_null($saved->dealer_id))->toBeTrue();
+
+    $response->assertRedirect(route('meetngreethonda.index', ['registered' => $saved->no_registrasi]));
+});
+
 test('guests can view public registration success page with registered parameter', function () {
     $item = MeetAndGreet::factory()->create();
 

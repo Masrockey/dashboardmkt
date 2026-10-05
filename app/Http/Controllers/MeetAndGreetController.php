@@ -110,9 +110,9 @@ class MeetAndGreetController extends Controller
         if (empty($data['dealer_id']) && ! empty($data['dealer_asal'])) {
             $keyword = preg_replace('/^(SO|PT\.?\s*Astra\s*International\s*Tbk-Honda\s*-?)\s*/i', '', $data['dealer_asal']);
             $matchedDealerId = Dealer::where('nama_dealer', 'like', "%{$keyword}%")->value('id');
-            if ($matchedDealerId) {
-                $data['dealer_id'] = $matchedDealerId;
-            }
+            $data['dealer_id'] = $matchedDealerId ?: null;
+        } elseif (! empty($data['dealer_id']) && ! is_numeric($data['dealer_id'])) {
+            $data['dealer_id'] = null;
         }
 
         if ($request->hasFile('stnk')) {
@@ -156,9 +156,9 @@ class MeetAndGreetController extends Controller
         if (empty($data['dealer_id']) && ! empty($data['dealer_asal'])) {
             $keyword = preg_replace('/^(SO|PT\.?\s*Astra\s*International\s*Tbk-Honda\s*-?)\s*/i', '', $data['dealer_asal']);
             $matchedDealerId = Dealer::where('nama_dealer', 'like', "%{$keyword}%")->value('id');
-            if ($matchedDealerId) {
-                $data['dealer_id'] = $matchedDealerId;
-            }
+            $data['dealer_id'] = $matchedDealerId ?: null;
+        } elseif (! empty($data['dealer_id']) && ! is_numeric($data['dealer_id'])) {
+            $data['dealer_id'] = null;
         }
 
         if ($request->hasFile('stnk')) {

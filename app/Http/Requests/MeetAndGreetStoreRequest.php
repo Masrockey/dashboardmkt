@@ -35,6 +35,14 @@ class MeetAndGreetStoreRequest extends FormRequest
         if (! $this->filled('dealer_asal') && $this->user()?->isDealerOnly() && $this->user()?->dealer) {
             $this->merge(['dealer_asal' => $this->user()->dealer->nama_dealer]);
         }
+
+        if ($this->has('dealer_id')) {
+            if (is_numeric($this->dealer_id)) {
+                $this->merge(['dealer_id' => (int) $this->dealer_id]);
+            } else {
+                $this->merge(['dealer_id' => null]);
+            }
+        }
     }
 
     /**
@@ -46,7 +54,7 @@ class MeetAndGreetStoreRequest extends FormRequest
     {
         return [
             'dealer_asal' => ['required', 'string', 'max:100'],
-            'dealer_id' => ['nullable'],
+            'dealer_id' => ['nullable', 'integer'],
             'nama_konsumen' => ['required', 'string', 'max:255'],
             'alamat' => ['required', 'string', 'max:1000'],
             'no_hp' => ['required', 'string', 'max:30'],

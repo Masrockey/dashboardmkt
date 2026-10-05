@@ -131,7 +131,6 @@ export default function PublicMeetAndGreet({
 
     const form = useForm<{
         dealer_asal: string;
-        dealer_id: string;
         nama_konsumen: string;
         alamat: string;
         no_hp: string;
@@ -140,7 +139,6 @@ export default function PublicMeetAndGreet({
         stnk: File | null;
     }>({
         dealer_asal: '',
-        dealer_id: '',
         nama_konsumen: '',
         alamat: '',
         no_hp: '',
@@ -644,7 +642,6 @@ export default function PublicMeetAndGreet({
                                                     value={form.data.dealer_asal}
                                                     onChange={(e) => {
                                                         form.setData('dealer_asal', e.target.value);
-                                                        form.setData('dealer_id', e.target.value);
                                                     }}
                                                     required
                                                     disabled={form.processing}
