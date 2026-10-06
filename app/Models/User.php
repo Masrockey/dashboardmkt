@@ -58,9 +58,34 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
-            'role' => UserRole::class,
             'roles' => 'array',
         ];
+    }
+
+    /**
+     * Get primary role.
+     */
+    public function getRoleAttribute(): UserRole|string
+    {
+        $raw = $this->attributes['role'] ?? null;
+        if ($raw === null) {
+            $roles = $this->roles;
+            $raw = $roles[0] ?? UserRole::Dealer->value;
+        }
+
+        if ($raw instanceof UserRole) {
+            return $raw;
+        }
+
+        return UserRole::tryFrom((string) $raw) ?? (string) $raw;
+    }
+
+    /**
+     * Set primary role.
+     */
+    public function setRoleAttribute($value): void
+    {
+        $this->attributes['role'] = $value instanceof UserRole ? $value->value : (string) $value;
     }
 
     /**
@@ -127,7 +152,7 @@ class User extends Authenticatable
     /**
      * Check if user has any of the specified roles.
      *
-     * @param array<UserRole|string> $roles
+     * @param  array<UserRole|string>  $roles
      */
     public function hasAnyRole(array $roles): bool
     {
@@ -147,5 +172,63 @@ class User extends Authenticatable
     {
         return $this->hasRole(UserRole::Dealer) &&
             ! $this->hasAnyRole([UserRole::Superadmin, UserRole::Spv, UserRole::Kabag]);
+    }
+
+    /**
+     * Check if user has a specific permission.
+     */
+    public function hasPermission(string $permission): bool
+    {
+        // Superadmin always has full access
+        if ($this->hasRole('superadmin')) {
+            return true;
+        }
+
+        $userRoles = $this->roles;
+        if (empty($userRoles)) {
+            return false;
+        }
+
+        $roles = Role::whereIn('name', $userRoles)->get();
+
+        foreach ($roles as $role) {
+            if ($role->hasPermission($permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get all unique permissions for this user.
+     *
+     * @return array<string>
+     */
+    public function getAllPermissions(): array
+    {
+        if ($this->hasRole('superadmin')) {
+            return array_keys(Role::AVAILABLE_PERMISSIONS);
+        }
+
+        $userRoles = $this->roles;
+        if (empty($userRoles)) {
+            return [];
+        }
+
+        $roles = Role::whereIn('name', $userRoles)->get();
+        $permissions = [];
+
+        foreach ($roles as $role) {
+            $perms = $role->permissions ?? [];
+            if (in_array('*', $perms, true)) {
+                return array_keys(Role::AVAILABLE_PERMISSIONS);
+            }
+            foreach ($perms as $p) {
+                $permissions[] = $p;
+            }
+        }
+
+        return array_values(array_unique($permissions));
     }
 }

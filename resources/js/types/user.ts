@@ -1,6 +1,6 @@
 import type { Dealer } from './dealer';
 
-export type UserRole = 'superadmin' | 'spv' | 'kabag' | 'dealer';
+export type UserRole = 'superadmin' | 'spv' | 'kabag' | 'dealer' | (string & {});
 
 export interface RoleOption {
     value: UserRole;

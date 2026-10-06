@@ -12,6 +12,7 @@ use App\Http\Controllers\MeetAndGreetController;
 use App\Http\Controllers\PameranController;
 use App\Http\Controllers\PublicMeetAndGreetController;
 use App\Http\Controllers\R2Controller;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SegmentController;
 use App\Http\Controllers\TypeController;
 use App\Http\Controllers\UserController;
@@ -28,6 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('dealers', DealerController::class)->except(['create', 'show', 'edit']);
     Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
+    Route::resource('roles', RoleController::class)->except(['create', 'show', 'edit']);
 
     // Marketing (Hanya untuk Superadmin, SPV, & Kabag)
     Route::middleware(EnsureMarketingAccess::class)->group(function () {

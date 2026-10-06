@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\UserRole;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,8 +29,8 @@ class UserStoreRequest extends FormRequest
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'roles' => ['nullable', 'array', 'min:1'],
-            'roles.*' => [Rule::enum(UserRole::class)],
-            'role' => ['nullable', Rule::enum(UserRole::class)],
+            'roles.*' => ['string', 'max:50', Rule::exists('roles', 'name')],
+            'role' => ['nullable', 'string', 'max:50', Rule::exists('roles', 'name')],
             'dealer_id' => ['nullable', 'exists:dealers,id'],
         ];
     }

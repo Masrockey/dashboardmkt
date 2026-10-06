@@ -12,3 +12,4 @@ export type * from './ui';
 export type * from './user';
 export type * from './r2';
 export type * from './meet-and-greet';
+export type * from './role';

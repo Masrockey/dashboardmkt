@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Http\Requests\UserStoreRequest;
 use App\Http\Requests\UserUpdateRequest;
 use App\Models\Dealer;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -51,10 +52,18 @@ class UserController extends Controller
             ->orderBy('nama_dealer')
             ->get();
 
-        $roles = array_map(fn (UserRole $role) => [
-            'value' => $role->value,
-            'label' => $role->label(),
-        ], UserRole::cases());
+        $dbRoles = Role::query()->orderBy('id')->get();
+        if ($dbRoles->isNotEmpty()) {
+            $roles = $dbRoles->map(fn (Role $r) => [
+                'value' => $r->name,
+                'label' => $r->label,
+            ])->values()->all();
+        } else {
+            $roles = array_map(fn (UserRole $role) => [
+                'value' => $role->value,
+                'label' => $role->label(),
+            ], UserRole::cases());
+        }
 
         return Inertia::render('users/index', [
             'users' => $users,

@@ -11,6 +11,7 @@ import {
     LayoutGrid,
     Map,
     MapPin,
+    ShieldCheck,
     Tag,
     Users,
 } from 'lucide-react';
@@ -37,143 +38,195 @@ import kabupatens from '@/routes/kabupatens';
 import marketing from '@/routes/marketing';
 import meetAndGreet from '@/routes/meet-and-greet';
 import pameran from '@/routes/pameran';
+import roles from '@/routes/roles';
 import segments from '@/routes/segments';
 import types from '@/routes/types';
 import users from '@/routes/users';
 import type { NavGroup, NavItem } from '@/types';
 
-const pcdNavItems: NavItem[] = [
+type PermittedNavItem = NavItem & {
+    permission?: string;
+};
+
+const pcdNavItems: PermittedNavItem[] = [
     {
         title: 'Dashboard Channel',
         href: dashboard(),
         icon: LayoutGrid,
+        permission: 'pcd.dashboard',
     },
     {
         title: 'Channel',
         href: pameran.index(),
         icon: CalendarDays,
+        permission: 'pcd.channel',
     },
     {
         title: 'Jenis Channel',
         href: jenisPameran.index(),
         icon: MapPin,
+        permission: 'pcd.jenis_channel',
     },
     {
         title: 'Meet & Greet',
         href: meetAndGreet.index(),
         icon: Handshake,
+        permission: 'pcd.meet_and_greet',
     },
 ];
 
-const masterDataNavItems: NavItem[] = [
+const masterDataNavItems: PermittedNavItem[] = [
     {
         title: 'Segment',
         href: segments.index(),
         icon: Layers,
+        permission: 'master_data.access',
     },
     {
         title: 'Brand',
         href: brands.index(),
         icon: BookmarkCheck,
+        permission: 'master_data.access',
     },
     {
         title: 'Kategori',
         href: categories.index(),
         icon: FolderKanban,
+        permission: 'master_data.access',
     },
     {
         title: 'Kabupaten',
         href: kabupatens.index(),
         icon: Map,
+        permission: 'master_data.access',
     },
     {
         title: 'Type',
         href: types.index(),
         icon: Tag,
+        permission: 'master_data.access',
     },
 ];
 
-const marketingNavItems: NavItem[] = [
+const marketingNavItems: PermittedNavItem[] = [
     {
         title: 'Dashboard Marketing',
         href: marketing.dashboard(),
         icon: LayoutGrid,
+        permission: 'marketing.dashboard',
     },
     {
         title: 'R2',
         href: r2.index(),
         icon: Bike,
+        permission: 'marketing.r2',
     },
 ];
 
-
-const managementNavItems: NavItem[] = [
+const managementNavItems: PermittedNavItem[] = [
     {
         title: 'Dealer',
         href: dealers.index(),
         icon: Building2,
+        permission: 'management.dealers',
     },
     {
         title: 'User',
         href: users.index(),
         icon: Users,
+        permission: 'management.users',
+    },
+    {
+        title: 'Role',
+        href: roles.index(),
+        icon: ShieldCheck,
+        permission: 'management.roles',
     },
 ];
 
 const footerNavItems: NavItem[] = [];
 
 export function AppSidebar() {
-    const { auth } = usePage<{ auth: { user: { role?: string; roles?: string[] } } }>().props;
+    const { auth } = usePage<{
+        auth: {
+            user: {
+                role?: string;
+                roles?: string[];
+                permissions?: string[];
+            };
+        };
+    }>().props;
     const userRole = auth?.user?.role;
     const userRoles = auth?.user?.roles || (userRole ? [userRole] : []);
+    const userPermissions = auth?.user?.permissions || [];
 
-    const isDealerOrKabagOnly =
-        userRoles.every((r) => r === 'dealer' || r === 'kabag') && userRoles.length > 0;
-    const canAccessMarketing = userRoles.some(
-        (r) => r === 'superadmin' || r === 'spv' || r === 'kabag',
-    );
+    const isSuperAdmin = userRoles.includes('superadmin') || userPermissions.includes('*');
 
-    const canAccessMasterData = userRoles.some((r) => r === 'superadmin' || r === 'spv');
-    const canAccessManagement = userRoles.some((r) => r === 'superadmin' || r === 'spv');
+    const can = (permission?: string) => {
+        if (!permission) return true;
+        if (isSuperAdmin) return true;
+        if (userPermissions.length > 0) {
+            return userPermissions.includes(permission);
+        }
+        // Fallback backward compatibility
+        if (permission.startsWith('pcd.')) {
+            if (permission === 'pcd.jenis_channel') {
+                return !userRoles.every((r) => r === 'dealer' || r === 'kabag');
+            }
+            return true;
+        }
+        if (permission.startsWith('marketing.')) {
+            return userRoles.some((r) => r === 'superadmin' || r === 'spv' || r === 'kabag');
+        }
+        if (permission.startsWith('master_data.')) {
+            return userRoles.some((r) => r === 'superadmin' || r === 'spv');
+        }
+        if (permission === 'management.dealers' || permission === 'management.users') {
+            return userRoles.some((r) => r === 'superadmin' || r === 'spv');
+        }
+        if (permission === 'management.roles') {
+            return userRoles.includes('superadmin');
+        }
+        return false;
+    };
 
     const navGroups: NavGroup[] = useMemo(() => {
-        const groups: NavGroup[] = [
-            {
-                title: 'PCD',
-                items: isDealerOrKabagOnly
-                    ? pcdNavItems.filter(
-                        (item) =>
-                            item.title === 'Dashboard Channel' ||
-                            item.title === 'Channel' ||
-                            item.title === 'Meet & Greet',
-                    )
-                    : pcdNavItems,
-            },
-        ];
+        const groups: NavGroup[] = [];
 
-        if (canAccessMarketing) {
+        const visiblePcd = pcdNavItems.filter((item) => can(item.permission));
+        if (visiblePcd.length > 0) {
+            groups.push({
+                title: 'PCD',
+                items: visiblePcd,
+            });
+        }
+
+        const visibleMarketing = marketingNavItems.filter((item) => can(item.permission));
+        if (visibleMarketing.length > 0) {
             groups.push({
                 title: 'Marketing',
-                items: marketingNavItems,
+                items: visibleMarketing,
             });
         }
 
-        if (canAccessMasterData) {
+        const visibleMasterData = masterDataNavItems.filter((item) => can(item.permission));
+        if (visibleMasterData.length > 0) {
             groups.push({
                 title: 'Master Data',
-                items: masterDataNavItems,
+                items: visibleMasterData,
             });
         }
 
-        if (canAccessManagement) {
+        const visibleManagement = managementNavItems.filter((item) => can(item.permission));
+        if (visibleManagement.length > 0) {
             groups.push({
                 title: 'Management',
-                items: managementNavItems,
+                items: visibleManagement,
             });
         }
 
         return groups;
-    }, [isDealerOrKabagOnly, canAccessMarketing, canAccessMasterData, canAccessManagement]);
+    }, [isSuperAdmin, userPermissions]);
 
 
     return (

@@ -213,33 +213,41 @@ export default function UsersIndex({ users, dealers, roles, filters }: UsersInde
         });
     };
 
-    const getRoleBadge = (role: UserRole) => {
+    const getRoleBadge = (role: string) => {
+        const found = roles.find((r) => r.value === role);
+        const label = found ? found.label : role;
+
         switch (role) {
             case 'superadmin':
                 return (
                     <Badge className="border-purple-200 bg-purple-100 text-purple-800 dark:border-purple-800 dark:bg-purple-950/60 dark:text-purple-300">
                         <Shield className="mr-1 size-3" />
-                        Superadmin
+                        {label}
                     </Badge>
                 );
             case 'spv':
                 return (
                     <Badge className="border-blue-200 bg-blue-100 text-blue-800 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
                         <UserCheck className="mr-1 size-3" />
-                        SPV
+                        {label}
                     </Badge>
                 );
             case 'kabag':
                 return (
                     <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        Kabag
+                        {label}
                     </Badge>
                 );
             case 'dealer':
-            default:
                 return (
                     <Badge className="border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                        Dealer
+                        {label}
+                    </Badge>
+                );
+            default:
+                return (
+                    <Badge className="border-indigo-200 bg-indigo-100 text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
+                        {label}
                     </Badge>
                 );
         }
