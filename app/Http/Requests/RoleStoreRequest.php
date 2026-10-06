@@ -42,7 +42,7 @@ class RoleStoreRequest extends FormRequest
             'label' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:500'],
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', Rule::in(array_merge(['*'], array_keys(Role::AVAILABLE_PERMISSIONS)))],
+            'permissions.*' => ['string', Rule::in(Role::getAllowedPermissionKeys())],
         ];
     }
 

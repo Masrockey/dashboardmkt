@@ -11,8 +11,10 @@ import {
     LayoutGrid,
     Map,
     MapPin,
+    Megaphone,
     ShieldCheck,
     Tag,
+    Ticket,
     Users,
 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -46,6 +48,7 @@ import type { NavGroup, NavItem } from '@/types';
 
 type PermittedNavItem = NavItem & {
     permission?: string;
+    items?: PermittedNavItem[];
 };
 
 const pcdNavItems: PermittedNavItem[] = [
@@ -105,6 +108,19 @@ const masterDataNavItems: PermittedNavItem[] = [
         href: types.index(),
         icon: Tag,
         permission: 'master_data.access',
+    },
+];
+
+const promosiNavItems: PermittedNavItem[] = [
+    {
+        title: 'ATL',
+        icon: Megaphone,
+        items: [],
+    },
+    {
+        title: 'BTL',
+        icon: Ticket,
+        items: [],
     },
 ];
 
@@ -200,6 +216,24 @@ export function AppSidebar() {
                 items: visiblePcd,
             });
         }
+
+        // Promosi
+        const visiblePromosi = promosiNavItems
+            .map((item) => {
+                if (item.items && item.items.length > 0) {
+                    return {
+                        ...item,
+                        items: item.items.filter((sub) => can(sub.permission)),
+                    };
+                }
+                return item;
+            })
+            .filter((item) => can(item.permission));
+
+        groups.push({
+            title: 'Promosi',
+            items: visiblePromosi,
+        });
 
         const visibleMarketing = marketingNavItems.filter((item) => can(item.permission));
         if (visibleMarketing.length > 0) {

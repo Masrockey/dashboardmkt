@@ -179,3 +179,76 @@ test('unassigned custom roles can be deleted', function () {
     $response->assertRedirect(route('roles.index'));
     $this->assertDatabaseMissing('roles', ['name' => 'temporary_test_role']);
 });
+
+test('superadmin can create a role with granular read write delete permissions', function () {
+    $superadmin = User::factory()->create([
+        'roles' => ['superadmin'],
+        'role' => 'superadmin',
+    ]);
+
+    $response = $this->actingAs($superadmin)->post(route('roles.store'), [
+        'name' => 'channel_viewer',
+        'label' => 'Channel Viewer Only',
+        'description' => 'Hanya bisa melihat channel, tidak bisa edit atau hapus',
+        'permissions' => [
+            'pcd.channel.read',
+            'promosi.atl.read',
+            'management.dealers.read',
+        ],
+    ]);
+
+    $response->assertRedirect(route('roles.index'));
+
+    $role = Role::where('name', 'channel_viewer')->first();
+    expect($role)->not->toBeNull();
+    expect($role->hasPermission('pcd.channel.read'))->toBeTrue();
+    expect($role->hasPermission('pcd.channel'))->toBeTrue(); // Menu visibility check
+    expect($role->hasPermission('pcd.channel.write'))->toBeFalse();
+    expect($role->hasPermission('pcd.channel.delete'))->toBeFalse();
+    expect($role->hasPermission('promosi.atl.read'))->toBeTrue();
+    expect($role->hasPermission('promosi.atl.delete'))->toBeFalse();
+});
+
+test('role hasPermission handles wildcard, broad legacy permissions, and granular actions correctly', function () {
+    $superadminRole = Role::create([
+        'name' => 'test_superadmin',
+        'label' => 'Superadmin Test',
+        'permissions' => ['*'],
+        'is_system' => false,
+    ]);
+
+    expect($superadminRole->hasPermission('pcd.channel.delete'))->toBeTrue();
+    expect($superadminRole->hasPermission('management.users.write'))->toBeTrue();
+
+    // Legacy broad permission
+    $legacyRole = Role::create([
+        'name' => 'legacy_operator',
+        'label' => 'Legacy Operator',
+        'permissions' => ['pcd.channel', 'master_data.access'],
+        'is_system' => false,
+    ]);
+
+    expect($legacyRole->hasPermission('pcd.channel.read'))->toBeTrue();
+    expect($legacyRole->hasPermission('pcd.channel.write'))->toBeTrue();
+    expect($legacyRole->hasPermission('pcd.channel.delete'))->toBeTrue();
+    expect($legacyRole->hasPermission('master_data.brands.read'))->toBeTrue();
+    expect($legacyRole->hasPermission('master_data.types.delete'))->toBeTrue();
+    expect($legacyRole->hasPermission('management.users.read'))->toBeFalse();
+
+    // Granular role
+    $granularRole = Role::create([
+        'name' => 'content_editor',
+        'label' => 'Content Editor',
+        'permissions' => [
+            'pcd.channel.read',
+            'pcd.channel.write',
+            // no delete
+        ],
+        'is_system' => false,
+    ]);
+
+    expect($granularRole->hasPermission('pcd.channel.read'))->toBeTrue();
+    expect($granularRole->hasPermission('pcd.channel.write'))->toBeTrue();
+    expect($granularRole->hasPermission('pcd.channel.delete'))->toBeFalse();
+    expect($granularRole->hasPermission('pcd.channel'))->toBeTrue(); // sidebar menu display
+});

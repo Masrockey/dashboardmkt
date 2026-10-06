@@ -1,11 +1,8 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import {
-    AlertCircle,
     Check,
     CheckSquare,
-    ChevronDown,
-    ChevronUp,
-    Info,
+    Eye,
     Key,
     Pencil,
     Plus,
@@ -46,7 +43,7 @@ import {
 } from '@/components/ui/table';
 import { dashboard } from '@/routes';
 import rolesRoute from '@/routes/roles';
-import type { GroupedPermissions, RoleItem } from '@/types';
+import type { GroupedPermissions, PermissionGroup, RoleItem } from '@/types';
 
 interface RolesIndexProps {
     roles: RoleItem[];
@@ -54,6 +51,483 @@ interface RolesIndexProps {
     filters: {
         search?: string;
     };
+}
+
+function getActionMeta(actionType: string) {
+    switch (actionType) {
+        case 'read':
+            return {
+                label: 'Read',
+                badgeBg:
+                    'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
+                activeCard:
+                    'border-emerald-300 bg-emerald-50/70 dark:border-emerald-800/80 dark:bg-emerald-950/30',
+                icon: Eye,
+            };
+        case 'write':
+            return {
+                label: 'Write',
+                badgeBg:
+                    'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800',
+                activeCard:
+                    'border-blue-300 bg-blue-50/70 dark:border-blue-800/80 dark:bg-blue-950/30',
+                icon: Pencil,
+            };
+        case 'delete':
+            return {
+                label: 'Delete',
+                badgeBg:
+                    'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800',
+                activeCard:
+                    'border-rose-300 bg-rose-50/70 dark:border-rose-800/80 dark:bg-rose-950/30',
+                icon: Trash2,
+            };
+        case 'approval':
+            return {
+                label: 'Approval',
+                badgeBg:
+                    'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800',
+                activeCard:
+                    'border-purple-300 bg-purple-50/70 dark:border-purple-800/80 dark:bg-purple-950/30',
+                icon: ShieldCheck,
+            };
+        default:
+            return {
+                label: actionType.toUpperCase(),
+                badgeBg:
+                    'bg-neutral-100 text-neutral-800 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700',
+                activeCard:
+                    'border-neutral-300 bg-neutral-100/70 dark:border-neutral-700 dark:bg-neutral-800/40',
+                icon: Check,
+            };
+    }
+}
+
+interface PermissionControlMatrixProps {
+    groupedPermissions: GroupedPermissions;
+    selectedPermissions: string[];
+    allPermissionKeys: string[];
+    onChange: (permissions: string[]) => void;
+    error?: string;
+}
+
+function PermissionControlMatrix({
+    groupedPermissions,
+    selectedPermissions,
+    allPermissionKeys,
+    onChange,
+    error,
+}: PermissionControlMatrixProps) {
+    const [filterQuery, setFilterQuery] = useState('');
+
+    // Precompute action types across all groups
+    const { allReadKeys, allWriteKeys, allDeleteKeys } = useMemo(() => {
+        const reads: string[] = [];
+        const writes: string[] = [];
+        const deletes: string[] = [];
+
+        Object.values(groupedPermissions).forEach((grp) => {
+            grp.features.forEach((feat) => {
+                feat.actions.forEach((act) => {
+                    if (act.action === 'read') reads.push(act.key);
+                    if (act.action === 'write') writes.push(act.key);
+                    if (act.action === 'delete') deletes.push(act.key);
+                });
+            });
+        });
+
+        return { allReadKeys: reads, allWriteKeys: writes, allDeleteKeys: deletes };
+    }, [groupedPermissions]);
+
+    const toggleAction = (key: string) => {
+        if (selectedPermissions.includes(key)) {
+            onChange(selectedPermissions.filter((k) => k !== key));
+        } else {
+            onChange([...selectedPermissions, key]);
+        }
+    };
+
+    const toggleFeature = (actions: { key: string }[]) => {
+        const keys = actions.map((a) => a.key);
+        const allSelected = keys.every((k) => selectedPermissions.includes(k));
+        if (allSelected) {
+            onChange(selectedPermissions.filter((k) => !keys.includes(k)));
+        } else {
+            onChange(Array.from(new Set([...selectedPermissions, ...keys])));
+        }
+    };
+
+    const toggleGroupActionType = (group: PermissionGroup, actionType: string) => {
+        const keys: string[] = [];
+        group.features.forEach((feat) => {
+            feat.actions
+                .filter((a) => a.action === actionType)
+                .forEach((a) => keys.push(a.key));
+        });
+        if (keys.length === 0) return;
+
+        const allSelected = keys.every((k) => selectedPermissions.includes(k));
+        if (allSelected) {
+            onChange(selectedPermissions.filter((k) => !keys.includes(k)));
+        } else {
+            onChange(Array.from(new Set([...selectedPermissions, ...keys])));
+        }
+    };
+
+    const toggleEntireGroup = (group: PermissionGroup) => {
+        const keys: string[] = [];
+        group.features.forEach((feat) => {
+            feat.actions.forEach((a) => keys.push(a.key));
+        });
+
+        const allSelected = keys.every((k) => selectedPermissions.includes(k));
+        if (allSelected) {
+            onChange(selectedPermissions.filter((k) => !keys.includes(k)));
+        } else {
+            onChange(Array.from(new Set([...selectedPermissions, ...keys])));
+        }
+    };
+
+    const handleSelectAll = () => {
+        onChange([...allPermissionKeys]);
+    };
+
+    const handleSelectOnlyRead = () => {
+        onChange([...allReadKeys]);
+    };
+
+    const handleSelectReadWrite = () => {
+        onChange(Array.from(new Set([...allReadKeys, ...allWriteKeys])));
+    };
+
+    const handleClearAll = () => {
+        onChange([]);
+    };
+
+    // Filter features according to search query
+    const filteredGroups = useMemo(() => {
+        if (!filterQuery.trim()) {
+            return Object.entries(groupedPermissions);
+        }
+
+        const query = filterQuery.toLowerCase().trim();
+        const result: [string, PermissionGroup][] = [];
+
+        Object.entries(groupedPermissions).forEach(([groupName, groupData]) => {
+            const matchesGroup = groupName.toLowerCase().includes(query);
+            const matchedFeatures = groupData.features.filter((feat) => {
+                return (
+                    matchesGroup ||
+                    feat.feature.toLowerCase().includes(query) ||
+                    feat.actions.some(
+                        (a) =>
+                            a.label.toLowerCase().includes(query) ||
+                            a.description.toLowerCase().includes(query) ||
+                            a.action.toLowerCase().includes(query),
+                    )
+                );
+            });
+
+            if (matchedFeatures.length > 0) {
+                result.push([
+                    groupName,
+                    {
+                        ...groupData,
+                        features: matchedFeatures,
+                    },
+                ]);
+            }
+        });
+
+        return result;
+    }, [groupedPermissions, filterQuery]);
+
+    return (
+        <div className="space-y-4 pt-2">
+            {/* Header & Quick Action Toolbar */}
+            <div className="flex flex-col gap-3 rounded-xl border border-neutral-200/90 bg-neutral-50/70 p-3.5 dark:border-neutral-800 dark:bg-neutral-900/60">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                            Kontrol Hak Akses Menu & Modul
+                        </h3>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Atur izin granular (Read, Write, Delete) untuk setiap modul dan fitur sistem.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs bg-white dark:bg-neutral-900"
+                            onClick={handleSelectAll}
+                        >
+                            <CheckSquare className="mr-1 size-3.5" />
+                            Pilih Semua
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/50"
+                            onClick={handleSelectOnlyRead}
+                        >
+                            <Eye className="mr-1 size-3.5" />
+                            Hanya Read
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-950/50"
+                            onClick={handleSelectReadWrite}
+                        >
+                            <Pencil className="mr-1 size-3.5" />
+                            Read + Write
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs text-neutral-600 dark:text-neutral-400"
+                            onClick={handleClearAll}
+                        >
+                            <Square className="mr-1 size-3.5" />
+                            Batal Semua
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Fast filter */}
+                <div className="relative">
+                    <Search className="text-muted-foreground absolute left-3 top-2.5 size-3.5 pointer-events-none" />
+                    <Input
+                        type="text"
+                        placeholder="Filter modul, nama menu, atau aksi (cth: channel, pameran, read)..."
+                        value={filterQuery}
+                        onChange={(e) => setFilterQuery(e.target.value)}
+                        className="h-8 pl-8 pr-8 text-xs bg-white dark:bg-neutral-900"
+                    />
+                    {filterQuery && (
+                        <button
+                            type="button"
+                            onClick={() => setFilterQuery('')}
+                            className="text-muted-foreground hover:text-foreground absolute right-2.5 top-2.5 size-3.5"
+                        >
+                            <X className="size-3.5" />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <InputError message={error} />
+
+            {/* Groups list */}
+            <div className="space-y-4">
+                {filteredGroups.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-neutral-300 p-8 text-center dark:border-neutral-800">
+                        <p className="text-sm font-medium text-neutral-500">
+                            Tidak ada hak akses yang cocok dengan filter &quot;{filterQuery}&quot;.
+                        </p>
+                    </div>
+                ) : (
+                    filteredGroups.map(([groupName, groupData]) => {
+                        const groupActions = groupData.features.flatMap((f) => f.actions);
+                        const groupActionKeys = groupActions.map((a) => a.key);
+                        const selectedInGroup = groupActionKeys.filter((k) =>
+                            selectedPermissions.includes(k),
+                        ).length;
+                        const isAllGroupSelected =
+                            groupActionKeys.length > 0 &&
+                            selectedInGroup === groupActionKeys.length;
+
+                        // Check action types availability in this group
+                        const readInGroup = groupActions.filter((a) => a.action === 'read');
+                        const writeInGroup = groupActions.filter((a) => a.action === 'write');
+                        const deleteInGroup = groupActions.filter((a) => a.action === 'delete');
+
+                        const isAllReadInGroup =
+                            readInGroup.length > 0 &&
+                            readInGroup.every((a) => selectedPermissions.includes(a.key));
+                        const isAllWriteInGroup =
+                            writeInGroup.length > 0 &&
+                            writeInGroup.every((a) => selectedPermissions.includes(a.key));
+                        const isAllDeleteInGroup =
+                            deleteInGroup.length > 0 &&
+                            deleteInGroup.every((a) => selectedPermissions.includes(a.key));
+
+                        return (
+                            <div
+                                key={groupName}
+                                className="rounded-xl border border-neutral-200/90 bg-neutral-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/50"
+                            >
+                                {/* Group Header */}
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-neutral-200 pb-2.5 mb-3 dark:border-neutral-800">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
+                                            Modul {groupName}
+                                        </span>
+                                        <Badge
+                                            variant={selectedInGroup > 0 ? 'default' : 'outline'}
+                                            className="text-[10px]"
+                                        >
+                                            {selectedInGroup} / {groupActionKeys.length} dipilih
+                                        </Badge>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-1">
+                                        {readInGroup.length > 0 && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className={`h-6 px-2 text-[11px] ${
+                                                    isAllReadInGroup
+                                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                                        : 'text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40'
+                                                }`}
+                                                onClick={() => toggleGroupActionType(groupData, 'read')}
+                                            >
+                                                <Eye className="mr-1 size-3" />
+                                                {isAllReadInGroup ? 'Batal Read' : '+ Read'}
+                                            </Button>
+                                        )}
+                                        {writeInGroup.length > 0 && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className={`h-6 px-2 text-[11px] ${
+                                                    isAllWriteInGroup
+                                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300'
+                                                        : 'text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40'
+                                                }`}
+                                                onClick={() => toggleGroupActionType(groupData, 'write')}
+                                            >
+                                                <Pencil className="mr-1 size-3" />
+                                                {isAllWriteInGroup ? 'Batal Write' : '+ Write'}
+                                            </Button>
+                                        )}
+                                        {deleteInGroup.length > 0 && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className={`h-6 px-2 text-[11px] ${
+                                                    isAllDeleteInGroup
+                                                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                                        : 'text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40'
+                                                }`}
+                                                onClick={() => toggleGroupActionType(groupData, 'delete')}
+                                            >
+                                                <Trash2 className="mr-1 size-3" />
+                                                {isAllDeleteInGroup ? 'Batal Delete' : '+ Delete'}
+                                            </Button>
+                                        )}
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 px-2 text-xs text-neutral-600 hover:text-neutral-950 dark:text-neutral-400"
+                                            onClick={() => toggleEntireGroup(groupData)}
+                                        >
+                                            {isAllGroupSelected ? 'Batalkan Grup' : 'Pilih Semua Grup'}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* Features List */}
+                                <div className="space-y-3">
+                                    {groupData.features.map((feat) => {
+                                        const featKeys = feat.actions.map((a) => a.key);
+                                        const selectedInFeat = featKeys.filter((k) =>
+                                            selectedPermissions.includes(k),
+                                        ).length;
+                                        const isAllFeatSelected =
+                                            featKeys.length > 0 && selectedInFeat === featKeys.length;
+
+                                        return (
+                                            <div
+                                                key={feat.feature}
+                                                className="rounded-xl border border-neutral-200/90 bg-white p-3 shadow-xs dark:border-neutral-800 dark:bg-neutral-950"
+                                            >
+                                                {/* Feature Header */}
+                                                <div className="flex items-center justify-between border-b border-neutral-100 pb-2 mb-2.5 dark:border-neutral-800/80">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100">
+                                                            {feat.feature}
+                                                        </span>
+                                                        <Badge
+                                                            variant={selectedInFeat > 0 ? 'secondary' : 'outline'}
+                                                            className="text-[10px] px-1.5 py-0"
+                                                        >
+                                                            {selectedInFeat} / {feat.actions.length} aksi
+                                                        </Badge>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleFeature(feat.actions)}
+                                                        className="rounded px-1.5 py-0.5 text-[11px] font-medium text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 dark:text-indigo-400 dark:hover:bg-indigo-950/50"
+                                                    >
+                                                        {isAllFeatSelected ? 'Batalkan Fitur' : 'Pilih Semua'}
+                                                    </button>
+                                                </div>
+
+                                                {/* Action Checkboxes Grid */}
+                                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                                    {feat.actions.map((act) => {
+                                                        const checked = selectedPermissions.includes(act.key);
+                                                        const meta = getActionMeta(act.action);
+                                                        const IconComponent = meta.icon;
+
+                                                        return (
+                                                            <label
+                                                                key={act.key}
+                                                                className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors select-none ${
+                                                                    checked
+                                                                        ? meta.activeCard
+                                                                        : 'border-neutral-200/70 bg-neutral-50/40 hover:bg-neutral-100/60 dark:border-neutral-800 dark:bg-neutral-900/40 dark:hover:bg-neutral-900'
+                                                                }`}
+                                                            >
+                                                                <Checkbox
+                                                                    checked={checked}
+                                                                    onCheckedChange={() => toggleAction(act.key)}
+                                                                    className="mt-0.5"
+                                                                />
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <span
+                                                                            className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${meta.badgeBg}`}
+                                                                        >
+                                                                            <IconComponent className="size-2.5" />
+                                                                            {meta.label}
+                                                                        </span>
+                                                                        <span className="truncate text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                                                                            {act.label}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                                                                        {act.description}
+                                                                    </p>
+                                                                </div>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+        </div>
+    );
 }
 
 export default function RolesIndex({
@@ -72,7 +546,9 @@ export default function RolesIndex({
     const allPermissionKeys = useMemo(() => {
         const keys: string[] = [];
         Object.values(groupedPermissions).forEach((group) => {
-            group.forEach((p) => keys.push(p.key));
+            group.features.forEach((feat) => {
+                feat.actions.forEach((act) => keys.push(act.key));
+            });
         });
         return keys;
     }, [groupedPermissions]);
@@ -132,7 +608,6 @@ export default function RolesIndex({
                 .replace(/[^a-z0-9]+/g, '_')
                 .replace(/^_+|_+$/g, '');
 
-            // Only auto-update if name was empty or matched previous auto-generated slug
             const prevSlug = prev.label
                 .toLowerCase()
                 .trim()
@@ -169,10 +644,36 @@ export default function RolesIndex({
     const handleOpenEdit = (role: RoleItem) => {
         setSelectedRole(role);
         editForm.clearErrors();
+
+        // Expand any legacy broad permissions (e.g. 'pcd.channel' -> 'pcd.channel.read', 'pcd.channel.write', etc.)
+        const expandedPermissions = new Set<string>();
+        (role.permissions || []).forEach((p) => {
+            if (p === '*') {
+                expandedPermissions.add('*');
+                return;
+            }
+            if (p === 'master_data.access') {
+                allPermissionKeys
+                    .filter((k) => k.startsWith('master_data.'))
+                    .forEach((k) => expandedPermissions.add(k));
+                return;
+            }
+            let matchedChild = false;
+            allPermissionKeys.forEach((k) => {
+                if (k === p || k.startsWith(p + '.')) {
+                    expandedPermissions.add(k);
+                    matchedChild = true;
+                }
+            });
+            if (!matchedChild) {
+                expandedPermissions.add(p);
+            }
+        });
+
         editForm.setData({
             label: role.label,
             description: role.description || '',
-            permissions: role.permissions || [],
+            permissions: Array.from(expandedPermissions),
         });
         setIsEditOpen(true);
     };
@@ -207,34 +708,6 @@ export default function RolesIndex({
         });
     };
 
-    // Helpers to toggle individual permission checkbox
-    const togglePermission = (
-        current: string[],
-        permKey: string,
-        onChange: (perms: string[]) => void,
-    ) => {
-        if (current.includes(permKey)) {
-            onChange(current.filter((k) => k !== permKey));
-        } else {
-            onChange([...current, permKey]);
-        }
-    };
-
-    // Helper to toggle entire group
-    const toggleGroupPermissions = (
-        current: string[],
-        groupKeys: string[],
-        onChange: (perms: string[]) => void,
-    ) => {
-        const allSelected = groupKeys.every((k) => current.includes(k));
-        if (allSelected) {
-            onChange(current.filter((k) => !groupKeys.includes(k)));
-        } else {
-            const next = Array.from(new Set([...current, ...groupKeys]));
-            onChange(next);
-        }
-    };
-
     // Summary statistics
     const stats = useMemo(() => {
         const total = roles.length;
@@ -258,7 +731,7 @@ export default function RolesIndex({
                             Menu Role & Hak Akses
                         </h1>
                         <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            Kelola role pengguna dan kontrol hak akses menu dalam sistem dashboard.
+                            Kelola role pengguna dan kontrol hak akses menu (Read, Write, Delete) dalam sistem dashboard.
                         </p>
                     </div>
 
@@ -386,7 +859,7 @@ export default function RolesIndex({
                                 <TableHead className="w-12 text-center">No</TableHead>
                                 <TableHead className="min-w-[180px]">Role & Identifier</TableHead>
                                 <TableHead className="min-w-[200px]">Deskripsi</TableHead>
-                                <TableHead className="min-w-[240px]">Hak Akses Menu</TableHead>
+                                <TableHead className="min-w-[260px]">Hak Akses Menu & Aksi</TableHead>
                                 <TableHead className="w-28 text-center">Pengguna</TableHead>
                                 <TableHead className="w-24 text-right">Aksi</TableHead>
                             </TableRow>
@@ -426,6 +899,11 @@ export default function RolesIndex({
                                     const isSuperAdmin =
                                         role.name === 'superadmin' || role.permissions.includes('*');
                                     const canDelete = !role.is_system && role.users_count === 0;
+
+                                    const readCount = role.permissions.filter((p) => p.endsWith('.read')).length;
+                                    const writeCount = role.permissions.filter((p) => p.endsWith('.write')).length;
+                                    const deleteCount = role.permissions.filter((p) => p.endsWith('.delete')).length;
+                                    const hasGranular = readCount > 0 || writeCount > 0 || deleteCount > 0;
 
                                     return (
                                         <TableRow key={role.id}>
@@ -471,21 +949,54 @@ export default function RolesIndex({
                                                         Akses Penuh (Semua Modul)
                                                     </Badge>
                                                 ) : (
-                                                    <div className="flex flex-wrap items-center gap-1.5">
-                                                        <Badge
-                                                            variant="secondary"
-                                                            className="text-xs font-semibold"
-                                                        >
-                                                            {role.permissions.length} Hak Akses
-                                                        </Badge>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-6 px-2 text-[11px] text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-                                                            onClick={() => setActivePermissionPreview(role)}
-                                                        >
-                                                            Lihat Detail
-                                                        </Button>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        {hasGranular && (
+                                                            <div className="flex flex-wrap items-center gap-1">
+                                                                {readCount > 0 && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                                                    >
+                                                                        <Eye className="mr-1 size-2.5" />
+                                                                        {readCount} Read
+                                                                    </Badge>
+                                                                )}
+                                                                {writeCount > 0 && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="border-blue-200 bg-blue-50 text-[10px] text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300"
+                                                                    >
+                                                                        <Pencil className="mr-1 size-2.5" />
+                                                                        {writeCount} Write
+                                                                    </Badge>
+                                                                )}
+                                                                {deleteCount > 0 && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="border-rose-200 bg-rose-50 text-[10px] text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
+                                                                    >
+                                                                        <Trash2 className="mr-1 size-2.5" />
+                                                                        {deleteCount} Delete
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-xs font-semibold"
+                                                            >
+                                                                {role.permissions.length} Hak Akses
+                                                            </Badge>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 px-2 text-[11px] text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                                                                onClick={() => setActivePermissionPreview(role)}
+                                                            >
+                                                                Lihat Detail
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </TableCell>
@@ -540,14 +1051,14 @@ export default function RolesIndex({
                 open={activePermissionPreview !== null}
                 onOpenChange={(open) => !open && setActivePermissionPreview(null)}
             >
-                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Key className="size-5 text-indigo-600 dark:text-indigo-400" />
                             Daftar Hak Akses: {activePermissionPreview?.label}
                         </DialogTitle>
                         <DialogDescription>
-                            Daftar modul dan fitur yang dapat diakses oleh role ini ({activePermissionPreview?.name}).
+                            Daftar modul, menu, dan aksi granular (Read, Write, Delete) yang dapat diakses oleh role ini ({activePermissionPreview?.name}).
                         </DialogDescription>
                     </DialogHeader>
 
@@ -561,52 +1072,100 @@ export default function RolesIndex({
                                     </p>
                                 </div>
                             ) : (
-                                Object.entries(groupedPermissions).map(([groupName, items]) => {
-                                    const activeInGroup = items.filter((it) =>
-                                        activePermissionPreview.permissions.includes(it.key),
+                                Object.entries(groupedPermissions).map(([groupName, groupData]) => {
+                                    const groupActions = groupData.features.flatMap((f) => f.actions);
+                                    const activeGroupActions = groupActions.filter(
+                                        (a) =>
+                                            activePermissionPreview.permissions.includes(a.key) ||
+                                            activePermissionPreview.permissions.some(
+                                                (p) => p !== '' && a.key.startsWith(p + '.'),
+                                            ),
                                     );
 
                                     return (
                                         <div
                                             key={groupName}
-                                            className="rounded-lg border border-neutral-200/80 p-3 dark:border-neutral-800"
+                                            className="rounded-xl border border-neutral-200/80 p-3.5 dark:border-neutral-800"
                                         >
-                                            <div className="mb-2 flex items-center justify-between border-b pb-1.5 dark:border-neutral-800">
-                                                <span className="font-semibold text-sm text-neutral-800 dark:text-neutral-200">
+                                            <div className="mb-2.5 flex items-center justify-between border-b pb-2 dark:border-neutral-800">
+                                                <span className="font-bold text-sm text-neutral-800 dark:text-neutral-200">
                                                     Modul {groupName}
                                                 </span>
                                                 <Badge
-                                                    variant={activeInGroup.length > 0 ? 'default' : 'secondary'}
+                                                    variant={activeGroupActions.length > 0 ? 'default' : 'secondary'}
                                                     className="text-[10px]"
                                                 >
-                                                    {activeInGroup.length} dari {items.length} diizinkan
+                                                    {activeGroupActions.length} dari {groupActions.length} aksi diizinkan
                                                 </Badge>
                                             </div>
 
-                                            <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
-                                                {items.map((perm) => {
-                                                    const isGranted = activePermissionPreview.permissions.includes(
-                                                        perm.key,
+                                            <div className="space-y-2 pt-1">
+                                                {groupData.features.map((feat) => {
+                                                    const activeFeatActions = feat.actions.filter(
+                                                        (a) =>
+                                                            activePermissionPreview.permissions.includes(a.key) ||
+                                                            activePermissionPreview.permissions.some(
+                                                                (p) => p !== '' && a.key.startsWith(p + '.'),
+                                                            ),
                                                     );
+                                                    const hasAny = activeFeatActions.length > 0;
+
                                                     return (
                                                         <div
-                                                            key={perm.key}
-                                                            className={`flex items-start gap-2 rounded-md p-2 text-xs transition-colors ${
-                                                                isGranted
-                                                                    ? 'bg-emerald-50 text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-200'
-                                                                    : 'bg-neutral-50/60 text-neutral-400 opacity-60 dark:bg-neutral-900/40 dark:text-neutral-500'
+                                                            key={feat.feature}
+                                                            className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border p-2.5 text-xs transition-colors ${
+                                                                hasAny
+                                                                    ? 'border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+                                                                    : 'border-neutral-100 bg-neutral-50/60 text-neutral-400 opacity-60 dark:border-neutral-800/50 dark:bg-neutral-950/40 dark:text-neutral-500'
                                                             }`}
                                                         >
-                                                            {isGranted ? (
-                                                                <Check className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                                            ) : (
-                                                                <X className="mt-0.5 size-3.5 shrink-0 text-neutral-400" />
-                                                            )}
-                                                            <div>
-                                                                <p className="font-medium">{perm.label}</p>
-                                                                <p className="text-[11px] opacity-80">
-                                                                    {perm.description}
-                                                                </p>
+                                                            <div className="flex items-center gap-2">
+                                                                {hasAny ? (
+                                                                    <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                                ) : (
+                                                                    <X className="size-4 shrink-0 text-neutral-400" />
+                                                                )}
+                                                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                                                    {feat.feature}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="flex flex-wrap items-center gap-1.5 pl-6 sm:pl-0">
+                                                                {feat.actions.map((act) => {
+                                                                    const isGranted =
+                                                                        activePermissionPreview.permissions.includes(act.key) ||
+                                                                        activePermissionPreview.permissions.some(
+                                                                            (p) => p !== '' && act.key.startsWith(p + '.'),
+                                                                        );
+
+                                                                    let colorClass = '';
+                                                                    if (act.action === 'read') {
+                                                                        colorClass = isGranted
+                                                                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300'
+                                                                            : 'bg-neutral-100 text-neutral-400 opacity-50 dark:bg-neutral-800';
+                                                                    } else if (act.action === 'write') {
+                                                                        colorClass = isGranted
+                                                                            ? 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-300'
+                                                                            : 'bg-neutral-100 text-neutral-400 opacity-50 dark:bg-neutral-800';
+                                                                    } else if (act.action === 'delete') {
+                                                                        colorClass = isGranted
+                                                                            ? 'bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950 dark:text-rose-300'
+                                                                            : 'bg-neutral-100 text-neutral-400 opacity-50 dark:bg-neutral-800';
+                                                                    } else {
+                                                                        colorClass = isGranted
+                                                                            ? 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950 dark:text-purple-300'
+                                                                            : 'bg-neutral-100 text-neutral-400 opacity-50 dark:bg-neutral-800';
+                                                                    }
+
+                                                                    return (
+                                                                        <span
+                                                                            key={act.key}
+                                                                            className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-semibold ${colorClass}`}
+                                                                        >
+                                                                            {act.label}
+                                                                        </span>
+                                                                    );
+                                                                })}
                                                             </div>
                                                         </div>
                                                     );
@@ -631,14 +1190,14 @@ export default function RolesIndex({
 
             {/* Dialog Tambah Role */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Plus className="size-5 text-indigo-600 dark:text-indigo-400" />
                             Tambah Role Baru
                         </DialogTitle>
                         <DialogDescription>
-                            Buat role baru dan atur izin hak akses modul untuk pengguna sistem.
+                            Buat role baru dan atur izin hak akses modul (Read, Write, Delete) untuk pengguna sistem.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -697,128 +1256,13 @@ export default function RolesIndex({
                         </div>
 
                         {/* Kontrol Hak Akses Matrix */}
-                        <div className="space-y-3 pt-2">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-2 dark:border-neutral-800">
-                                <div>
-                                    <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                                        Kontrol Hak Akses Menu & Modul
-                                    </h3>
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                        Pilih menu apa saja yang boleh dilihat dan digunakan oleh role ini.
-                                    </p>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        onClick={() =>
-                                            createForm.setData('permissions', [...allPermissionKeys])
-                                        }
-                                    >
-                                        <CheckSquare className="mr-1 size-3.5" />
-                                        Pilih Semua
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 text-xs text-neutral-600 dark:text-neutral-400"
-                                        onClick={() => createForm.setData('permissions', [])}
-                                    >
-                                        <Square className="mr-1 size-3.5" />
-                                        Batal Semua
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <InputError message={createForm.errors.permissions} />
-
-                            <div className="space-y-4 pt-1">
-                                {Object.entries(groupedPermissions).map(([groupName, items]) => {
-                                    const groupKeys = items.map((i) => i.key);
-                                    const isAllGroupSelected = groupKeys.every((k) =>
-                                        createForm.data.permissions.includes(k),
-                                    );
-                                    const someGroupSelected =
-                                        !isAllGroupSelected &&
-                                        groupKeys.some((k) => createForm.data.permissions.includes(k));
-
-                                    return (
-                                        <div
-                                            key={groupName}
-                                            className="rounded-xl border border-neutral-200/90 bg-neutral-50/50 p-3.5 dark:border-neutral-800 dark:bg-neutral-900/50"
-                                        >
-                                            <div className="flex items-center justify-between border-b border-neutral-200 pb-2 dark:border-neutral-800">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                                                        Modul {groupName}
-                                                    </span>
-                                                    <Badge variant="outline" className="text-[10px]">
-                                                        {items.filter((i) => createForm.data.permissions.includes(i.key)).length} / {items.length} dipilih
-                                                    </Badge>
-                                                </div>
-
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-6 px-2 text-xs text-neutral-600 hover:text-neutral-950 dark:text-neutral-400"
-                                                    onClick={() =>
-                                                        toggleGroupPermissions(
-                                                            createForm.data.permissions,
-                                                            groupKeys,
-                                                            (next) => createForm.setData('permissions', next),
-                                                        )
-                                                    }
-                                                >
-                                                    {isAllGroupSelected ? 'Batalkan Grup' : 'Pilih Semua Grup'}
-                                                </Button>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 gap-2.5 pt-3 sm:grid-cols-2">
-                                                {items.map((perm) => {
-                                                    const checked = createForm.data.permissions.includes(perm.key);
-                                                    return (
-                                                        <label
-                                                            key={perm.key}
-                                                            className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors ${
-                                                                checked
-                                                                    ? 'border-indigo-300 bg-indigo-50/80 dark:border-indigo-800 dark:bg-indigo-950/40'
-                                                                    : 'border-neutral-200/70 bg-white hover:bg-neutral-100/60 dark:border-neutral-800 dark:bg-neutral-900'
-                                                            }`}
-                                                        >
-                                                            <Checkbox
-                                                                checked={checked}
-                                                                onCheckedChange={() =>
-                                                                    togglePermission(
-                                                                        createForm.data.permissions,
-                                                                        perm.key,
-                                                                        (next) =>
-                                                                            createForm.setData('permissions', next),
-                                                                    )
-                                                                }
-                                                                className="mt-0.5"
-                                                            />
-                                                            <div className="select-none">
-                                                                <p className="font-semibold text-xs text-neutral-900 dark:text-neutral-100">
-                                                                    {perm.label}
-                                                                </p>
-                                                                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                                                                    {perm.description}
-                                                                </p>
-                                                            </div>
-                                                        </label>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        <PermissionControlMatrix
+                            groupedPermissions={groupedPermissions}
+                            selectedPermissions={createForm.data.permissions}
+                            allPermissionKeys={allPermissionKeys}
+                            onChange={(next) => createForm.setData('permissions', next)}
+                            error={createForm.errors.permissions}
+                        />
 
                         <DialogFooter className="mt-6">
                             <DialogClose asChild>
@@ -845,7 +1289,7 @@ export default function RolesIndex({
 
             {/* Dialog Edit Role */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Pencil className="size-5 text-indigo-600 dark:text-indigo-400" />
@@ -914,125 +1358,13 @@ export default function RolesIndex({
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-3 pt-2">
-                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b pb-2 dark:border-neutral-800">
-                                    <div>
-                                        <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                                            Kontrol Hak Akses Menu & Modul
-                                        </h3>
-                                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                            Sesuaikan hak akses modul untuk role ini.
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-7 text-xs"
-                                            onClick={() =>
-                                                editForm.setData('permissions', [...allPermissionKeys])
-                                            }
-                                        >
-                                            <CheckSquare className="mr-1 size-3.5" />
-                                            Pilih Semua
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-7 text-xs text-neutral-600 dark:text-neutral-400"
-                                            onClick={() => editForm.setData('permissions', [])}
-                                        >
-                                            <Square className="mr-1 size-3.5" />
-                                            Batal Semua
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <InputError message={editForm.errors.permissions} />
-
-                                <div className="space-y-4 pt-1">
-                                    {Object.entries(groupedPermissions).map(([groupName, items]) => {
-                                        const groupKeys = items.map((i) => i.key);
-                                        const isAllGroupSelected = groupKeys.every((k) =>
-                                            editForm.data.permissions.includes(k),
-                                        );
-
-                                        return (
-                                            <div
-                                                key={groupName}
-                                                className="rounded-xl border border-neutral-200/90 bg-neutral-50/50 p-3.5 dark:border-neutral-800 dark:bg-neutral-900/50"
-                                            >
-                                                <div className="flex items-center justify-between border-b border-neutral-200 pb-2 dark:border-neutral-800">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                                                            Modul {groupName}
-                                                        </span>
-                                                        <Badge variant="outline" className="text-[10px]">
-                                                            {items.filter((i) => editForm.data.permissions.includes(i.key)).length} / {items.length} dipilih
-                                                        </Badge>
-                                                    </div>
-
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-6 px-2 text-xs text-neutral-600 hover:text-neutral-950 dark:text-neutral-400"
-                                                        onClick={() =>
-                                                            toggleGroupPermissions(
-                                                                editForm.data.permissions,
-                                                                groupKeys,
-                                                                (next) => editForm.setData('permissions', next),
-                                                            )
-                                                        }
-                                                    >
-                                                        {isAllGroupSelected ? 'Batalkan Grup' : 'Pilih Semua Grup'}
-                                                    </Button>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 gap-2.5 pt-3 sm:grid-cols-2">
-                                                    {items.map((perm) => {
-                                                        const checked = editForm.data.permissions.includes(perm.key);
-                                                        return (
-                                                            <label
-                                                                key={perm.key}
-                                                                className={`flex cursor-pointer items-start gap-2.5 rounded-lg border p-2.5 transition-colors ${
-                                                                    checked
-                                                                        ? 'border-indigo-300 bg-indigo-50/80 dark:border-indigo-800 dark:bg-indigo-950/40'
-                                                                        : 'border-neutral-200/70 bg-white hover:bg-neutral-100/60 dark:border-neutral-800 dark:bg-neutral-900'
-                                                                }`}
-                                                            >
-                                                                <Checkbox
-                                                                    checked={checked}
-                                                                    onCheckedChange={() =>
-                                                                        togglePermission(
-                                                                            editForm.data.permissions,
-                                                                            perm.key,
-                                                                            (next) =>
-                                                                                editForm.setData('permissions', next),
-                                                                        )
-                                                                    }
-                                                                    className="mt-0.5"
-                                                                />
-                                                                <div className="select-none">
-                                                                    <p className="font-semibold text-xs text-neutral-900 dark:text-neutral-100">
-                                                                        {perm.label}
-                                                                    </p>
-                                                                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                                                                        {perm.description}
-                                                                    </p>
-                                                                </div>
-                                                            </label>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                            <PermissionControlMatrix
+                                groupedPermissions={groupedPermissions}
+                                selectedPermissions={editForm.data.permissions}
+                                allPermissionKeys={allPermissionKeys}
+                                onChange={(next) => editForm.setData('permissions', next)}
+                                error={editForm.errors.permissions}
+                            />
                         )}
 
                         <DialogFooter className="mt-6">

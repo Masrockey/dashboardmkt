@@ -1,10 +1,23 @@
-export interface PermissionItem {
+export type PermissionActionType = 'read' | 'write' | 'delete' | 'approval' | string;
+
+export interface PermissionAction {
     key: string;
+    action: PermissionActionType;
     label: string;
     description: string;
 }
 
-export type GroupedPermissions = Record<string, PermissionItem[]>;
+export interface PermissionFeature {
+    feature: string;
+    actions: PermissionAction[];
+}
+
+export interface PermissionGroup {
+    group: string;
+    features: PermissionFeature[];
+}
+
+export type GroupedPermissions = Record<string, PermissionGroup>;
 
 export interface RoleItem {
     id: number;
