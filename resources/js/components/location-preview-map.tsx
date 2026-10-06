@@ -30,6 +30,7 @@ interface LocationPreviewMapProps {
     otherChannels?: PameranItem[];
     currentChannelId?: number;
     isDealer?: boolean;
+    showRadius?: boolean;
 }
 
 export default function LocationPreviewMap({
@@ -42,6 +43,7 @@ export default function LocationPreviewMap({
     otherChannels = [],
     currentChannelId,
     isDealer,
+    showRadius = true,
 }: LocationPreviewMapProps) {
     const page = usePage<{ auth?: { user?: { role?: string } } }>();
     const isDealerUser = isDealer ?? (page?.props?.auth?.user?.role === 'dealer');
@@ -52,12 +54,14 @@ export default function LocationPreviewMap({
     const reviewCircleRef = useRef<L.Circle | null>(null);
     const otherMarkersLayerRef = useRef<L.LayerGroup | null>(null);
 
-    const conflicts = checkRadiusConflicts(
-        latitude,
-        longitude,
-        otherChannels,
-        currentChannelId,
-    );
+    const conflicts = showRadius
+        ? checkRadiusConflicts(
+            latitude,
+            longitude,
+            otherChannels,
+            currentChannelId,
+        )
+        : [];
     const hasConflict = conflicts.length > 0;
 
     // Helper to render other registered channels on map
@@ -215,39 +219,41 @@ export default function LocationPreviewMap({
         renderOtherChannels(otherLayer, otherChannels, currentChannelId, isDealerUser);
 
         // Circle radius 2km untuk channel yang sedang ditinjau
-        const initialConflicts = checkRadiusConflicts(
-            latitude,
-            longitude,
-            otherChannels,
-            currentChannelId,
-        );
-        const isConflict = initialConflicts.length > 0;
-        const circleColor = isConflict ? '#dc2626' : '#2563eb';
-        const fillColor = isConflict ? '#ef4444' : '#3b82f6';
-        const fillOpacity = isConflict ? 0.22 : 0.12;
+        if (showRadius) {
+            const initialConflicts = checkRadiusConflicts(
+                latitude,
+                longitude,
+                otherChannels,
+                currentChannelId,
+            );
+            const isConflict = initialConflicts.length > 0;
+            const circleColor = isConflict ? '#dc2626' : '#2563eb';
+            const fillColor = isConflict ? '#ef4444' : '#3b82f6';
+            const fillOpacity = isConflict ? 0.22 : 0.12;
 
-        const reviewCircle = L.circle([latitude, longitude], {
-            radius: 2000,
-            color: circleColor,
-            weight: 2,
-            dashArray: '5, 5',
-            fillColor,
-            fillOpacity,
-        }).addTo(map);
+            const reviewCircle = L.circle([latitude, longitude], {
+                radius: 2000,
+                color: circleColor,
+                weight: 2,
+                dashArray: '5, 5',
+                fillColor,
+                fillOpacity,
+            }).addTo(map);
 
-        const tooltipText = isConflict
-            ? `⚠️ Peringatan: Menimpa Radius Channel Lain! (${initialConflicts[0].distance < 1000 ? `${Math.round(initialConflicts[0].distance)} m` : `${(initialConflicts[0].distance / 1000).toFixed(2)} km`})`
-            : 'Radius Channel Ditinjau: 2 km';
+            const tooltipText = isConflict
+                ? `⚠️ Peringatan: Menimpa Radius Channel Lain! (${initialConflicts[0].distance < 1000 ? `${Math.round(initialConflicts[0].distance)} m` : `${(initialConflicts[0].distance / 1000).toFixed(2)} km`})`
+                : 'Radius Channel Ditinjau: 2 km';
 
-        reviewCircle.bindTooltip(tooltipText, {
-            direction: 'bottom',
-            offset: [0, 20],
-            className: isConflict
-                ? 'text-xs font-bold text-red-600 dark:text-red-400 border border-red-300'
-                : 'text-xs font-semibold text-blue-700 dark:text-blue-300',
-        });
+            reviewCircle.bindTooltip(tooltipText, {
+                direction: 'bottom',
+                offset: [0, 20],
+                className: isConflict
+                    ? 'text-xs font-bold text-red-600 dark:text-red-400 border border-red-300'
+                    : 'text-xs font-semibold text-blue-700 dark:text-blue-300',
+            });
 
-        reviewCircleRef.current = reviewCircle;
+            reviewCircleRef.current = reviewCircle;
+        }
 
         // Marker for the current channel being reviewed
         const marker = L.marker([latitude, longitude], {
@@ -255,8 +261,11 @@ export default function LocationPreviewMap({
             zIndexOffset: 1000,
         }).addTo(map);
 
+        const isConflict = showRadius && conflicts.length > 0;
         marker.bindTooltip(
-            `<b>Titik Channel Ditinjau</b>${isConflict ? ' - ⚠️ Menimpa Radius' : ''}<br/><span style="font-size: 10px;">${popupText || ''}</span>`,
+            showRadius
+                ? `<b>Titik Channel Ditinjau</b>${isConflict ? ' - ⚠️ Menimpa Radius' : ''}<br/><span style="font-size: 10px;">${popupText || ''}</span>`
+                : `<b>Titik Lokasi</b><br/><span style="font-size: 10px;">${popupText || ''}</span>`,
             {
                 permanent: true,
                 direction: 'top',
@@ -268,7 +277,7 @@ export default function LocationPreviewMap({
         );
 
         if (popupText) {
-            marker.bindPopup(`<b>Channel Ditinjau</b><br/>${popupText}`);
+            marker.bindPopup(`<b>${showRadius ? 'Channel Ditinjau' : 'Lokasi'}</b><br/>${popupText}`);
         }
 
         markerRef.current = marker;
@@ -372,7 +381,7 @@ export default function LocationPreviewMap({
             </button>
 
             {/* Top Warning Badge if Menimpa Radius */}
-            {hasConflict && (
+            {showRadius && hasConflict && (
                 <div className="absolute top-2 left-2 z-[400] max-w-[calc(100%-140px)] rounded-md bg-red-600/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-md backdrop-blur-xs flex items-center gap-1.5 animate-in fade-in duration-150">
                     <AlertTriangle className="size-3.5 shrink-0 text-white animate-pulse" />
                     <span className="truncate">
@@ -386,19 +395,21 @@ export default function LocationPreviewMap({
                 <div className="rounded bg-background/90 px-2 py-0.5 text-[10px] font-mono text-neutral-600 dark:text-neutral-300 shadow-xs backdrop-blur-xs border border-neutral-200 dark:border-neutral-800">
                     {latitude.toFixed(6)}, {longitude.toFixed(6)}
                 </div>
-                {hasConflict ? (
-                    <div className="rounded-full bg-red-100/95 dark:bg-red-950/95 border border-red-300 dark:border-red-800 px-2.5 py-0.5 text-[10px] font-semibold text-red-700 dark:text-red-300 shadow-xs backdrop-blur-xs flex items-center gap-1">
-                        <AlertTriangle className="size-3 text-red-600 shrink-0" />
-                        <span>Menimpa {conflicts.length} Radius Channel Terdaftar</span>
-                    </div>
-                ) : (
-                    otherChannelsCount > 0 && (
-                        <div className="rounded-full bg-blue-50/95 dark:bg-blue-950/90 border border-blue-200 dark:border-blue-900 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300 shadow-xs backdrop-blur-xs flex items-center gap-1.5">
-                            <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
-                            {isDealerUser
-                                ? `${otherChannelsCount} Radius Channel (2 km)`
-                                : `${otherChannelsCount} Channel Terdaftar Lainnya`}
+                {showRadius && (
+                    hasConflict ? (
+                        <div className="rounded-full bg-red-100/95 dark:bg-red-950/95 border border-red-300 dark:border-red-800 px-2.5 py-0.5 text-[10px] font-semibold text-red-700 dark:text-red-300 shadow-xs backdrop-blur-xs flex items-center gap-1">
+                            <AlertTriangle className="size-3 text-red-600 shrink-0" />
+                            <span>Menimpa {conflicts.length} Radius Channel Terdaftar</span>
                         </div>
+                    ) : (
+                        otherChannelsCount > 0 && (
+                            <div className="rounded-full bg-blue-50/95 dark:bg-blue-950/90 border border-blue-200 dark:border-blue-900 px-2.5 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300 shadow-xs backdrop-blur-xs flex items-center gap-1.5">
+                                <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                {isDealerUser
+                                    ? `${otherChannelsCount} Radius Channel (2 km)`
+                                    : `${otherChannelsCount} Channel Terdaftar Lainnya`}
+                            </div>
+                        )
                     )
                 )}
             </div>

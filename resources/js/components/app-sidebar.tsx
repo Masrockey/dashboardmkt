@@ -1,7 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
 import r2 from '@/routes/r2';
+import billboards from '@/routes/billboards';
 import {
     Bike,
+    Presentation,
     BookmarkCheck,
     Building2,
     CalendarDays,
@@ -115,7 +117,14 @@ const promosiNavItems: PermittedNavItem[] = [
     {
         title: 'ATL',
         icon: Megaphone,
-        items: [],
+        items: [
+            {
+                title: 'Billboard',
+                href: billboards.index(),
+                icon: Presentation,
+                permission: 'promosi.atl.billboard',
+            },
+        ],
     },
     {
         title: 'BTL',
@@ -182,7 +191,13 @@ export function AppSidebar() {
         if (!permission) return true;
         if (isSuperAdmin) return true;
         if (userPermissions.length > 0) {
-            return userPermissions.includes(permission);
+            return userPermissions.some(
+                (p) =>
+                    p === permission ||
+                    p.startsWith(`${permission}.`) ||
+                    permission.startsWith(`${p}.`) ||
+                    (p === 'master_data.access' && permission.startsWith('master_data.')),
+            );
         }
         // Fallback backward compatibility
         if (permission.startsWith('pcd.')) {

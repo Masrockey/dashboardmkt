@@ -192,7 +192,7 @@ test('superadmin can create a role with granular read write delete permissions',
         'description' => 'Hanya bisa melihat channel, tidak bisa edit atau hapus',
         'permissions' => [
             'pcd.channel.read',
-            'promosi.atl.read',
+            'promosi.atl.billboard.read',
             'management.dealers.read',
         ],
     ]);
@@ -205,8 +205,8 @@ test('superadmin can create a role with granular read write delete permissions',
     expect($role->hasPermission('pcd.channel'))->toBeTrue(); // Menu visibility check
     expect($role->hasPermission('pcd.channel.write'))->toBeFalse();
     expect($role->hasPermission('pcd.channel.delete'))->toBeFalse();
-    expect($role->hasPermission('promosi.atl.read'))->toBeTrue();
-    expect($role->hasPermission('promosi.atl.delete'))->toBeFalse();
+    expect($role->hasPermission('promosi.atl.billboard.read'))->toBeTrue();
+    expect($role->hasPermission('promosi.atl.billboard.delete'))->toBeFalse();
 });
 
 test('role hasPermission handles wildcard, broad legacy permissions, and granular actions correctly', function () {

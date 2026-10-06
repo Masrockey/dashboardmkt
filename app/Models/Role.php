@@ -112,26 +112,26 @@ class Role extends Model
         ],
 
         // ==================== PROMOSI ====================
-        'promosi.atl.read' => [
+        'promosi.atl.billboard.read' => [
             'group' => 'Promosi',
-            'feature' => 'ATL (Above The Line)',
+            'feature' => 'ATL - Billboard',
             'action' => 'read',
-            'label' => 'Lihat Promosi ATL',
-            'description' => 'Melihat materi promosi media ATL',
+            'label' => 'Lihat Billboard',
+            'description' => 'Melihat data billboard beserta evidence foto',
         ],
-        'promosi.atl.write' => [
+        'promosi.atl.billboard.write' => [
             'group' => 'Promosi',
-            'feature' => 'ATL (Above The Line)',
+            'feature' => 'ATL - Billboard',
             'action' => 'write',
-            'label' => 'Tambah & Edit ATL',
-            'description' => 'Membuat dan memperbarui promosi ATL',
+            'label' => 'Tambah & Edit Billboard',
+            'description' => 'Menambah dan memperbarui data billboard',
         ],
-        'promosi.atl.delete' => [
+        'promosi.atl.billboard.delete' => [
             'group' => 'Promosi',
-            'feature' => 'ATL (Above The Line)',
+            'feature' => 'ATL - Billboard',
             'action' => 'delete',
-            'label' => 'Hapus ATL',
-            'description' => 'Menghapus data promosi ATL',
+            'label' => 'Hapus Billboard',
+            'description' => 'Menghapus data billboard',
         ],
         'promosi.btl.read' => [
             'group' => 'Promosi',
@@ -421,6 +421,10 @@ class Role extends Model
             'pcd.jenis_channel',
             'pcd.meet_and_greet',
             'promosi.atl',
+            'promosi.atl.read',
+            'promosi.atl.write',
+            'promosi.atl.delete',
+            'promosi.atl.billboard',
             'promosi.btl',
             'marketing.dashboard',
             'marketing.r2',

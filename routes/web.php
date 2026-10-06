@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BillboardController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
@@ -55,6 +56,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('meet-and-greet/export', [MeetAndGreetController::class, 'export'])->name('meet-and-greet.export');
     Route::post('meet-and-greet/toggle-status', [MeetAndGreetController::class, 'toggleStatus'])->name('meet-and-greet.toggle-status');
     Route::resource('meet-and-greet', MeetAndGreetController::class)->except(['create', 'show', 'edit']);
+
+    // Promosi - ATL
+    Route::resource('billboards', BillboardController::class)->except(['create', 'show', 'edit']);
     Route::get('api/geocode/search', [GeocodeController::class, 'search'])->name('geocode.search');
     Route::get('api/geocode/reverse', [GeocodeController::class, 'reverse'])->name('geocode.reverse');
 });

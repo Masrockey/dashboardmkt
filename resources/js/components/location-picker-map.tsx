@@ -99,6 +99,7 @@ interface LocationPickerMapProps {
     isDealer?: boolean;
     channelId?: number;
     radiusKm?: number;
+    showRadius?: boolean;
 }
 
 // Default center: Mataram, Nusa Tenggara Barat (-8.5833, 116.1167)
@@ -117,6 +118,7 @@ export default function LocationPickerMap({
     isDealer,
     channelId,
     radiusKm = 2,
+    showRadius = true,
 }: LocationPickerMapProps) {
     const page = usePage<{ auth?: { user?: { role?: string } } }>();
     const isDealerUser = isDealer ?? (page?.props?.auth?.user?.role === 'dealer');
@@ -124,6 +126,9 @@ export default function LocationPickerMap({
     const effectiveRadiusKm = Number(radiusKm) > 0 ? Number(radiusKm) : 2;
     const radiusKmRef = useRef(effectiveRadiusKm);
     radiusKmRef.current = effectiveRadiusKm;
+
+    const showRadiusRef = useRef(showRadius);
+    showRadiusRef.current = showRadius;
 
     const customIconUrlRef = useRef(customIconUrl);
     customIconUrlRef.current = customIconUrl;
@@ -157,14 +162,15 @@ export default function LocationPickerMap({
         setIsLoadingAddress(true);
         setStatusMessage('Mengambil informasi alamat...');
 
-        const currentRadKm = radiusKmRef.current;
-        const conflicts = checkRadiusConflicts(
-            lat,
-            lng,
-            existingChannelsRef.current,
-            channelIdRef.current,
-            currentRadKm * 1000,
-        );
+        const conflicts = showRadiusRef.current
+            ? checkRadiusConflicts(
+                lat,
+                lng,
+                existingChannelsRef.current,
+                channelIdRef.current,
+                radiusKmRef.current * 1000,
+            )
+            : [];
         setRadiusConflicts(conflicts);
 
         try {
@@ -239,13 +245,16 @@ export default function LocationPickerMap({
         const currentRadKm = radiusKmRef.current;
         const currentCustomIconUrl = customIconUrlRef.current;
 
-        const conflicts = checkRadiusConflicts(
-            lat,
-            lng,
-            existingChannelsRef.current,
-            channelIdRef.current,
-            currentRadKm * 1000,
-        );
+        const isRadiusActive = showRadiusRef.current;
+        const conflicts = isRadiusActive
+            ? checkRadiusConflicts(
+                lat,
+                lng,
+                existingChannelsRef.current,
+                channelIdRef.current,
+                currentRadKm * 1000,
+            )
+            : [];
         setRadiusConflicts(conflicts);
         const hasConflict = conflicts.length > 0;
         const circleColor = hasConflict ? '#dc2626' : '#2563eb';
@@ -291,38 +300,45 @@ export default function LocationPickerMap({
                 });
             }
 
-            if (selectedCircleRef.current) {
-                selectedCircleRef.current.setLatLng([lat, lng]);
-                selectedCircleRef.current.setRadius(currentRadKm * 1000);
-                selectedCircleRef.current.setStyle({
-                    color: circleColor,
-                    fillColor,
-                    fillOpacity,
-                });
+            if (!isRadiusActive) {
+                if (selectedCircleRef.current) {
+                    selectedCircleRef.current.remove();
+                    selectedCircleRef.current = null;
+                }
             } else {
-                selectedCircleRef.current = L.circle([lat, lng], {
-                    radius: currentRadKm * 1000,
-                    color: circleColor,
-                    weight: 2.5,
-                    dashArray: '6, 6',
-                    fillColor,
-                    fillOpacity,
-                    className: 'pointer-events-none',
-                }).addTo(map);
+                if (selectedCircleRef.current) {
+                    selectedCircleRef.current.setLatLng([lat, lng]);
+                    selectedCircleRef.current.setRadius(currentRadKm * 1000);
+                    selectedCircleRef.current.setStyle({
+                        color: circleColor,
+                        fillColor,
+                        fillOpacity,
+                    });
+                } else {
+                    selectedCircleRef.current = L.circle([lat, lng], {
+                        radius: currentRadKm * 1000,
+                        color: circleColor,
+                        weight: 2.5,
+                        dashArray: '6, 6',
+                        fillColor,
+                        fillOpacity,
+                        className: 'pointer-events-none',
+                    }).addTo(map);
+                }
+
+                const tooltipText = hasConflict
+                    ? `⚠️ Peringatan: Menimpa Radius Channel Terdaftar! (${conflicts[0].distance < 1000 ? `${Math.round(conflicts[0].distance)} m` : `${(conflicts[0].distance / 1000).toFixed(2)} km`})`
+                    : `Radius Channel Baru: ${currentRadKm} km`;
+
+                selectedCircleRef.current.unbindTooltip();
+                selectedCircleRef.current.bindTooltip(tooltipText, {
+                    direction: 'bottom',
+                    offset: [0, 20],
+                    className: hasConflict
+                        ? 'text-xs font-bold text-red-600 dark:text-red-400 border border-red-300'
+                        : 'text-xs font-semibold text-blue-700 dark:text-blue-300',
+                });
             }
-
-            const tooltipText = hasConflict
-                ? `⚠️ Peringatan: Menimpa Radius Channel Terdaftar! (${conflicts[0].distance < 1000 ? `${Math.round(conflicts[0].distance)} m` : `${(conflicts[0].distance / 1000).toFixed(2)} km`})`
-                : `Radius Channel Baru: ${currentRadKm} km`;
-
-            selectedCircleRef.current.unbindTooltip();
-            selectedCircleRef.current.bindTooltip(tooltipText, {
-                direction: 'bottom',
-                offset: [0, 20],
-                className: hasConflict
-                    ? 'text-xs font-bold text-red-600 dark:text-red-400 border border-red-300'
-                    : 'text-xs font-semibold text-blue-700 dark:text-blue-300',
-            });
         }
     };
 
@@ -755,15 +771,18 @@ export default function LocationPickerMap({
             }
 
             if (initialLat && initialLng) {
+                const isRadiusActive = showRadiusRef.current;
                 const currentRadiusKm = radiusKmRef.current;
                 const currentCustomIconUrl = customIconUrlRef.current;
-                const initialConflicts = checkRadiusConflicts(
-                    initialLat,
-                    initialLng,
-                    existingChannelsRef.current,
-                    channelIdRef.current,
-                    currentRadiusKm * 1000,
-                );
+                const initialConflicts = isRadiusActive
+                    ? checkRadiusConflicts(
+                        initialLat,
+                        initialLng,
+                        existingChannelsRef.current,
+                        channelIdRef.current,
+                        currentRadiusKm * 1000,
+                    )
+                    : [];
                 setRadiusConflicts(initialConflicts);
                 const hasConflict = initialConflicts.length > 0;
                 const circleColor = hasConflict ? '#dc2626' : '#2563eb';
@@ -792,27 +811,29 @@ export default function LocationPickerMap({
                     }
                 });
 
-                selectedCircleRef.current = L.circle([initialLat, initialLng], {
-                    radius: currentRadiusKm * 1000,
-                    color: circleColor,
-                    weight: 2.5,
-                    dashArray: '6, 6',
-                    fillColor,
-                    fillOpacity,
-                    className: 'pointer-events-none',
-                }).addTo(map);
+                if (isRadiusActive) {
+                    selectedCircleRef.current = L.circle([initialLat, initialLng], {
+                        radius: currentRadiusKm * 1000,
+                        color: circleColor,
+                        weight: 2.5,
+                        dashArray: '6, 6',
+                        fillColor,
+                        fillOpacity,
+                        className: 'pointer-events-none',
+                    }).addTo(map);
 
-                const tooltipText = hasConflict
-                    ? `⚠️ Peringatan: Menimpa Radius Channel Terdaftar! (${initialConflicts[0].distance < 1000 ? `${Math.round(initialConflicts[0].distance)} m` : `${(initialConflicts[0].distance / 1000).toFixed(2)} km`})`
-                    : `Radius Channel Baru: ${currentRadiusKm} km`;
+                    const tooltipText = hasConflict
+                        ? `⚠️ Peringatan: Menimpa Radius Channel Terdaftar! (${initialConflicts[0].distance < 1000 ? `${Math.round(initialConflicts[0].distance)} m` : `${(initialConflicts[0].distance / 1000).toFixed(2)} km`})`
+                        : `Radius Channel Baru: ${currentRadiusKm} km`;
 
-                selectedCircleRef.current.bindTooltip(tooltipText, {
-                    direction: 'bottom',
-                    offset: [0, 20],
-                    className: hasConflict
-                        ? 'text-xs font-bold text-red-600 dark:text-red-400 border border-red-300'
-                        : 'text-xs font-semibold text-blue-700 dark:text-blue-300',
-                });
+                    selectedCircleRef.current.bindTooltip(tooltipText, {
+                        direction: 'bottom',
+                        offset: [0, 20],
+                        className: hasConflict
+                            ? 'text-xs font-bold text-red-600 dark:text-red-400 border border-red-300'
+                            : 'text-xs font-semibold text-blue-700 dark:text-blue-300',
+                    });
+                }
             }
 
             map.on('click', (e: L.LeafletMouseEvent) => {
@@ -905,6 +926,10 @@ export default function LocationPickerMap({
 
     // Re-check radius conflicts if existing channels or channelId changes
     useEffect(() => {
+        if (!showRadius) {
+            setRadiusConflicts([]);
+            return;
+        }
         if (markerRef.current) {
             const pos = markerRef.current.getLatLng();
             const radKm = radiusKmRef.current;
@@ -940,10 +965,17 @@ export default function LocationPickerMap({
                 });
             }
         }
-    }, [existingChannels, channelId]);
+    }, [existingChannels, channelId, showRadius]);
 
     // Update circle radius when radiusKm prop changes (e.g. user selects different jenis channel)
     useEffect(() => {
+        if (!showRadius) {
+            if (selectedCircleRef.current) {
+                selectedCircleRef.current.remove();
+                selectedCircleRef.current = null;
+            }
+            return;
+        }
         const radKm = Number(radiusKm) > 0 ? Number(radiusKm) : 2;
         if (selectedCircleRef.current && markerRef.current) {
             const pos = markerRef.current.getLatLng();
@@ -983,7 +1015,7 @@ export default function LocationPickerMap({
                 { direction: 'top', offset: [0, -12] },
             );
         }
-    }, [radiusKm]);
+    }, [radiusKm, showRadius]);
 
     return (
         <div
@@ -1128,7 +1160,7 @@ export default function LocationPickerMap({
             </div>
 
             {/* Warning Alert Banner jika Menimpa Radius */}
-            {radiusConflicts.length > 0 && (
+            {showRadius && radiusConflicts.length > 0 && (
                 <div className="rounded-xl border border-red-300 bg-red-50/95 p-3.5 text-xs text-red-900 shadow-sm dark:border-red-900/80 dark:bg-red-950/50 dark:text-red-200">
                     <div className="flex items-start gap-3">
                         <div className="rounded-full bg-red-100 p-1.5 dark:bg-red-900/60 shrink-0 mt-0.5">
@@ -1194,19 +1226,21 @@ export default function LocationPickerMap({
                     </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                    {radiusConflicts.length > 0 ? (
-                        <span className="text-[11px] font-semibold text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-950/80 border border-red-300 dark:border-red-800 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-                            <AlertTriangle className="size-3 text-red-600 animate-pulse" />
-                            Menimpa Radius ({radiusConflicts.length})
-                        </span>
-                    ) : (
-                        existingChannels && existingChannels.length > 0 && (
-                            <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 px-2 py-0.5 rounded-full flex items-center gap-1.5">
-                                <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
-                                {isDealerUser
-                                    ? `${existingChannels.length} Radius Channel (${radiusKm} km)`
-                                    : `${existingChannels.length} Channel Terdaftar`}
+                    {showRadius && (
+                        radiusConflicts.length > 0 ? (
+                            <span className="text-[11px] font-semibold text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-950/80 border border-red-300 dark:border-red-800 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                                <AlertTriangle className="size-3 text-red-600 animate-pulse" />
+                                Menimpa Radius ({radiusConflicts.length})
                             </span>
+                        ) : (
+                            existingChannels && existingChannels.length > 0 && (
+                                <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+                                    <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                    {isDealerUser
+                                        ? `${existingChannels.length} Radius Channel (${radiusKm} km)`
+                                        : `${existingChannels.length} Channel Terdaftar`}
+                                </span>
+                            )
                         )
                     )}
                     {initialLat != null && initialLng != null && (
