@@ -101,6 +101,54 @@ class MarketingDashboardController extends Controller
             ->get()
             ->groupBy('kab_desc');
 
+        // Grouped brands per kecamatan for map statistics
+        $allKecamatanBrands = (clone $baseQuery)
+            ->select('kab_desc', 'kec_desc', 'mrk_desc', DB::raw('count(*) as count'))
+            ->whereNotNull('kab_desc')
+            ->where('kab_desc', '!=', '')
+            ->whereNotNull('kec_desc')
+            ->where('kec_desc', '!=', '')
+            ->whereNotNull('mrk_desc')
+            ->where('mrk_desc', '!=', '')
+            ->groupBy('kab_desc', 'kec_desc', 'mrk_desc')
+            ->orderByDesc('count')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->kab_desc.'|'.$item->kec_desc;
+            });
+
+        // Grouped nama pasar (all brands) per kecamatan and desa
+        $allNamaPasarRaw = (clone $baseQuery)
+            ->select('kab_desc', 'kec_desc', 'kel_desc', 'mrk_desc', 'nama_pasar', DB::raw('count(*) as count'))
+            ->whereNotNull('nama_pasar')
+            ->where('nama_pasar', '!=', '')
+            ->whereNotNull('kab_desc')
+            ->where('kab_desc', '!=', '')
+            ->whereNotNull('kec_desc')
+            ->where('kec_desc', '!=', '')
+            ->groupBy('kab_desc', 'kec_desc', 'kel_desc', 'mrk_desc', 'nama_pasar')
+            ->get();
+
+        $allNamaPasar = [];
+        foreach ($allNamaPasarRaw as $row) {
+            $key = $row->kab_desc.'|'.$row->kec_desc;
+            $npKey = $row->mrk_desc.'|'.$row->nama_pasar;
+            if (! isset($allNamaPasar[$key][$npKey])) {
+                $allNamaPasar[$key][$npKey] = [
+                    'nama_pasar' => (string) $row->nama_pasar,
+                    'brand' => (string) $row->mrk_desc,
+                    'count' => 0,
+                    'is_honda' => str_contains(strtoupper((string) $row->mrk_desc), 'HONDA'),
+                    'desa_counts' => [],
+                ];
+            }
+            $c = (int) $row->count;
+            $allNamaPasar[$key][$npKey]['count'] += $c;
+            if (! empty($row->kel_desc)) {
+                $allNamaPasar[$key][$npKey]['desa_counts'][(string) $row->kel_desc] = $c;
+            }
+        }
+
         // All kecamatans grouped by kabupaten with Honda counts
         $allKecamatans = (clone $baseQuery)
             ->select('kab_desc', 'kec_desc', DB::raw('count(*) as total'), DB::raw("SUM(CASE WHEN mrk_desc LIKE '%HONDA%' OR mrk_desc LIKE '%HND%' THEN 1 ELSE 0 END) as honda_count"))
@@ -137,7 +185,7 @@ class MarketingDashboardController extends Controller
             ->groupBy('kab_desc')
             ->orderByDesc('total')
             ->get()
-            ->map(function ($item) use ($baseQuery, $totalUnits, $kabupatenBrands, $allKecamatans, $allDesas) {
+            ->map(function ($item) use ($baseQuery, $totalUnits, $kabupatenBrands, $allKecamatanBrands, $allNamaPasar, $allKecamatans, $allDesas) {
                 $kabName = (string) $item->kabupaten;
                 $total = (int) $item->total;
 
@@ -155,7 +203,7 @@ class MarketingDashboardController extends Controller
                 $coords = $this->getKabupatenCoordinates($kabName);
 
                 $topBrands = ($kabupatenBrands->get($kabName) ?? collect())
-                    ->take(3)
+                    ->take(5)
                     ->map(function ($b) use ($total) {
                         $bCount = (int) $b->count;
 
@@ -183,7 +231,7 @@ class MarketingDashboardController extends Controller
                     ->all();
 
                 $fullKecamatanList = $kecamatansInKab
-                    ->map(function ($k, $idx) use ($kabName, $coords, $allDesas) {
+                    ->map(function ($k, $idx) use ($kabName, $coords, $allDesas, $allKecamatanBrands, $allNamaPasar) {
                         $kecName = (string) $k->kec_desc;
                         $kecTotal = (int) $k->total;
                         $kecHonda = (int) $k->honda_count;
@@ -212,6 +260,31 @@ class MarketingDashboardController extends Controller
                             ->values()
                             ->all();
 
+                        $kecBrands = ($allKecamatanBrands->get($desaKey) ?? collect())
+                            ->take(5)
+                            ->map(function ($b) use ($kecTotal) {
+                                $bCount = (int) $b->count;
+
+                                return [
+                                    'brand' => (string) $b->mrk_desc,
+                                    'count' => $bCount,
+                                    'percentage' => $kecTotal > 0 ? round(($bCount / $kecTotal) * 100, 1) : 0,
+                                    'is_honda' => str_contains(strtoupper((string) $b->mrk_desc), 'HONDA'),
+                                ];
+                            })
+                            ->values()
+                            ->all();
+
+                        $kecNamaPasar = isset($allNamaPasar[$desaKey]) ? array_values($allNamaPasar[$desaKey]) : [];
+                        usort($kecNamaPasar, function ($a, $b) {
+                            return $b['count'] <=> $a['count'];
+                        });
+                        $kecNamaPasar = array_map(function ($np) use ($kecTotal) {
+                            $np['percentage'] = $kecTotal > 0 ? round(($np['count'] / $kecTotal) * 100, 1) : 0;
+
+                            return $np;
+                        }, $kecNamaPasar);
+
                         return [
                             'kecamatan' => $kecName,
                             'total' => $kecTotal,
@@ -221,6 +294,8 @@ class MarketingDashboardController extends Controller
                             'latitude' => $kecCoords['lat'],
                             'longitude' => $kecCoords['lng'],
                             'desas' => $desas,
+                            'top_brands' => $kecBrands,
+                            'nama_pasars' => $kecNamaPasar,
                         ];
                     })
                     ->values()
