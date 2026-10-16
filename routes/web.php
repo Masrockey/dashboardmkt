@@ -5,12 +5,14 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DealerController;
+use App\Http\Controllers\FormBuilderController;
 use App\Http\Controllers\GeocodeController;
 use App\Http\Controllers\JenisPameranController;
 use App\Http\Controllers\KabupatenController;
 use App\Http\Controllers\MarketingDashboardController;
 use App\Http\Controllers\MeetAndGreetController;
 use App\Http\Controllers\PameranController;
+use App\Http\Controllers\PublicFormController;
 use App\Http\Controllers\PublicMeetAndGreetController;
 use App\Http\Controllers\R2Controller;
 use App\Http\Controllers\RoleController;
@@ -22,6 +24,10 @@ use App\Http\Middleware\EnsureMasterDataAccess;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', 'login')->name('home');
+
+// Public Form Shareable Links
+Route::get('/f/{slug}', [PublicFormController::class, 'show'])->name('forms.public.show');
+Route::post('/f/{slug}', [PublicFormController::class, 'submit'])->name('forms.public.submit');
 
 Route::get('/meetngreethonda', [PublicMeetAndGreetController::class, 'index'])->name('meetngreethonda.index');
 Route::post('/meetngreethonda', [PublicMeetAndGreetController::class, 'store'])->name('meetngreethonda.store');
@@ -56,6 +62,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('meet-and-greet/export', [MeetAndGreetController::class, 'export'])->name('meet-and-greet.export');
     Route::post('meet-and-greet/toggle-status', [MeetAndGreetController::class, 'toggleStatus'])->name('meet-and-greet.toggle-status');
     Route::resource('meet-and-greet', MeetAndGreetController::class)->except(['create', 'show', 'edit']);
+
+    // Form Builder
+    Route::get('forms', [FormBuilderController::class, 'index'])->name('forms.index');
+    Route::get('forms/create', [FormBuilderController::class, 'create'])->name('forms.create');
+    Route::post('forms', [FormBuilderController::class, 'store'])->name('forms.store');
+    Route::get('forms/{form}/edit', [FormBuilderController::class, 'edit'])->name('forms.edit');
+    Route::put('forms/{form}', [FormBuilderController::class, 'update'])->name('forms.update');
+    Route::delete('forms/{form}', [FormBuilderController::class, 'destroy'])->name('forms.destroy');
+    Route::get('forms/{form}/responses', [FormBuilderController::class, 'responses'])->name('forms.responses');
+    Route::post('forms/{form}/toggle-status', [FormBuilderController::class, 'toggleStatus'])->name('forms.toggle-status');
+    Route::get('forms/{form}/export', [FormBuilderController::class, 'export'])->name('forms.export');
 
     // Promosi - ATL
     Route::resource('billboards', BillboardController::class)->except(['create', 'show', 'edit']);

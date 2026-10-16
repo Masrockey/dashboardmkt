@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PameranStatus;
-use App\Enums\UserRole;
 use App\Models\JenisPameran;
 use App\Models\Pameran;
 use Illuminate\Http\Request;

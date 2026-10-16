@@ -1,12 +1,14 @@
 import { Link, usePage } from '@inertiajs/react';
-import r2 from '@/routes/r2';
 import billboards from '@/routes/billboards';
+import forms from '@/routes/forms';
+import r2 from '@/routes/r2';
 import {
     Bike,
-    Presentation,
     BookmarkCheck,
     Building2,
     CalendarDays,
+    FilePlus2,
+    FileText,
     FolderKanban,
     Handshake,
     Layers,
@@ -14,6 +16,7 @@ import {
     Map,
     MapPin,
     Megaphone,
+    Presentation,
     ShieldCheck,
     Tag,
     Ticket,
@@ -148,6 +151,21 @@ const marketingNavItems: PermittedNavItem[] = [
     },
 ];
 
+const formBuilderNavItems: PermittedNavItem[] = [
+    {
+        title: 'Buat Form',
+        href: forms.create(),
+        icon: FilePlus2,
+        permission: 'form_builder.create',
+    },
+    {
+        title: 'Daftar Form',
+        href: forms.index(),
+        icon: FileText,
+        permission: 'form_builder.index',
+    },
+];
+
 const managementNavItems: PermittedNavItem[] = [
     {
         title: 'Dealer',
@@ -200,6 +218,9 @@ export function AppSidebar() {
             );
         }
         // Fallback backward compatibility
+        if (permission.startsWith('form_builder.')) {
+            return true;
+        }
         if (permission.startsWith('pcd.')) {
             if (permission === 'pcd.jenis_channel') {
                 return !userRoles.every((r) => r === 'dealer' || r === 'kabag');
@@ -257,6 +278,12 @@ export function AppSidebar() {
                 items: visibleMarketing,
             });
         }
+
+        const visibleFormBuilder = formBuilderNavItems.filter((item) => can(item.permission));
+        groups.push({
+            title: 'Form Builder',
+            items: visibleFormBuilder,
+        });
 
         const visibleMasterData = masterDataNavItems.filter((item) => can(item.permission));
         if (visibleMasterData.length > 0) {
