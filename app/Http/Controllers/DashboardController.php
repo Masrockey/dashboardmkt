@@ -19,11 +19,13 @@ class DashboardController extends Controller
         $user = $request->user();
         $today = now()->toDateString();
 
-        // Query pameran untuk peta (memiliki latitude dan longitude)
+        // Query pameran untuk peta (memiliki latitude dan longitude, periode sewa belum berakhir, dan status sudah disetujui)
         $mapQuery = Pameran::query()
             ->with(['dealer', 'jenisPameran', 'creator'])
             ->whereNotNull('latitude')
-            ->whereNotNull('longitude');
+            ->whereNotNull('longitude')
+            ->where('status', PameranStatus::Disetujui)
+            ->where('tanggal_sewa_berakhir', '>=', $today);
 
         // Stats query
         $statsQuery = Pameran::query();

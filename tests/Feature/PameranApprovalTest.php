@@ -8,7 +8,7 @@ use App\Models\Pameran;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia;
 
-test('dealer creates pameran, then SPV approves, then Kabag approves and kode_pameran_md is generated', function () {
+test('dealer creates pameran, then SPV approves and kode_pameran_md is generated', function () {
     $dealer = Dealer::factory()->create(['nama_dealer' => 'Astra Motor Mataram']);
     $jenisPameran = JenisPameran::factory()->create(['kode_pameran' => 'MALL']);
 
@@ -17,7 +17,6 @@ test('dealer creates pameran, then SPV approves, then Kabag approves and kode_pa
         'dealer_id' => $dealer->id,
     ]);
     $spvUser = User::factory()->create(['role' => UserRole::Spv]);
-    $kabagUser = User::factory()->create(['role' => UserRole::Kabag]);
 
     // Step 1: Dealer creates pameran
     $response = $this->actingAs($dealerUser)->post(route('pameran.store'), [
@@ -36,75 +35,46 @@ test('dealer creates pameran, then SPV approves, then Kabag approves and kode_pa
     expect($pameran->kode_pameran_md)->toBeNull();
     expect($pameran->created_by_user_id)->toBe($dealerUser->id);
 
-    // Step 2: SPV approves pameran
+    // Step 2: SPV approves pameran -> Kode Pameran MD is immediately generated!
     $responseSpv = $this->actingAs($spvUser)->post(route('pameran.approve-spv', $pameran));
     $responseSpv->assertRedirect();
 
     $pameran->refresh();
-    expect($pameran->status)->toBe(PameranStatus::MenungguKabag);
-    expect($pameran->spv_approved_by)->toBe($spvUser->id);
-    expect($pameran->spv_approved_at)->not->toBeNull();
-    expect($pameran->kode_pameran_md)->toBeNull(); // Still not generated!
-
-    // Step 3: Kabag approves pameran -> Kode Pameran MD is generated!
-    $responseKabag = $this->actingAs($kabagUser)->post(route('pameran.approve-kabag', $pameran));
-    $responseKabag->assertRedirect();
-
-    $pameran->refresh();
     $expectedKodeMd = 'MALL-'.now()->format('Ymd').'-0001';
     expect($pameran->status)->toBe(PameranStatus::Disetujui);
-    expect($pameran->kabag_approved_by)->toBe($kabagUser->id);
-    expect($pameran->kabag_approved_at)->not->toBeNull();
+    expect($pameran->spv_approved_by)->toBe($spvUser->id);
+    expect($pameran->spv_approved_at)->not->toBeNull();
     expect($pameran->kode_pameran_md)->toBe($expectedKodeMd);
 
-    // Step 4: Create a second pameran and approve through Kabag, sequence should be 0002
+    // Step 3: Create a second pameran and approve through SPV, sequence should be 0002
     $secondPameran = Pameran::factory()->create([
         'dealer_id' => $dealer->id,
         'jenis_pameran_id' => $jenisPameran->id,
-        'status' => PameranStatus::MenungguKabag,
-        'spv_approved_by' => $spvUser->id,
-        'spv_approved_at' => now(),
+        'status' => PameranStatus::MenungguSpv,
     ]);
 
-    $this->actingAs($kabagUser)->post(route('pameran.approve-kabag', $secondPameran));
+    $this->actingAs($spvUser)->post(route('pameran.approve-spv', $secondPameran));
     $secondPameran->refresh();
     $expectedSecondKodeMd = 'MALL-'.now()->format('Ymd').'-0002';
+    expect($secondPameran->status)->toBe(PameranStatus::Disetujui);
     expect($secondPameran->kode_pameran_md)->toBe($expectedSecondKodeMd);
 });
 
-test('dealer cannot approve SPV or Kabag stage', function () {
+test('dealer or kabag cannot approve SPV stage', function () {
     $dealerUser = User::factory()->create(['role' => UserRole::Dealer]);
+    $kabagUser = User::factory()->create(['role' => UserRole::Kabag]);
     $pameranSpv = Pameran::factory()->create(['status' => PameranStatus::MenungguSpv]);
-    $pameranKabag = Pameran::factory()->create(['status' => PameranStatus::MenungguKabag]);
 
     $this->actingAs($dealerUser)
         ->post(route('pameran.approve-spv', $pameranSpv))
         ->assertForbidden();
 
-    $this->actingAs($dealerUser)
-        ->post(route('pameran.approve-kabag', $pameranKabag))
-        ->assertForbidden();
-});
-
-test('SPV cannot approve Kabag stage and Kabag cannot approve SPV stage', function () {
-    $spvUser = User::factory()->create(['role' => UserRole::Spv]);
-    $kabagUser = User::factory()->create(['role' => UserRole::Kabag]);
-
-    $pameranSpv = Pameran::factory()->create(['status' => PameranStatus::MenungguSpv]);
-    $pameranKabag = Pameran::factory()->create(['status' => PameranStatus::MenungguKabag]);
-
-    // SPV trying Kabag
-    $this->actingAs($spvUser)
-        ->post(route('pameran.approve-kabag', $pameranKabag))
-        ->assertForbidden();
-
-    // Kabag trying SPV
     $this->actingAs($kabagUser)
         ->post(route('pameran.approve-spv', $pameranSpv))
         ->assertForbidden();
 });
 
-test('superadmin can approve both SPV and Kabag stages', function () {
+test('superadmin can approve SPV stage', function () {
     $superadmin = User::factory()->create(['role' => UserRole::Superadmin]);
     $pameran = Pameran::factory()->create(['status' => PameranStatus::MenungguSpv]);
 
@@ -113,18 +83,11 @@ test('superadmin can approve both SPV and Kabag stages', function () {
         ->assertRedirect();
 
     $pameran->refresh();
-    expect($pameran->status)->toBe(PameranStatus::MenungguKabag);
-
-    $this->actingAs($superadmin)
-        ->post(route('pameran.approve-kabag', $pameran))
-        ->assertRedirect();
-
-    $pameran->refresh();
     expect($pameran->status)->toBe(PameranStatus::Disetujui);
     expect($pameran->kode_pameran_md)->not->toBeNull();
 });
 
-test('SPV or Kabag or Superadmin can reject pameran with note', function () {
+test('SPV or Superadmin can reject pameran with note', function () {
     $spvUser = User::factory()->create(['role' => UserRole::Spv]);
     $pameran = Pameran::factory()->create(['status' => PameranStatus::MenungguSpv]);
 
@@ -257,17 +220,11 @@ test('dealer user without dealer_id cannot create pameran and sees no pameran', 
         );
 });
 
-test('kabag does not see pameran if SPV has not approved yet', function () {
+test('kabag can view pamerans on index page', function () {
     $kabagUser = User::factory()->create(['role' => UserRole::Kabag]);
 
     $pameranWaitingSpv = Pameran::factory()->create([
         'status' => PameranStatus::MenungguSpv,
-        'spv_approved_at' => null,
-    ]);
-
-    $pameranWaitingKabag = Pameran::factory()->create([
-        'status' => PameranStatus::MenungguKabag,
-        'spv_approved_at' => now(),
     ]);
 
     $this->actingAs($kabagUser)
@@ -276,11 +233,11 @@ test('kabag does not see pameran if SPV has not approved yet', function () {
         ->assertInertia(fn (AssertableInertia $page) => $page
             ->component('pameran/index')
             ->has('pamerans.data', 1)
-            ->where('pamerans.data.0.id', $pameranWaitingKabag->id)
+            ->where('pamerans.data.0.id', $pameranWaitingSpv->id)
         );
 });
 
-test('kabag cannot reject pameran that is still waiting for SPV', function () {
+test('kabag cannot reject pameran', function () {
     $kabagUser = User::factory()->create(['role' => UserRole::Kabag]);
     $pameranWaitingSpv = Pameran::factory()->create([
         'status' => PameranStatus::MenungguSpv,
@@ -288,7 +245,7 @@ test('kabag cannot reject pameran that is still waiting for SPV', function () {
 
     $this->actingAs($kabagUser)
         ->post(route('pameran.reject', $pameranWaitingSpv), [
-            'catatan_penolakan' => 'Tolak sebelum SPV',
+            'catatan_penolakan' => 'Kabag mencoba menolak',
         ])
         ->assertForbidden();
 });

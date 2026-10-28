@@ -26,11 +26,6 @@ class PameranPolicy
             return $user->dealer_id !== null && $pameran->dealer_id === $user->dealer_id;
         }
 
-        if ($user->hasRole(UserRole::Kabag) && ! $user->hasRole(UserRole::Superadmin)) {
-            return $pameran->status !== PameranStatus::MenungguSpv
-                && ($pameran->status !== PameranStatus::Ditolak || $pameran->spv_approved_by !== null || $pameran->spv_approved_at !== null);
-        }
-
         return true;
     }
 
@@ -80,10 +75,11 @@ class PameranPolicy
 
     /**
      * Determine whether the user can approve at the Kabag stage.
+     * (Deprecated: Kabag approval is removed).
      */
     public function approveKabag(User $user, Pameran $pameran): bool
     {
-        return $user->hasAnyRole([UserRole::Kabag, UserRole::Superadmin]);
+        return false;
     }
 
     /**
@@ -95,11 +91,7 @@ class PameranPolicy
             return true;
         }
 
-        if ($user->hasRole(UserRole::Kabag) && $pameran->status === PameranStatus::MenungguKabag) {
-            return true;
-        }
-
-        if ($user->hasRole(UserRole::Spv) && $pameran->status === PameranStatus::MenungguSpv) {
+        if ($user->hasRole(UserRole::Spv) && in_array($pameran->status, [PameranStatus::MenungguSpv, PameranStatus::MenungguKabag], true)) {
             return true;
         }
 

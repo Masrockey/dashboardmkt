@@ -54,14 +54,6 @@ class PameranController extends Controller
                     $query->whereRaw('1 = 0');
                 }
             })
-            ->when($user->hasRole(UserRole::Kabag) && ! $user->hasRole(UserRole::Superadmin), function (Builder $query) {
-                $query->where('status', '!=', PameranStatus::MenungguSpv)
-                    ->where(function (Builder $sub) {
-                        $sub->where('status', '!=', PameranStatus::Ditolak)
-                            ->orWhereNotNull('spv_approved_by')
-                            ->orWhereNotNull('spv_approved_at');
-                    });
-            })
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $subQuery) use ($search) {
                     $subQuery->where('kode_pameran_md', 'like', "%{$search}%")
@@ -131,6 +123,8 @@ class PameranController extends Controller
             ->sort()
             ->values();
 
+        $today = now()->toDateString();
+
         $mapPamerans = Pameran::query()
             ->with([
                 'dealer:id,kode_dealer,nama_dealer',
@@ -138,6 +132,7 @@ class PameranController extends Controller
             ])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
+            ->where('tanggal_sewa_berakhir', '>=', $today)
             ->latest('id')
             ->get();
 
@@ -331,7 +326,7 @@ class PameranController extends Controller
             abort(403, 'Anda tidak memiliki hak akses untuk menyetujui tahap SPV.');
         }
 
-        if ($pameran->status !== PameranStatus::MenungguSpv) {
+        if (! in_array($pameran->status, [PameranStatus::MenungguSpv, PameranStatus::MenungguKabag], true)) {
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => 'Status channel tidak valid untuk disetujui SPV.',
@@ -344,40 +339,18 @@ class PameranController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Channel berhasil disetujui oleh SPV dan dilanjutkan ke Kabag.',
+            'message' => "Channel berhasil disetujui oleh SPV. Kode Channel MD ({$pameran->kode_pameran_md}) telah diterbitkan.",
         ]);
 
         return back();
     }
 
     /**
-     * Approve exhibition by Kabag.
+     * Approve exhibition by Kabag (deprecated: delegates to SPV approval).
      */
     public function approveKabag(Request $request, Pameran $pameran): RedirectResponse
     {
-        $user = $request->user();
-
-        if (! in_array($user->role, [UserRole::Kabag, UserRole::Superadmin], true)) {
-            abort(403, 'Anda tidak memiliki hak akses untuk menyetujui tahap Kabag.');
-        }
-
-        if ($pameran->status !== PameranStatus::MenungguKabag) {
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => 'Status channel tidak valid untuk disetujui Kabag.',
-            ]);
-
-            return back();
-        }
-
-        $pameran->approveByKabag($user);
-
-        Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => "Channel berhasil disetujui oleh Kabag. Kode Channel MD ({$pameran->kode_pameran_md}) telah diterbitkan.",
-        ]);
-
-        return back();
+        return $this->approveSpv($request, $pameran);
     }
 
     /**
@@ -387,16 +360,12 @@ class PameranController extends Controller
     {
         $user = $request->user();
 
-        if (! in_array($user->role, [UserRole::Spv, UserRole::Kabag, UserRole::Superadmin], true)) {
+        if (! in_array($user->role, [UserRole::Spv, UserRole::Superadmin], true)) {
             abort(403, 'Anda tidak memiliki hak akses untuk menolak channel.');
         }
 
-        if ($user->role === UserRole::Kabag && $pameran->status === PameranStatus::MenungguSpv) {
-            abort(403, 'Channel belum disetujui oleh SPV.');
-        }
-
-        if ($user->role === UserRole::Spv && $pameran->status !== PameranStatus::MenungguSpv) {
-            abort(403, 'SPV hanya dapat menolak channel pada tahap menunggu persetujuan SPV.');
+        if (! in_array($pameran->status, [PameranStatus::MenungguSpv, PameranStatus::MenungguKabag], true)) {
+            abort(403, 'SPV hanya dapat menolak channel pada tahap menunggu persetujuan.');
         }
 
         $validated = $request->validate([

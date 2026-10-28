@@ -15,9 +15,15 @@ test('guests are redirected to the login page when visiting pameran', function (
 
 test('authenticated users can view the pameran page with mapPamerans for approval and edit maps', function () {
     $user = User::factory()->create(['role' => UserRole::Spv]);
-    Pameran::factory()->create([
+    $active = Pameran::factory()->create([
         'latitude' => -8.5833,
         'longitude' => 116.1167,
+        'mulai_tanggal_sewa' => now()->subDays(2)->format('Y-m-d'),
+        'tanggal_sewa_berakhir' => now()->addDays(5)->format('Y-m-d'),
+    ]);
+    $expired = Pameran::factory()->expired()->create([
+        'latitude' => -8.6000,
+        'longitude' => 116.1500,
     ]);
 
     $response = $this->actingAs($user)->get(route('pameran.index'));
@@ -25,8 +31,9 @@ test('authenticated users can view the pameran page with mapPamerans for approva
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
         ->component('pameran/index')
-        ->has('pamerans')
-        ->has('mapPamerans')
+        ->has('pamerans.data', 2) // Both active and expired are in the table!
+        ->has('mapPamerans', 1)   // Only the active one is on the map!
+        ->where('mapPamerans.0.id', $active->id)
     );
 });
 

@@ -20,8 +20,8 @@ class PameranFactory extends Factory
      */
     public function definition(): array
     {
-        $startDate = fake()->dateTimeBetween('-1 month', '+1 month');
-        $endDate = (clone $startDate)->modify('+'.fake()->numberBetween(3, 14).' days');
+        $startDate = now()->subDays(fake()->numberBetween(0, 5));
+        $endDate = (clone $startDate)->modify('+'.fake()->numberBetween(7, 30).' days');
 
         return [
             'dealer_id' => Dealer::factory(),
@@ -37,6 +37,17 @@ class PameranFactory extends Factory
             'latitude' => fake()->latitude(-8.7, -8.5),
             'longitude' => fake()->longitude(116.0, 116.3),
         ];
+    }
+
+    /**
+     * Indicate that the pameran rental period has expired.
+     */
+    public function expired(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'mulai_tanggal_sewa' => now()->subMonths(2)->format('Y-m-d'),
+            'tanggal_sewa_berakhir' => now()->subDay()->format('Y-m-d'),
+        ]);
     }
 
     /**

@@ -94,28 +94,12 @@ class Pameran extends Model
      */
     public function approveBySpv(User $user): bool
     {
-        if ($this->status !== PameranStatus::MenungguSpv) {
+        if (! in_array($this->status, [PameranStatus::MenungguSpv, PameranStatus::MenungguKabag], true)) {
             return false;
         }
 
         $this->spv_approved_by = $user->id;
         $this->spv_approved_at = now();
-        $this->status = PameranStatus::MenungguKabag;
-
-        return $this->save();
-    }
-
-    /**
-     * Approve exhibition by Kabag.
-     */
-    public function approveByKabag(User $user): bool
-    {
-        if ($this->status !== PameranStatus::MenungguKabag) {
-            return false;
-        }
-
-        $this->kabag_approved_by = $user->id;
-        $this->kabag_approved_at = now();
         $this->status = PameranStatus::Disetujui;
 
         if (empty($this->kode_pameran_md)) {
@@ -123,6 +107,14 @@ class Pameran extends Model
         }
 
         return $this->save();
+    }
+
+    /**
+     * Approve exhibition by Kabag (deprecated, delegates to SPV approval).
+     */
+    public function approveByKabag(User $user): bool
+    {
+        return $this->approveBySpv($user);
     }
 
     /**

@@ -3,7 +3,6 @@ import {
     Calendar,
     CalendarDays,
     Check,
-    CheckCheck,
     ChevronLeft,
     ChevronRight,
     ExternalLink,
@@ -121,7 +120,6 @@ export default function PameranIndex({
     const [isRejectOpen, setIsRejectOpen] = useState(false);
 
     const [selectedPameran, setSelectedPameran] = useState<PameranItem | null>(null);
-    const [approveType, setApproveType] = useState<'spv' | 'kabag' | null>(null);
     const [isApproving, setIsApproving] = useState(false);
 
     // Edit Form
@@ -272,20 +270,16 @@ export default function PameranIndex({
     };
 
     // Approval handlers
-    const handleOpenApprove = (pameran: PameranItem, type: 'spv' | 'kabag') => {
+    const handleOpenApprove = (pameran: PameranItem) => {
         setSelectedPameran(pameran);
-        setApproveType(type);
         setIsApproveOpen(true);
     };
 
     const handleConfirmApprove = () => {
-        if (!selectedPameran || !approveType) return;
+        if (!selectedPameran) return;
 
         setIsApproving(true);
-        const url =
-            approveType === 'spv'
-                ? pameranRoute.approveSpv.url(selectedPameran.id)
-                : pameranRoute.approveKabag.url(selectedPameran.id);
+        const url = pameranRoute.approveSpv.url(selectedPameran.id);
 
         router.post(
             url,
@@ -296,7 +290,6 @@ export default function PameranIndex({
                     setIsApproving(false);
                     setIsApproveOpen(false);
                     setSelectedPameran(null);
-                    setApproveType(null);
                 },
             },
         );
@@ -415,8 +408,7 @@ export default function PameranIndex({
         selectedKecamatanFilter.length > 0;
 
     const statusOptions: Option[] = [
-        ...(currentUser.role !== 'kabag' ? [{ label: 'Menunggu SPV', value: 'menunggu_spv' }] : []),
-        { label: 'Menunggu Kabag', value: 'menunggu_kabag' },
+        { label: 'Menunggu SPV', value: 'menunggu_spv' },
         { label: 'Disetujui', value: 'disetujui' },
         { label: 'Ditolak', value: 'ditolak' },
     ];
@@ -442,11 +434,7 @@ export default function PameranIndex({
     }));
 
     const canApproveSpv = currentUser.role === 'spv' || currentUser.role === 'superadmin';
-    const canApproveKabag = currentUser.role === 'kabag' || currentUser.role === 'superadmin';
-    const canReject =
-        currentUser.role === 'spv' ||
-        currentUser.role === 'kabag' ||
-        currentUser.role === 'superadmin';
+    const canReject = currentUser.role === 'spv' || currentUser.role === 'superadmin';
 
     return (
         <>
@@ -705,40 +693,17 @@ export default function PameranIndex({
                                                 {rowNumber}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                {canApproveSpv && item.status === 'menunggu_spv' ? (
+                                                {canApproveSpv && (item.status === 'menunggu_spv' || item.status === 'menunggu_kabag') ? (
                                                     <div className="flex items-center justify-center gap-1.5">
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
-                                                            onClick={() => handleOpenApprove(item, 'spv')}
+                                                            onClick={() => handleOpenApprove(item)}
                                                             className="h-8 gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 text-xs shrink-0"
-                                                            title="Approve SPV"
+                                                            title="Approve SPV & Terbitkan Kode MD"
                                                         >
                                                             <Check className="size-3.5" />
                                                             Approve SPV
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleOpenReject(item)}
-                                                            className="h-8 gap-1 border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40 text-xs shrink-0"
-                                                            title="Tolak Channel"
-                                                        >
-                                                            <XCircle className="size-3.5" />
-                                                            Tolak
-                                                        </Button>
-                                                    </div>
-                                                ) : canApproveKabag && item.status === 'menunggu_kabag' ? (
-                                                    <div className="flex items-center justify-center gap-1.5">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleOpenApprove(item, 'kabag')}
-                                                            className="h-8 gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 text-xs shrink-0"
-                                                            title="Approve Kabag & Terbitkan Kode MD"
-                                                        >
-                                                            <CheckCheck className="size-3.5" />
-                                                            Approve Kabag
                                                         </Button>
                                                         <Button
                                                             variant="outline"
@@ -1194,17 +1159,15 @@ export default function PameranIndex({
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog Konfirmasi Approval (SPV / Kabag) */}
+            {/* Dialog Konfirmasi Approval (SPV) */}
             <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
                 <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
                     <DialogHeader className="px-6 pt-6 pb-4 border-b">
                         <DialogTitle>
-                            {approveType === 'spv' ? 'Persetujuan SPV' : 'Persetujuan Kabag'}
+                            Persetujuan SPV
                         </DialogTitle>
                         <DialogDescription>
-                            {approveType === 'spv'
-                                ? 'Apakah Anda yakin ingin menyetujui channel ini? Channel akan dilanjutkan ke tahap persetujuan Kabag.'
-                                : 'Apakah Anda yakin ingin menyetujui channel ini? Kode Channel MD akan otomatis diterbitkan.'}
+                            Apakah Anda yakin ingin menyetujui channel ini? Kode Channel MD akan otomatis diterbitkan.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -1292,7 +1255,7 @@ export default function PameranIndex({
                             className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
                             {isApproving && <Spinner className="mr-2 size-4" />}
-                            {approveType === 'spv' ? 'Setujui (SPV)' : 'Setujui & Terbitkan Kode MD'}
+                            Setujui & Terbitkan Kode MD
                         </Button>
                     </DialogFooter>
                 </DialogContent>
