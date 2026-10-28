@@ -3,6 +3,7 @@ import { ChevronDown, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -80,11 +81,12 @@ export function MultiSelectFilter({
                 <Button
                     variant="outline"
                     size="sm"
-                    className={`h-9 justify-between text-xs font-normal px-2.5 ${
-                        selectedValues.length > 0
-                            ? 'border-emerald-500/60 bg-emerald-50/50 text-emerald-900 dark:border-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-300 font-medium'
-                            : ''
-                    } ${className}`}
+                    className={cn(
+                        'h-9 justify-between text-xs font-normal px-2.5',
+                        selectedValues.length > 0 &&
+                            'border-emerald-500/60 bg-emerald-50/50 text-emerald-900 dark:border-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-300 font-medium',
+                        className,
+                    )}
                 >
                     <span className="truncate">{getTriggerLabel()}</span>
                     <div className="flex items-center gap-1 shrink-0 ml-1">
@@ -100,7 +102,7 @@ export function MultiSelectFilter({
                     </div>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 p-1">
+            <DropdownMenuContent align="start" className="w-64 p-1">
                 {(showSearch || options.length > 5) && (
                     <div className="p-1">
                         <div className="relative">

@@ -44,6 +44,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import type { JenisPameran, PameranItem } from '@/types';
 
 // Fix default marker icon path issue in Vite bundler
@@ -119,8 +120,25 @@ export default function DashboardMap({
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRentalFilter, setSelectedRentalFilter] = useState('all'); // all | berlangsung | akan_datang | selesai
+    const [selectedDealerFilter, setSelectedDealerFilter] = useState<string[]>([]);
     const [selectedJenisFilter, setSelectedJenisFilter] = useState('all');
     const [selectedPameran, setSelectedPameran] = useState<PameranItem | null>(null);
+
+    // Options dealer unik dari pameran
+    const dealerOptions = useMemo(() => {
+        const map = new Map<number, string>();
+        pamerans.forEach((p) => {
+            if (p.dealer?.id) {
+                const label = p.dealer.kode_dealer
+                    ? `${p.dealer.nama_dealer} (${p.dealer.kode_dealer})`
+                    : p.dealer.nama_dealer;
+                map.set(p.dealer.id, label);
+            }
+        });
+        return Array.from(map.entries())
+            .map(([id, label]) => ({ value: String(id), label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [pamerans]);
 
     // State Komparasi Pameran
     const [isCompareMode, setIsCompareMode] = useState(false);
@@ -214,6 +232,13 @@ export default function DashboardMap({
                 return false;
             }
 
+            // Dealer filter (multi-select)
+            if (selectedDealerFilter.length > 0) {
+                if (!item.dealer_id || !selectedDealerFilter.includes(String(item.dealer_id))) {
+                    return false;
+                }
+            }
+
             // Jenis Pameran filter
             if (selectedJenisFilter !== 'all') {
                 if (String(item.jenis_pameran_id) !== String(selectedJenisFilter)) {
@@ -227,6 +252,7 @@ export default function DashboardMap({
         pamerans,
         searchQuery,
         selectedRentalFilter,
+        selectedDealerFilter,
         selectedJenisFilter,
     ]);
 
@@ -750,6 +776,17 @@ export default function DashboardMap({
                             <SelectItem value="akan_datang">Akan Datang</SelectItem>
                         </SelectContent>
                     </Select>
+
+                    {/* Filter Dealer (Multi-Select) */}
+                    <MultiSelectFilter
+                        label="Dealer"
+                        placeholder="Semua Dealer"
+                        options={dealerOptions}
+                        selectedValues={selectedDealerFilter}
+                        onChange={setSelectedDealerFilter}
+                        className="h-8 w-[150px] sm:w-[170px] text-xs"
+                        showSearch={true}
+                    />
 
                     {/* Filter Jenis Channel */}
                     <Select
