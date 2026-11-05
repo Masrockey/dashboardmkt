@@ -19,6 +19,7 @@ class Type extends Model
         'nama_type',
         'category_id',
         'segment_id',
+        'series_id',
         'nama_pasar',
     ];
 
@@ -36,5 +37,13 @@ class Type extends Model
     public function segment(): BelongsTo
     {
         return $this->belongsTo(Segment::class);
+    }
+
+    /**
+     * Get the series associated with the type.
+     */
+    public function series(): BelongsTo
+    {
+        return $this->belongsTo(Series::class);
     }
 }

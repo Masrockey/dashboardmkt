@@ -8,6 +8,7 @@ export type * from './navigation';
 export type * from './pameran';
 export type * from './segment';
 export type * from './type-model';
+export type * from './series';
 export type * from './ui';
 export type * from './user';
 export type * from './r2';

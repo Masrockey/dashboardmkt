@@ -6,6 +6,7 @@ use App\Http\Requests\TypeStoreRequest;
 use App\Http\Requests\TypeUpdateRequest;
 use App\Models\Category;
 use App\Models\Segment;
+use App\Models\Series;
 use App\Models\Type;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,7 @@ class TypeController extends Controller
         $search = $request->string('search')->toString();
 
         $types = Type::query()
-            ->with(['segment', 'category'])
+            ->with(['segment', 'category', 'series'])
             ->when($search !== '', function (Builder $query) use ($search) {
                 $query->where(function (Builder $subQuery) use ($search) {
                     $subQuery->where('nama_type', 'like', "%{$search}%")
@@ -33,6 +34,9 @@ class TypeController extends Controller
                         })
                         ->orWhereHas('category', function (Builder $catQuery) use ($search) {
                             $catQuery->where('nama_kategori', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('series', function (Builder $serQuery) use ($search) {
+                            $serQuery->where('nama', 'like', "%{$search}%");
                         });
                 });
             })
@@ -48,10 +52,15 @@ class TypeController extends Controller
             ->orderBy('nama_kategori')
             ->get(['id', 'nama_kategori']);
 
+        $allSeries = Series::query()
+            ->orderBy('nama')
+            ->get(['id', 'nama']);
+
         return Inertia::render('types/index', [
             'types' => $types,
             'segments' => $segments,
             'categories' => $categories,
+            'allSeries' => $allSeries,
             'filters' => [
                 'search' => $search,
             ],

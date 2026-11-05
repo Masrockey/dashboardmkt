@@ -42,18 +42,19 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import typesRoute from '@/routes/types';
-import type { Category, PaginatedTypes, Segment, TypeItem } from '@/types';
+import type { Category, PaginatedTypes, Segment, Series, TypeItem } from '@/types';
 
 interface TypesIndexProps {
     types: PaginatedTypes;
     segments: Segment[];
     categories: Category[];
+    allSeries: Series[];
     filters: {
         search?: string;
     };
 }
 
-export default function TypesIndex({ types, segments, categories, filters }: TypesIndexProps) {
+export default function TypesIndex({ types, segments, categories, allSeries = [], filters }: TypesIndexProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -65,11 +66,13 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
         nama_type: string;
         category_id: string | number;
         segment_id: string | number;
+        series_id: string | number;
         nama_pasar: string;
     }>({
         nama_type: '',
         category_id: '',
         segment_id: '',
+        series_id: '',
         nama_pasar: '',
     });
 
@@ -78,11 +81,13 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
         nama_type: string;
         category_id: string | number;
         segment_id: string | number;
+        series_id: string | number;
         nama_pasar: string;
     }>({
         nama_type: '',
         category_id: '',
         segment_id: '',
+        series_id: '',
         nama_pasar: '',
     });
 
@@ -127,6 +132,7 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
             ...data,
             category_id: data.category_id === '' ? null : Number(data.category_id),
             segment_id: data.segment_id === '' ? null : Number(data.segment_id),
+            series_id: data.series_id === '' ? null : Number(data.series_id),
         }));
         createForm.post(typesRoute.store.url(), {
             preserveScroll: true,
@@ -143,6 +149,7 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
             nama_type: item.nama_type,
             category_id: item.category_id ? String(item.category_id) : '',
             segment_id: item.segment_id ? String(item.segment_id) : '',
+            series_id: item.series_id ? String(item.series_id) : '',
             nama_pasar: item.nama_pasar || '',
         });
         editForm.clearErrors();
@@ -157,6 +164,7 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
             ...data,
             category_id: data.category_id === '' ? null : Number(data.category_id),
             segment_id: data.segment_id === '' ? null : Number(data.segment_id),
+            series_id: data.series_id === '' ? null : Number(data.series_id),
         }));
         editForm.put(typesRoute.update.url(selectedType.id), {
             preserveScroll: true,
@@ -252,6 +260,7 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
                                 <TableHead>Type</TableHead>
                                 <TableHead>Kategori</TableHead>
                                 <TableHead>Segment</TableHead>
+                                <TableHead>Series</TableHead>
                                 <TableHead>Nama Pasar</TableHead>
                                 <TableHead>Tanggal Dibuat</TableHead>
                                 <TableHead className="w-28 text-right">Aksi</TableHead>
@@ -260,7 +269,7 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
                         <TableBody>
                             {types.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                                    <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                                         Data type tidak ditemukan.
                                     </TableCell>
                                 </TableRow>
@@ -292,6 +301,20 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
                                             ) : (
                                                 <span className="text-xs text-muted-foreground italic">
                                                     - Tanpa Segment -
+                                                </span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {item.series ? (
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="font-medium bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                                                >
+                                                    {item.series.nama}
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">
+                                                    - Tanpa Series -
                                                 </span>
                                             )}
                                         </TableCell>
@@ -445,6 +468,28 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
                             </div>
 
                             <div className="space-y-1.5">
+                                <Label htmlFor="create_series_id">Series</Label>
+                                <Select
+                                    value={createForm.data.series_id ? String(createForm.data.series_id) : 'none'}
+                                    onValueChange={(val) => createForm.setData('series_id', val === 'none' ? '' : val)}
+                                    disabled={createForm.processing}
+                                >
+                                    <SelectTrigger id="create_series_id" className="w-full">
+                                        <SelectValue placeholder="Pilih Series" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Tanpa Series --</SelectItem>
+                                        {allSeries.map((ser) => (
+                                            <SelectItem key={ser.id} value={String(ser.id)}>
+                                                {ser.nama}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={createForm.errors.series_id} />
+                            </div>
+
+                            <div className="space-y-1.5">
                                 <Label htmlFor="create_nama_pasar">Nama Pasar</Label>
                                 <Input
                                     id="create_nama_pasar"
@@ -538,6 +583,28 @@ export default function TypesIndex({ types, segments, categories, filters }: Typ
                                     </SelectContent>
                                 </Select>
                                 <InputError message={editForm.errors.segment_id} />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="edit_series_id">Series</Label>
+                                <Select
+                                    value={editForm.data.series_id ? String(editForm.data.series_id) : 'none'}
+                                    onValueChange={(val) => editForm.setData('series_id', val === 'none' ? '' : val)}
+                                    disabled={editForm.processing}
+                                >
+                                    <SelectTrigger id="edit_series_id" className="w-full">
+                                        <SelectValue placeholder="Pilih Series" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">-- Tanpa Series --</SelectItem>
+                                        {allSeries.map((ser) => (
+                                            <SelectItem key={ser.id} value={String(ser.id)}>
+                                                {ser.nama}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={editForm.errors.series_id} />
                             </div>
 
                             <div className="space-y-1.5">

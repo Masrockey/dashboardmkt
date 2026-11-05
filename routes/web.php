@@ -17,6 +17,7 @@ use App\Http\Controllers\PublicMeetAndGreetController;
 use App\Http\Controllers\R2Controller;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SegmentController;
+use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\TypeController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsureMarketingAccess;
@@ -54,6 +55,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
         Route::resource('kabupatens', KabupatenController::class)->except(['create', 'show', 'edit']);
         Route::resource('types', TypeController::class)->except(['create', 'show', 'edit']);
+        Route::resource('series', SeriesController::class)->except(['create', 'show', 'edit']);
     });
     Route::post('pameran/{pameran}/approve-spv', [PameranController::class, 'approveSpv'])->name('pameran.approve-spv');
     Route::post('pameran/{pameran}/approve-kabag', [PameranController::class, 'approveKabag'])->name('pameran.approve-kabag');

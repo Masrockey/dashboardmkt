@@ -17,6 +17,7 @@ class TypeUpdateRequest extends FormRequest
             'nama_type' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'segment_id' => ['nullable', 'exists:segments,id'],
+            'series_id' => ['nullable', 'exists:series,id'],
             'nama_pasar' => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -27,6 +28,7 @@ class TypeUpdateRequest extends FormRequest
             'nama_type' => 'Type / Nama Type',
             'category_id' => 'Kategori',
             'segment_id' => 'Segment',
+            'series_id' => 'Series',
             'nama_pasar' => 'Nama Pasar',
         ];
     }

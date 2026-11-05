@@ -1,5 +1,6 @@
 import type { Category } from './category';
 import type { Segment } from './segment';
+import type { Series } from './series';
 
 export interface TypeItem {
     id: number;
@@ -8,6 +9,8 @@ export interface TypeItem {
     category?: Category | null;
     segment_id: number | null;
     segment?: Segment | null;
+    series_id: number | null;
+    series?: Series | null;
     nama_pasar: string | null;
     created_at: string;
     updated_at: string;

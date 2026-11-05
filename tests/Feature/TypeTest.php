@@ -3,8 +3,10 @@
 use App\Enums\UserRole;
 use App\Models\Category;
 use App\Models\Segment;
+use App\Models\Series;
 use App\Models\Type;
 use App\Models\User;
+use Inertia\Testing\AssertableInertia;
 
 test('guests are redirected to the login page when visiting types', function () {
     $response = $this->get(route('types.index'));
@@ -92,4 +94,60 @@ test('authorized users can delete a type', function () {
     $this->assertDatabaseMissing('types', [
         'id' => $type->id,
     ]);
+});
+
+test('authorized users can create and update a type with series relation', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+    $series1 = Series::create(['nama' => 'Vario Series']);
+    $series2 = Series::create(['nama' => 'BeAT Series']);
+
+    $response = $this->actingAs($user)->post(route('types.store'), [
+        'nama_type' => 'VARIO 160',
+        'series_id' => $series1->id,
+        'nama_pasar' => 'VARIO 160 CBS',
+    ]);
+
+    $response->assertRedirect(route('types.index'));
+
+    $this->assertDatabaseHas('types', [
+        'nama_type' => 'VARIO 160',
+        'series_id' => $series1->id,
+    ]);
+
+    $type = Type::where('nama_type', 'VARIO 160')->first();
+    expect($type->series->id)->toBe($series1->id);
+
+    // Update series
+    $response = $this->actingAs($user)->put(route('types.update', $type), [
+        'nama_type' => 'VARIO 160',
+        'series_id' => $series2->id,
+    ]);
+
+    $response->assertRedirect(route('types.index'));
+
+    $this->assertDatabaseHas('types', [
+        'id' => $type->id,
+        'series_id' => $series2->id,
+    ]);
+});
+
+test('types can be searched by series name', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+    $series = Series::create(['nama' => 'Scoopy Series']);
+    Type::create([
+        'nama_type' => 'SCOOPY PRESTIGE',
+        'series_id' => $series->id,
+    ]);
+    Type::create([
+        'nama_type' => 'CBR 250RR',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('types.index', ['search' => 'Scoopy']));
+
+    $response->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('types/index')
+            ->where('types.total', 1)
+            ->where('types.data.0.nama_type', 'SCOOPY PRESTIGE')
+        );
 });

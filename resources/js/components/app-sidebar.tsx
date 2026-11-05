@@ -5,6 +5,7 @@ import r2 from '@/routes/r2';
 import {
     Bike,
     BookmarkCheck,
+    Boxes,
     Building2,
     CalendarDays,
     FilePlus2,
@@ -47,6 +48,7 @@ import meetAndGreet from '@/routes/meet-and-greet';
 import pameran from '@/routes/pameran';
 import roles from '@/routes/roles';
 import segments from '@/routes/segments';
+import series from '@/routes/series';
 import types from '@/routes/types';
 import users from '@/routes/users';
 import type { NavGroup, NavItem } from '@/types';
@@ -112,6 +114,12 @@ const masterDataNavItems: PermittedNavItem[] = [
         title: 'Type',
         href: types.index(),
         icon: Tag,
+        permission: 'master_data.access',
+    },
+    {
+        title: 'Series',
+        href: series.index(),
+        icon: Boxes,
         permission: 'master_data.access',
     },
 ];
