@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import {
     Select,
     SelectContent,
@@ -106,6 +107,9 @@ interface MarketingKabupatenMapProps {
     className?: string;
     selectedKabupatenFilter?: string;
     onSelectKabupatenFilter?: (kabupaten: string) => void;
+    segmentOptions?: string[];
+    selectedSegments?: string[];
+    onSegmentsChange?: (segments: string[]) => void;
 }
 
 type MetricMode = 'share' | 'competitor' | 'volume';
@@ -116,6 +120,9 @@ export default function MarketingKabupatenMap({
     className = '',
     selectedKabupatenFilter = 'all',
     onSelectKabupatenFilter,
+    segmentOptions = [],
+    selectedSegments = [],
+    onSegmentsChange,
 }: MarketingKabupatenMapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
@@ -214,30 +221,153 @@ export default function MarketingKabupatenMap({
             bounds.extend(latLng);
 
             // Competitor stats
-            const competitorShare = item.total > 0 ? Math.round((item.competitor_count / item.total) * 1000) / 10 : 0;
             const topCompetitorBrand = (item.top_brands || []).find((b) => !b.is_honda)?.brand || 'Kompetitor';
 
-            let badgeBgColor = '#dc2626';
-            let displayValue = `${item.honda_share}%`;
-            let subLabel = 'Honda';
+            const shortName = item.kabupaten.replace(/^(KAB\.?|KOTA)\s+/i, '');
+
+            let pillHtml = '';
 
             if (metricMode === 'competitor') {
-                displayValue = `${competitorShare}%`;
-                subLabel = topCompetitorBrand;
-                badgeBgColor = competitorShare >= 40 ? '#1d4ed8' : competitorShare >= 25 ? '#2563eb' : '#475569';
+                pillHtml = `
+                    <div style="
+                        display: inline-flex;
+                        align-items: center;
+                        background: #ffffff;
+                        border: 2px solid #ffffff;
+                        border-radius: 9999px;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25);
+                        overflow: hidden;
+                        font-family: inherit;
+                        font-size: 10.5px;
+                        font-weight: 700;
+                        line-height: 1.2;
+                    ">
+                        <div style="
+                            background-color: #1d4ed8;
+                            color: #ffffff;
+                            padding: 2.5px 7px;
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
+                            white-space: nowrap;
+                        ">
+                            <span>${item.competitor_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 8.5px; opacity: 0.95; font-weight: 600;">Kompetitor</span>
+                        </div>
+                        <div style="
+                            background-color: #dc2626;
+                            color: #ffffff;
+                            padding: 2.5px 7px;
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
+                            white-space: nowrap;
+                            border-left: 1px solid rgba(255, 255, 255, 0.35);
+                        ">
+                            <span>${item.honda_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 8.5px; opacity: 0.95; font-weight: 600;">Honda</span>
+                        </div>
+                    </div>
+                `;
             } else if (metricMode === 'volume') {
-                displayValue = item.total >= 1000 ? `${(item.total / 1000).toFixed(1)}k` : `${item.total}`;
-                subLabel = 'Unit R2';
-                badgeBgColor = item.total >= 2000 ? '#0f172a' : item.total >= 1000 ? '#334155' : '#64748b';
+                pillHtml = `
+                    <div style="
+                        display: inline-flex;
+                        align-items: center;
+                        background: #ffffff;
+                        border: 2px solid #ffffff;
+                        border-radius: 9999px;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25);
+                        overflow: hidden;
+                        font-family: inherit;
+                        font-size: 10.5px;
+                        font-weight: 700;
+                        line-height: 1.2;
+                    ">
+                        <div style="
+                            background-color: #0f172a;
+                            color: #ffffff;
+                            padding: 2.5px 7px;
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
+                            white-space: nowrap;
+                        ">
+                            <span>${item.total.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 8.5px; opacity: 0.95; font-weight: 600;">Total</span>
+                        </div>
+                        <div style="
+                            background-color: #dc2626;
+                            color: #ffffff;
+                            padding: 2.5px 6px;
+                            display: flex;
+                            align-items: center;
+                            gap: 2.5px;
+                            white-space: nowrap;
+                            border-left: 1px solid rgba(255, 255, 255, 0.35);
+                        ">
+                            <span>${item.honda_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 8px; opacity: 0.95; font-weight: 600;">H</span>
+                        </div>
+                        <div style="
+                            background-color: #2563eb;
+                            color: #ffffff;
+                            padding: 2.5px 6px;
+                            display: flex;
+                            align-items: center;
+                            gap: 2.5px;
+                            white-space: nowrap;
+                            border-left: 1px solid rgba(255, 255, 255, 0.35);
+                        ">
+                            <span>${item.competitor_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 8px; opacity: 0.95; font-weight: 600;">Komp</span>
+                        </div>
+                    </div>
+                `;
             } else {
-                const isDominant = item.honda_share >= 70;
-                const isStrong = item.honda_share >= 50 && item.honda_share < 70;
-                badgeBgColor = isDominant ? '#dc2626' : isStrong ? '#d97706' : '#4b5563';
-                displayValue = `${item.honda_share}%`;
-                subLabel = 'Honda';
+                // Tampilan default (Unit Honda): Tampilkan kedua unit berdampingan (Honda & Kompetitor)
+                pillHtml = `
+                    <div style="
+                        display: inline-flex;
+                        align-items: center;
+                        background: #ffffff;
+                        border: 2px solid #ffffff;
+                        border-radius: 9999px;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25);
+                        overflow: hidden;
+                        font-family: inherit;
+                        font-size: 10.5px;
+                        font-weight: 700;
+                        line-height: 1.2;
+                    ">
+                        <div style="
+                            background-color: #dc2626;
+                            color: #ffffff;
+                            padding: 2.5px 7px;
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
+                            white-space: nowrap;
+                        ">
+                            <span>${item.honda_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 8.5px; opacity: 0.95; font-weight: 600;">Honda</span>
+                        </div>
+                        <div style="
+                            background-color: #2563eb;
+                            color: #ffffff;
+                            padding: 2.5px 7px;
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
+                            white-space: nowrap;
+                            border-left: 1px solid rgba(255, 255, 255, 0.35);
+                        ">
+                            <span>${item.competitor_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 8.5px; opacity: 0.95; font-weight: 600;">Kompetitor</span>
+                        </div>
+                    </div>
+                `;
             }
-
-            const shortName = item.kabupaten.replace(/^(KAB\.?|KOTA)\s+/i, '');
 
             const customHtml = `
                 <div class="kabupaten-marker-container" style="
@@ -249,32 +379,14 @@ export default function MarketingKabupatenMap({
                     transition: transform 0.2s ease, filter 0.2s ease;
                     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
                 ">
+                    ${pillHtml}
                     <div style="
-                        background-color: ${badgeBgColor};
+                        background-color: rgba(15, 23, 42, 0.9);
                         color: #ffffff;
-                        border: 2px solid #ffffff;
-                        border-radius: 9999px;
-                        padding: 3px 8px;
-                        font-family: inherit;
-                        font-weight: 700;
-                        font-size: 11px;
-                        line-height: 1.2;
-                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-                        display: flex;
-                        align-items: center;
-                        gap: 4px;
-                        white-space: nowrap;
-                    ">
-                        <span>${displayValue}</span>
-                        <span style="font-size: 9px; opacity: 0.9; font-weight: 600;">${subLabel}</span>
-                    </div>
-                    <div style="
-                        background-color: rgba(15, 23, 42, 0.88);
-                        color: #ffffff;
-                        padding: 1px 6px;
+                        padding: 1.5px 7px;
                         border-radius: 4px;
                         font-size: 9.5px;
-                        font-weight: 600;
+                        font-weight: 700;
                         margin-top: 3px;
                         white-space: nowrap;
                         border: 1px solid rgba(255, 255, 255, 0.2);
@@ -288,11 +400,18 @@ export default function MarketingKabupatenMap({
             const customIcon = L.divIcon({
                 className: 'kabupaten-map-div-icon',
                 html: customHtml,
-                iconSize: [85, 40],
-                iconAnchor: [42, 20],
+                iconSize: [140, 42],
+                iconAnchor: [70, 21],
             });
 
-            const marker = L.marker(latLng, { icon: customIcon });
+            const marker = L.marker(latLng, { icon: customIcon, zIndexOffset: 100 });
+
+            marker.on('mouseover', () => {
+                marker.setZIndexOffset(1000);
+            });
+            marker.on('mouseout', () => {
+                marker.setZIndexOffset(100);
+            });
 
             // Brand breakdown html for tooltip
             const brandsHtml = (item.top_brands || [])
@@ -301,7 +420,7 @@ export default function MarketingKabupatenMap({
                         <span style="font-weight: ${b.is_honda ? '700' : '500'}; color: ${b.is_honda ? '#dc2626' : '#2563eb'};">
                             ${b.brand}:
                         </span>
-                        <span>${b.count.toLocaleString('id-ID')} unit (${b.percentage}%)</span>
+                        <span><strong>${b.count.toLocaleString('id-ID')} unit</strong></span>
                     </div>
                 `)
                 .join('');
@@ -318,12 +437,12 @@ export default function MarketingKabupatenMap({
                             <strong>${item.total.toLocaleString('id-ID')} unit</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; color: #dc2626;">
-                            <span>Pangsa Honda:</span>
-                            <strong>${item.honda_share}% (${item.honda_count.toLocaleString('id-ID')})</strong>
+                            <span>Unit Honda:</span>
+                            <strong>${item.honda_count.toLocaleString('id-ID')} unit</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; color: #2563eb;">
-                            <span>Pangsa Brand Lain:</span>
-                            <strong>${competitorShare}% (${item.competitor_count.toLocaleString('id-ID')})</strong>
+                            <span>Unit Brand Lain:</span>
+                            <strong>${item.competitor_count.toLocaleString('id-ID')} unit</strong>
                         </div>
                     </div>
                     ${
@@ -385,28 +504,40 @@ export default function MarketingKabupatenMap({
             // ========================================================
             // LEVEL 2: TAMPILKAN DAFTAR KECAMATAN DI KABUPATEN INI
             // ========================================================
+            const kecCoordCounts = new Map<string, number>();
+            const getUniqueKecLatLng = (rawLat: number, rawLng: number): [number, number] => {
+                const key = `${rawLat.toFixed(3)},${rawLng.toFixed(3)}`;
+                const count = kecCoordCounts.get(key) || 0;
+                kecCoordCounts.set(key, count + 1);
+                if (count === 0) return [rawLat, rawLng];
+                // Offset colliding pins slightly in a radial pattern so they never stack
+                const angle = (count * 60) * (Math.PI / 180);
+                const radius = 0.005 * Math.ceil(count / 6);
+                return [rawLat + radius * Math.cos(angle), rawLng + radius * Math.sin(angle) * 1.1];
+            };
+
             kecamatans.forEach((k) => {
                 if (k.latitude == null || k.longitude == null) return;
-                const latLng: [number, number] = [k.latitude, k.longitude];
+                const latLng: [number, number] = getUniqueKecLatLng(k.latitude, k.longitude);
                 bounds.extend(latLng);
 
                 const compShare = k.total > 0 ? Math.round((k.competitor_count / k.total) * 1000) / 10 : 0;
                 const topKecCompBrand = (k.top_brands || []).find((b) => !b.is_honda)?.brand || 'Kompetitor';
 
                 let zoneColor = '#dc2626';
-                let subBadgeText = `Honda ${k.honda_share}%`;
+                let subBadgeText = `${k.honda_count.toLocaleString('id-ID')} Honda &bull; ${k.competitor_count.toLocaleString('id-ID')} Lain`;
 
                 if (metricMode === 'competitor') {
                     zoneColor = compShare >= 40 ? '#1d4ed8' : compShare >= 25 ? '#2563eb' : '#475569';
-                    subBadgeText = `${topKecCompBrand} ${compShare}%`;
+                    subBadgeText = `${k.competitor_count.toLocaleString('id-ID')} ${topKecCompBrand} &bull; ${k.honda_count.toLocaleString('id-ID')} Honda`;
                 } else if (metricMode === 'volume') {
                     zoneColor = k.total >= 500 ? '#0f172a' : k.total >= 200 ? '#334155' : '#64748b';
-                    subBadgeText = `${k.total} Unit`;
+                    subBadgeText = `${k.total.toLocaleString('id-ID')} Unit`;
                 } else {
                     const isDominant = k.honda_share >= 70;
                     const isStrong = k.honda_share >= 50 && k.honda_share < 70;
                     zoneColor = isDominant ? '#dc2626' : isStrong ? '#d97706' : '#4b5563';
-                    subBadgeText = `Honda ${k.honda_share}%`;
+                    subBadgeText = `${k.honda_count.toLocaleString('id-ID')} Honda &bull; ${k.competitor_count.toLocaleString('id-ID')} Lain`;
                 }
 
                 // Scaled circle radius based on unit volume
@@ -442,8 +573,88 @@ export default function MarketingKabupatenMap({
 
                 // 2. Center Pill Badge Marker
                 const cleanKecName = k.kecamatan.replace(/^(KEC\.?|KECAMATAN)\s+/i, '');
+
+                let kecPillHtml = '';
+                if (metricMode === 'competitor') {
+                    kecPillHtml = `
+                        <div style="
+                            display: inline-flex;
+                            align-items: center;
+                            background: #ffffff;
+                            border: 2px solid #ffffff;
+                            border-radius: 9999px;
+                            box-shadow: 0 3px 5px rgba(0,0,0,0.22);
+                            overflow: hidden;
+                            font-size: 10px;
+                            font-weight: 700;
+                            line-height: 1.2;
+                        ">
+                            <div style="background-color: #1d4ed8; color: #ffffff; padding: 2px 6px; display: flex; align-items: center; gap: 2.5px; white-space: nowrap;">
+                                <span>${k.competitor_count.toLocaleString('id-ID')}</span>
+                                <span style="font-size: 8px; opacity: 0.95; font-weight: 600;">Komp</span>
+                            </div>
+                            <div style="background-color: #dc2626; color: #ffffff; padding: 2px 6px; display: flex; align-items: center; gap: 2.5px; white-space: nowrap; border-left: 1px solid rgba(255,255,255,0.35);">
+                                <span>${k.honda_count.toLocaleString('id-ID')}</span>
+                                <span style="font-size: 8px; opacity: 0.95; font-weight: 600;">Honda</span>
+                            </div>
+                        </div>
+                    `;
+                } else if (metricMode === 'volume') {
+                    kecPillHtml = `
+                        <div style="
+                            display: inline-flex;
+                            align-items: center;
+                            background: #ffffff;
+                            border: 2px solid #ffffff;
+                            border-radius: 9999px;
+                            box-shadow: 0 3px 5px rgba(0,0,0,0.22);
+                            overflow: hidden;
+                            font-size: 10px;
+                            font-weight: 700;
+                            line-height: 1.2;
+                        ">
+                            <div style="background-color: #0f172a; color: #ffffff; padding: 2px 6px; display: flex; align-items: center; gap: 2.5px; white-space: nowrap;">
+                                <span>${k.total.toLocaleString('id-ID')}</span>
+                                <span style="font-size: 8px; opacity: 0.95; font-weight: 600;">Total</span>
+                            </div>
+                            <div style="background-color: #dc2626; color: #ffffff; padding: 2px 5px; display: flex; align-items: center; gap: 2px; white-space: nowrap; border-left: 1px solid rgba(255,255,255,0.35);">
+                                <span>${k.honda_count.toLocaleString('id-ID')}</span>
+                                <span style="font-size: 7.5px; opacity: 0.95; font-weight: 600;">H</span>
+                            </div>
+                            <div style="background-color: #2563eb; color: #ffffff; padding: 2px 5px; display: flex; align-items: center; gap: 2px; white-space: nowrap; border-left: 1px solid rgba(255,255,255,0.35);">
+                                <span>${k.competitor_count.toLocaleString('id-ID')}</span>
+                                <span style="font-size: 7.5px; opacity: 0.95; font-weight: 600;">Komp</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    kecPillHtml = `
+                        <div style="
+                            display: inline-flex;
+                            align-items: center;
+                            background: #ffffff;
+                            border: 2px solid #ffffff;
+                            border-radius: 9999px;
+                            box-shadow: 0 3px 5px rgba(0,0,0,0.22);
+                            overflow: hidden;
+                            font-size: 10px;
+                            font-weight: 700;
+                            line-height: 1.2;
+                        ">
+                            <div style="background-color: #dc2626; color: #ffffff; padding: 2px 6px; display: flex; align-items: center; gap: 2.5px; white-space: nowrap;">
+                                <span>${k.honda_count.toLocaleString('id-ID')}</span>
+                                <span style="font-size: 8px; opacity: 0.95; font-weight: 600;">Honda</span>
+                            </div>
+                            <div style="background-color: #2563eb; color: #ffffff; padding: 2px 6px; display: flex; align-items: center; gap: 2.5px; white-space: nowrap; border-left: 1px solid rgba(255,255,255,0.35);">
+                                <span>${k.competitor_count.toLocaleString('id-ID')}</span>
+                                <span style="font-size: 8px; opacity: 0.95; font-weight: 600;">Kompetitor</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 const kecMarkerHtml = `
-                    <div style="
+                    <div class="kecamatan-marker-container" style="
                         display: flex;
                         flex-direction: column;
                         align-items: center;
@@ -452,35 +663,20 @@ export default function MarketingKabupatenMap({
                         transition: transform 0.2s ease, filter 0.2s ease;
                         filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
                     ">
-                        <div style="
-                            background-color: ${zoneColor};
-                            color: #ffffff;
-                            border: 2px solid #ffffff;
-                            border-radius: 9999px;
-                            padding: 2.5px 7px;
-                            font-size: 10px;
-                            font-weight: 700;
-                            white-space: nowrap;
-                            display: flex;
-                            align-items: center;
-                            gap: 3.5px;
-                        ">
-                            <span>${cleanKecName}</span>
-                            <span style="background: rgba(0,0,0,0.25); border-radius: 9999px; padding: 1px 5px; font-size: 9px;">
-                                ${k.total}
-                            </span>
-                        </div>
+                        ${kecPillHtml}
                         <div style="
                             background: rgba(15, 23, 42, 0.9);
                             color: #ffffff;
-                            padding: 1px 5px;
+                            padding: 1.5px 6px;
                             border-radius: 4px;
-                            font-size: 8.5px;
-                            font-weight: 600;
-                            margin-top: 2px;
+                            font-size: 9px;
+                            font-weight: 700;
+                            margin-top: 2.5px;
                             white-space: nowrap;
+                            border: 1px solid rgba(255, 255, 255, 0.2);
+                            letter-spacing: 0.02em;
                         ">
-                            ${subBadgeText}
+                            ${cleanKecName}
                         </div>
                     </div>
                 `;
@@ -488,11 +684,18 @@ export default function MarketingKabupatenMap({
                 const kecIcon = L.divIcon({
                     className: 'kecamatan-div-icon',
                     html: kecMarkerHtml,
-                    iconSize: [95, 36],
-                    iconAnchor: [47, 18],
+                    iconSize: [130, 40],
+                    iconAnchor: [65, 20],
                 });
 
-                const kecMarker = L.marker(latLng, { icon: kecIcon });
+                const kecMarker = L.marker(latLng, { icon: kecIcon, zIndexOffset: 300 });
+
+                kecMarker.on('mouseover', () => {
+                    kecMarker.setZIndexOffset(1000);
+                });
+                kecMarker.on('mouseout', () => {
+                    kecMarker.setZIndexOffset(300);
+                });
 
                 // Brand breakdown html for kecamatan tooltip
                 const kecBrandsHtml = (k.top_brands || [])
@@ -501,7 +704,7 @@ export default function MarketingKabupatenMap({
                             <span style="font-weight: ${b.is_honda ? '700' : '500'}; color: ${b.is_honda ? '#dc2626' : '#2563eb'};">
                                 ${b.brand}:
                             </span>
-                            <span>${b.count.toLocaleString('id-ID')} unit (${b.percentage}%)</span>
+                            <span>${b.count.toLocaleString('id-ID')} unit</span>
                         </div>
                     `)
                     .join('');
@@ -520,12 +723,12 @@ export default function MarketingKabupatenMap({
                                 <strong>${k.total.toLocaleString('id-ID')} unit</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; color: #dc2626;">
-                                <span>Pangsa Honda:</span>
-                                <strong>${k.honda_share}% (${k.honda_count.toLocaleString('id-ID')})</strong>
+                                <span>Unit Honda:</span>
+                                <strong>${k.honda_count.toLocaleString('id-ID')} unit</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; color: #2563eb;">
-                                <span>Pangsa Brand Lain:</span>
-                                <strong>${compShare}% (${k.competitor_count.toLocaleString('id-ID')})</strong>
+                                <span>Unit Brand Lain:</span>
+                                <strong>${k.competitor_count.toLocaleString('id-ID')} unit</strong>
                             </div>
                         </div>
                         ${
@@ -602,61 +805,111 @@ export default function MarketingKabupatenMap({
 
             // 2. Render Titik Setiap Desa / Kelurahan di Kecamatan Ini
             const desas = kec.desas || [];
+            const desaCoordCounts = new Map<string, number>();
+            const getUniqueDesaLatLng = (rawLat: number, rawLng: number): [number, number] => {
+                const key = `${rawLat.toFixed(4)},${rawLng.toFixed(4)}`;
+                const count = desaCoordCounts.get(key) || 0;
+                desaCoordCounts.set(key, count + 1);
+                if (count === 0) return [rawLat, rawLng];
+                const angle = (count * 60) * (Math.PI / 180);
+                const radius = 0.003 * Math.ceil(count / 6);
+                return [rawLat + radius * Math.cos(angle), rawLng + radius * Math.sin(angle) * 1.1];
+            };
+
             desas.forEach((d) => {
                 if (d.latitude == null || d.longitude == null) return;
-                const dLatLng: [number, number] = [d.latitude, d.longitude];
+                const dLatLng: [number, number] = getUniqueDesaLatLng(d.latitude, d.longitude);
                 bounds.extend(dLatLng);
 
                 const isDesaSelected = selectedDesa === d.desa;
-                const isDesaDominant = d.honda_share >= 70;
-                const isDesaStrong = d.honda_share >= 50 && d.honda_share < 70;
-                const desaBadgeColor =
-                    metricMode === 'competitor'
-                        ? d.competitor_count > d.honda_count
-                            ? '#2563eb'
-                            : '#64748b'
-                        : isDesaDominant
-                          ? '#dc2626'
-                          : isDesaStrong
-                            ? '#d97706'
-                            : '#4b5563';
+
+                let desaPillHtml = '';
+                if (metricMode === 'competitor') {
+                    desaPillHtml = `
+                        <span style="background-color: #1d4ed8; color: #ffffff; padding: 2px 5.5px; display: inline-flex; align-items: center; gap: 2px; border-left: 1px solid rgba(255,255,255,0.35);">
+                            <span>${d.competitor_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 7.5px; opacity: 0.95; font-weight: 600;">Komp</span>
+                        </span>
+                        <span style="background-color: #dc2626; color: #ffffff; padding: 2px 5.5px; display: inline-flex; align-items: center; gap: 2px; border-left: 1px solid rgba(255,255,255,0.35);">
+                            <span>${d.honda_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 7.5px; opacity: 0.95; font-weight: 600;">H</span>
+                        </span>
+                    `;
+                } else if (metricMode === 'volume') {
+                    desaPillHtml = `
+                        <span style="background-color: #0f172a; color: #ffffff; padding: 2px 5px; display: inline-flex; align-items: center; gap: 2px; border-left: 1px solid rgba(255,255,255,0.35);">
+                            <span>${d.total.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 7.5px; opacity: 0.95; font-weight: 600;">Tot</span>
+                        </span>
+                        <span style="background-color: #dc2626; color: #ffffff; padding: 2px 4px; display: inline-flex; align-items: center; gap: 1.5px; border-left: 1px solid rgba(255,255,255,0.35);">
+                            <span>${d.honda_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 7px; opacity: 0.95;">H</span>
+                        </span>
+                        <span style="background-color: #2563eb; color: #ffffff; padding: 2px 4px; display: inline-flex; align-items: center; gap: 1.5px; border-left: 1px solid rgba(255,255,255,0.35);">
+                            <span>${d.competitor_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 7px; opacity: 0.95;">K</span>
+                        </span>
+                    `;
+                } else {
+                    desaPillHtml = `
+                        <span style="background-color: #dc2626; color: #ffffff; padding: 2px 5.5px; display: inline-flex; align-items: center; gap: 2px; border-left: 1px solid rgba(255,255,255,0.35);">
+                            <span>${d.honda_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 7.5px; opacity: 0.95; font-weight: 600;">Honda</span>
+                        </span>
+                        <span style="background-color: #2563eb; color: #ffffff; padding: 2px 5.5px; display: inline-flex; align-items: center; gap: 2px; border-left: 1px solid rgba(255,255,255,0.35);">
+                            <span>${d.competitor_count.toLocaleString('id-ID')}</span>
+                            <span style="font-size: 7.5px; opacity: 0.95; font-weight: 600;">Komp</span>
+                        </span>
+                    `;
+                }
 
                 const desaHtml = `
                     <div style="
-                        display: flex;
+                        display: inline-flex;
                         align-items: center;
-                        gap: 3.5px;
-                        background-color: ${isDesaSelected ? '#dc2626' : 'rgba(255, 255, 255, 0.96)'};
-                        border: 2px solid ${isDesaSelected ? '#ffffff' : desaBadgeColor};
-                        color: ${isDesaSelected ? '#ffffff' : '#0f172a'};
-                        padding: ${isDesaSelected ? '3px 8px' : '2px 7px'};
+                        background: #ffffff;
+                        border: 2px solid ${isDesaSelected ? '#dc2626' : '#ffffff'};
                         border-radius: 9999px;
-                        font-size: 10px;
-                        font-weight: 700;
-                        box-shadow: ${isDesaSelected ? '0 0 0 3px rgba(220, 38, 38, 0.4), 0 3px 6px rgba(0,0,0,0.3)' : '0 2px 5px rgba(0,0,0,0.2)'};
+                        box-shadow: ${isDesaSelected ? '0 0 0 3px rgba(220, 38, 38, 0.45), 0 3px 6px rgba(0,0,0,0.3)' : '0 2px 5px rgba(0,0,0,0.22)'};
                         white-space: nowrap;
+                        overflow: hidden;
                         transform: translate(-50%, -50%) ${isDesaSelected ? 'scale(1.08)' : 'scale(1)'};
                         cursor: pointer;
                         transition: transform 0.15s ease, box-shadow 0.15s ease;
+                        font-family: inherit;
+                        font-size: 9.5px;
+                        font-weight: 700;
+                        line-height: 1.2;
                     ">
-                        <span style="display: inline-block; width: 6.5px; height: 6.5px; border-radius: 9999px; background-color: ${isDesaSelected ? '#ffffff' : desaBadgeColor}; shrink-0;"></span>
-                        <span>${d.desa}</span>
-                        <span style="background-color: ${isDesaSelected ? 'rgba(0,0,0,0.3)' : '#f1f5f9'}; color: ${isDesaSelected ? '#ffffff' : '#1e293b'}; padding: 0.5px 5px; border-radius: 4px; font-size: 9px; font-weight: 800;">
-                            ${d.total}
+                        <span style="
+                            background: ${isDesaSelected ? '#b91c1c' : 'rgba(15, 23, 42, 0.92)'};
+                            color: #ffffff;
+                            padding: 2px 6.5px;
+                            letter-spacing: 0.02em;
+                        ">
+                            ${d.desa}
                         </span>
+                        ${desaPillHtml}
                     </div>
                 `;
 
                 const desaIcon = L.divIcon({
                     className: 'desa-div-icon',
                     html: desaHtml,
-                    iconSize: [95, 26],
-                    iconAnchor: [47, 13],
+                    iconSize: [130, 26],
+                    iconAnchor: [65, 13],
                 });
 
                 const desaMarker = L.marker(dLatLng, {
                     icon: desaIcon,
                     zIndexOffset: isDesaSelected ? 1000 : 500,
+                });
+
+                desaMarker.on('mouseover', () => {
+                    desaMarker.setZIndexOffset(1000);
+                });
+                desaMarker.on('mouseout', () => {
+                    desaMarker.setZIndexOffset(isDesaSelected ? 1000 : 500);
                 });
 
                 const desaTooltip = `
@@ -673,8 +926,8 @@ export default function MarketingKabupatenMap({
                                 <strong>${d.total} unit</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; color: #dc2626;">
-                                <span>Honda:</span>
-                                <strong>${d.honda_share}% (${d.honda_count} unit)</strong>
+                                <span>Unit Honda:</span>
+                                <strong>${d.honda_count.toLocaleString('id-ID')} unit</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; color: #2563eb;">
                                 <span>Brand Lain / Kompetitor:</span>
@@ -930,45 +1183,30 @@ export default function MarketingKabupatenMap({
                         </SelectContent>
                     </Select>
 
-                    {/* Mode Metrik Marker Toggle (Honda, Brand Lain/Kompetitor, Volume) */}
-                    <div className="flex items-center rounded-lg border border-neutral-200 bg-white p-0.5 dark:border-neutral-800 dark:bg-neutral-950">
-                        <button
-                            type="button"
-                            onClick={() => setMetricMode('share')}
-                            className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                                metricMode === 'share'
-                                    ? 'bg-red-600 text-white shadow-xs'
-                                    : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
-                            }`}
-                            title="Tampilkan persentase pangsa pasar Honda"
-                        >
-                            Pangsa Honda (%)
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setMetricMode('competitor')}
-                            className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                                metricMode === 'competitor'
-                                    ? 'bg-blue-600 text-white shadow-xs'
-                                    : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
-                            }`}
-                            title="Tampilkan persentase pangsa pasar brand lain (Yamaha, dll.)"
-                        >
-                            Brand Lain / Kompetitor (%)
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setMetricMode('volume')}
-                            className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                                metricMode === 'volume'
-                                    ? 'bg-neutral-900 text-white shadow-xs dark:bg-neutral-100 dark:text-neutral-900'
-                                    : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
-                            }`}
-                            title="Tampilkan total volume unit R2"
-                        >
-                            Volume Unit
-                        </button>
-                    </div>
+                    {/* Filter Segment (Dropdown Multi Select) */}
+                    <MultiSelectFilter
+                        label="Segment"
+                        placeholder="Semua Segment"
+                        options={(segmentOptions && segmentOptions.length > 0
+                            ? segmentOptions
+                            : [
+                                  'AT HIGH',
+                                  'AT LOW',
+                                  'AT MID',
+                                  'CUB HIGH',
+                                  'CUB LOW',
+                                  'CUB MID',
+                                  'SPORT HIGH',
+                                  'SPORT LOW',
+                                  'SPORT MID',
+                                  'UNCATEGORY',
+                              ]
+                        ).map((s) => ({ label: s, value: s }))}
+                        selectedValues={selectedSegments}
+                        onChange={onSegmentsChange || (() => {})}
+                        className="h-8 w-[165px] text-xs"
+                        showSearch={true}
+                    />
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -1169,7 +1407,7 @@ export default function MarketingKabupatenMap({
                                                     </span>
                                                 </span>
                                                 <span className="text-neutral-700 dark:text-neutral-300 text-[10.5px]">
-                                                    <strong>{b.count.toLocaleString('id-ID')} unit</strong> ({b.percentage}%)
+                                                    <strong>{b.count.toLocaleString('id-ID')} unit</strong>
                                                 </span>
                                             </div>
                                             <div className="h-1.5 w-full rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
@@ -1201,16 +1439,16 @@ export default function MarketingKabupatenMap({
                                             {selectedKabupaten.total.toLocaleString('id-ID')}
                                         </div>
                                         <div className="text-[10px] text-neutral-500">
-                                            {selectedKabupaten.percentage_of_total}% dari total NTB
+                                            Wilayah {selectedKabupaten.kabupaten}
                                         </div>
                                     </div>
                                     <div className="rounded-lg bg-red-50 p-2 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50">
-                                        <div className="text-[11px] text-red-600 dark:text-red-400 font-medium">Honda Share</div>
+                                        <div className="text-[11px] text-red-600 dark:text-red-400 font-medium">Total Unit Honda</div>
                                         <div className="text-base font-bold text-red-600 dark:text-red-400 mt-0.5">
-                                            {selectedKabupaten.honda_share}%
+                                            {selectedKabupaten.honda_count.toLocaleString('id-ID')}
                                         </div>
                                         <div className="text-[10px] text-red-700/80 dark:text-red-300/80">
-                                            {selectedKabupaten.honda_count.toLocaleString('id-ID')} unit terdaftar
+                                            unit terdaftar
                                         </div>
                                     </div>
                                 </div>
@@ -1229,12 +1467,12 @@ export default function MarketingKabupatenMap({
                                         <div
                                             className="bg-red-600 h-full transition-all"
                                             style={{ width: `${Math.min(100, selectedKabupaten.honda_share)}%` }}
-                                            title={`Honda: ${selectedKabupaten.honda_share}%`}
+                                            title={`Honda: ${selectedKabupaten.honda_count.toLocaleString('id-ID')} unit`}
                                         />
                                         <div
                                             className="bg-blue-600 h-full transition-all"
                                             style={{ width: `${Math.max(0, 100 - selectedKabupaten.honda_share)}%` }}
-                                            title={`Brand Lain: ${Math.max(0, 100 - selectedKabupaten.honda_share).toFixed(1)}%`}
+                                            title={`Brand Lain: ${selectedKabupaten.competitor_count.toLocaleString('id-ID')} unit`}
                                         />
                                     </div>
                                 </div>
@@ -1273,7 +1511,7 @@ export default function MarketingKabupatenMap({
                                                                     : 'text-neutral-600 dark:text-neutral-300'
                                                             }`}
                                                         >
-                                                            {k.honda_share}%
+                                                            {k.honda_count} Honda
                                                         </span>
                                                         <ChevronRight className="size-3 text-neutral-400" />
                                                     </div>
@@ -1310,19 +1548,19 @@ export default function MarketingKabupatenMap({
                                     <div>
                                         <div className="text-[10px] text-neutral-500">Total R2</div>
                                         <div className="font-bold text-neutral-900 dark:text-neutral-100">
-                                            {selectedKecamatan.total}
+                                            {selectedKecamatan.total.toLocaleString('id-ID')}
                                         </div>
                                     </div>
                                     <div>
                                         <div className="text-[10px] text-red-600 font-medium">Honda</div>
                                         <div className="font-bold text-red-600">
-                                            {selectedKecamatan.honda_share}%
+                                            {selectedKecamatan.honda_count.toLocaleString('id-ID')}
                                         </div>
                                     </div>
                                     <div>
                                         <div className="text-[10px] text-blue-600 font-medium">Brand Lain</div>
                                         <div className="font-bold text-blue-600">
-                                            {Math.max(0, 100 - selectedKecamatan.honda_share).toFixed(1)}%
+                                            {selectedKecamatan.competitor_count.toLocaleString('id-ID')}
                                         </div>
                                     </div>
                                 </div>
@@ -1507,9 +1745,6 @@ export default function MarketingKabupatenMap({
                                                                 <span className="font-bold text-neutral-900 dark:text-neutral-100 text-[11px]">
                                                                     {item.displayCount.toLocaleString('id-ID')} unit
                                                                 </span>
-                                                                <span className="text-[9.5px] text-neutral-500 ml-1">
-                                                                    ({item.activePercentage}%)
-                                                                </span>
                                                             </div>
                                                         </div>
 
@@ -1569,15 +1804,15 @@ export default function MarketingKabupatenMap({
                         <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-neutral-600 dark:text-neutral-300 text-[11px]">
                             <div className="flex items-center gap-1.5">
                                 <span className="size-2.5 rounded-full bg-blue-700 shrink-0" />
-                                <span>Brand Lain Kuat (&ge; 40%)</span>
+                                <span>Brand Lain Dominan</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <span className="size-2.5 rounded-full bg-blue-500 shrink-0" />
-                                <span>Brand Lain Sedang (25% - 39.9%)</span>
+                                <span>Brand Lain Moderat</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <span className="size-2.5 rounded-full bg-slate-600 shrink-0" />
-                                <span>Brand Lain Rendah (&lt; 25%)</span>
+                                <span>Brand Lain Rendah</span>
                             </div>
                         </div>
                     ) : metricMode === 'volume' ? (
@@ -1588,26 +1823,26 @@ export default function MarketingKabupatenMap({
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <span className="size-2.5 rounded-full bg-slate-600 shrink-0" />
-                                <span>Volume Sedang (1.000 - 1.999)</span>
+                                <span>Volume Sedang (1.000 - 1.999 Unit)</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <span className="size-2.5 rounded-full bg-slate-400 shrink-0" />
-                                <span>Volume Rendah (&lt; 1.000)</span>
+                                <span>Volume Rendah (&lt; 1.000 Unit)</span>
                             </div>
                         </div>
                     ) : (
                         <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-neutral-600 dark:text-neutral-300 text-[11px]">
                             <div className="flex items-center gap-1.5">
                                 <span className="size-2.5 rounded-full bg-red-600 shrink-0" />
-                                <span>Dominan (Honda &ge; 70%)</span>
+                                <span>Dominan (Honda Unggul)</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <span className="size-2.5 rounded-full bg-amber-600 shrink-0" />
-                                <span>Kuat (50% - 69.9%)</span>
+                                <span>Kuat (Honda Memimpin)</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <span className="size-2.5 rounded-full bg-neutral-600 shrink-0" />
-                                <span>Kompetitif (&lt; 50%)</span>
+                                <span>Kompetitif (Berimbang)</span>
                             </div>
                         </div>
                     )}

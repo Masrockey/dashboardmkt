@@ -154,6 +154,35 @@ test('marketing dashboard filters by kabupaten and brand correctly', function ()
             ->where('stats.competitor_units', 1)
             ->where('filters.brand', 'YAMAHA')
         );
+
+    // Test filtering by segment
+    R2::create([
+        'knd_nopol' => 'DR 9999 AT',
+        'mrk_desc' => 'HONDA',
+        'segment' => 'AT HIGH',
+        'kab_desc' => 'KOTA MATARAM',
+        'kec_desc' => 'Mataram',
+        'knd_thn_buat' => '2024',
+        'ctk_notice_tanggal' => '2026-01-20',
+    ]);
+    R2::create([
+        'knd_nopol' => 'DR 8888 CB',
+        'mrk_desc' => 'HONDA',
+        'segment' => 'CUB LOW',
+        'kab_desc' => 'KOTA MATARAM',
+        'kec_desc' => 'Mataram',
+        'knd_thn_buat' => '2024',
+        'ctk_notice_tanggal' => '2026-01-21',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('marketing.dashboard', ['segments' => ['AT HIGH']]))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('marketing/dashboard')
+            ->where('stats.total_units', 1)
+            ->where('filters.segments', ['AT HIGH'])
+        );
 });
 
 test('marketing dashboard provides geographic coordinates and detailed statistics for map markers', function () {

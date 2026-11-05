@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import {
     Select,
     SelectContent,
@@ -132,6 +133,7 @@ interface MarketingDashboardProps {
         kabupatens: string[];
         brands: string[];
         years: string[];
+        segments?: string[];
     };
     filters: {
         kabupaten: string;
@@ -139,6 +141,7 @@ interface MarketingDashboardProps {
         year: string;
         start_date: string;
         end_date: string;
+        segments?: string[];
     };
 }
 
@@ -157,10 +160,18 @@ export default function MarketingDashboard({
     const [selectedKabupaten, setSelectedKabupaten] = useState<string>(filters.kabupaten || 'all');
     const [selectedBrand, setSelectedBrand] = useState<string>(filters.brand || 'all');
     const [selectedYear, setSelectedYear] = useState<string>(filters.year || 'all');
+    const [selectedSegments, setSelectedSegments] = useState<string[]>(filters.segments || []);
     const [startDate, setStartDate] = useState<string>(filters.start_date || '');
     const [endDate, setEndDate] = useState<string>(filters.end_date || '');
     const [showFilters, setShowFilters] = useState<boolean>(
-        Boolean(filters.kabupaten || filters.brand || filters.year || filters.start_date || filters.end_date),
+        Boolean(
+            filters.kabupaten ||
+            filters.brand ||
+            filters.year ||
+            filters.start_date ||
+            filters.end_date ||
+            (filters.segments && filters.segments.length > 0),
+        ),
     );
 
     const activeFilterCount = [
@@ -169,7 +180,27 @@ export default function MarketingDashboard({
         filters.year && filters.year !== 'all',
         Boolean(filters.start_date),
         Boolean(filters.end_date),
+        Boolean(filters.segments && filters.segments.length > 0),
     ].filter(Boolean).length;
+
+    const handleSegmentsChange = (newSegments: string[]) => {
+        setSelectedSegments(newSegments);
+        router.get(
+            marketingRoute.dashboard.url(),
+            {
+                kabupaten: selectedKabupaten === 'all' ? '' : selectedKabupaten,
+                brand: selectedBrand === 'all' ? '' : selectedBrand,
+                year: selectedYear === 'all' ? '' : selectedYear,
+                start_date: startDate,
+                end_date: endDate,
+                segments: newSegments,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
 
     const handleApplyFilter = () => {
         router.get(
@@ -180,6 +211,7 @@ export default function MarketingDashboard({
                 year: selectedYear === 'all' ? '' : selectedYear,
                 start_date: startDate,
                 end_date: endDate,
+                segments: selectedSegments,
             },
             {
                 preserveState: true,
@@ -192,6 +224,7 @@ export default function MarketingDashboard({
         setSelectedKabupaten('all');
         setSelectedBrand('all');
         setSelectedYear('all');
+        setSelectedSegments([]);
         setStartDate('');
         setEndDate('');
         router.get(
@@ -215,6 +248,7 @@ export default function MarketingDashboard({
                 year: selectedYear === 'all' ? '' : selectedYear,
                 start_date: startDate,
                 end_date: endDate,
+                segments: selectedSegments,
             },
             {
                 preserveState: true,
@@ -298,11 +332,11 @@ export default function MarketingDashboard({
                                 )}
                             </div>
                             <CardDescription className="text-xs">
-                                Saring data menurut kabupaten, merk, tahun produksi, dan periode tanggal pencetakan notice.
+                                Saring data menurut kabupaten, merk, segment kendaraan, tahun produksi, dan periode tanggal pencetakan notice.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                                 {/* Filter Kabupaten */}
                                 <div className="space-y-1.5">
                                     <Label className="text-xs">Kabupaten / Kota</Label>
@@ -337,6 +371,20 @@ export default function MarketingDashboard({
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                </div>
+
+                                {/* Filter Segment (Multi-Select) */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Segment</Label>
+                                    <MultiSelectFilter
+                                        label="Segment"
+                                        placeholder="Semua Segment"
+                                        options={(filterOptions.segments || []).map((s) => ({ label: s, value: s }))}
+                                        selectedValues={selectedSegments}
+                                        onChange={setSelectedSegments}
+                                        className="h-9 w-full text-xs"
+                                        showSearch={true}
+                                    />
                                 </div>
 
                                 {/* Filter Year */}
@@ -424,12 +472,12 @@ export default function MarketingDashboard({
                         </CardContent>
                     </Card>
 
-                    {/* Honda Market Share */}
+                    {/* Total Unit Honda */}
                     <Card className="border-sidebar-border/70 shadow-xs dark:border-sidebar-border relative overflow-hidden">
                         <div className="absolute top-0 left-0 right-0 h-1 bg-red-600" />
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-red-700 dark:text-red-400">
-                                Honda Market Share
+                                Total Unit Honda
                             </CardTitle>
                             <div className="rounded-lg bg-red-100 p-2 dark:bg-red-950/60">
                                 <TrendingUp className="size-4 text-red-700 dark:text-red-300" />
@@ -438,20 +486,22 @@ export default function MarketingDashboard({
                         <CardContent>
                             <div className="flex items-baseline gap-2">
                                 <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                                    {stats.honda_market_share}%
+                                    {stats.honda_units.toLocaleString('id-ID')}
                                 </div>
                                 <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                                    ({stats.honda_units.toLocaleString('id-ID')} unit)
+                                    unit
                                 </span>
                             </div>
                             <div className="mt-2 h-1.5 w-full rounded-full bg-neutral-200 dark:bg-neutral-800">
                                 <div
                                     className="h-1.5 rounded-full bg-red-600"
-                                    style={{ width: `${Math.min(100, stats.honda_market_share)}%` }}
+                                    style={{
+                                        width: `${stats.total_units > 0 ? Math.min(100, (stats.honda_units / stats.total_units) * 100) : 0}%`,
+                                    }}
                                 />
                             </div>
                             <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                                Dominasi unit merk Honda di NTB
+                                Total unit motor merk Honda di NTB
                             </p>
                         </CardContent>
                     </Card>
@@ -460,7 +510,7 @@ export default function MarketingDashboard({
                     <Card className="border-sidebar-border/70 shadow-xs dark:border-sidebar-border">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                Pangsa Kompetitor
+                                Total Unit Kompetitor
                             </CardTitle>
                             <div className="rounded-lg bg-neutral-100 p-2 dark:bg-neutral-800">
                                 <Users className="size-4 text-neutral-600 dark:text-neutral-300" />
@@ -469,16 +519,18 @@ export default function MarketingDashboard({
                         <CardContent>
                             <div className="flex items-baseline gap-2">
                                 <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                                    {stats.competitor_market_share}%
+                                    {stats.competitor_units.toLocaleString('id-ID')}
                                 </div>
                                 <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                                    ({stats.competitor_units.toLocaleString('id-ID')} unit)
+                                    unit
                                 </span>
                             </div>
                             <div className="mt-2 h-1.5 w-full rounded-full bg-neutral-200 dark:bg-neutral-800">
                                 <div
                                     className="h-1.5 rounded-full bg-neutral-500 dark:bg-neutral-400"
-                                    style={{ width: `${Math.min(100, stats.competitor_market_share)}%` }}
+                                    style={{
+                                        width: `${stats.total_units > 0 ? Math.min(100, (stats.competitor_units / stats.total_units) * 100) : 0}%`,
+                                    }}
                                 />
                             </div>
                             <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
@@ -514,6 +566,9 @@ export default function MarketingDashboard({
                     kabupatenData={kabupatenDistribution}
                     selectedKabupatenFilter={selectedKabupaten}
                     onSelectKabupatenFilter={handleSelectKabupatenFromMap}
+                    segmentOptions={filterOptions.segments || []}
+                    selectedSegments={selectedSegments}
+                    onSegmentsChange={handleSegmentsChange}
                     height="500px"
                 />
 
@@ -526,10 +581,10 @@ export default function MarketingDashboard({
                                 <div>
                                     <CardTitle className="text-base font-bold flex items-center gap-2">
                                         <BarChart3 className="size-4 text-red-600" />
-                                        Distribusi Pangsa Pasar Merk Kendaraan
+                                        Distribusi Volume Unit Merk Kendaraan
                                     </CardTitle>
                                     <CardDescription className="text-xs">
-                                        Perbandingan persentase dan volume unit terdaftar per merek di NTB.
+                                        Perbandingan volume unit terdaftar per merek di NTB.
                                     </CardDescription>
                                 </div>
                                 <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50 dark:bg-red-950/30 dark:border-red-900 dark:text-red-300 text-xs">
@@ -556,11 +611,8 @@ export default function MarketingDashboard({
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
+                                            <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 font-semibold">
                                                 <span>{item.count.toLocaleString('id-ID')} unit</span>
-                                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                                                    ({item.percentage}%)
-                                                </span>
                                             </div>
                                         </div>
                                         <div className="h-2 w-full rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
@@ -578,7 +630,7 @@ export default function MarketingDashboard({
                             )}
 
                             <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
-                                <span>Honda memimpin dengan pangsa pasar <strong>{stats.honda_market_share}%</strong></span>
+                                <span>Honda memimpin dengan total <strong>{stats.honda_units.toLocaleString('id-ID')} unit</strong></span>
                                 <span className="text-[11px] text-neutral-400">Data update real-time</span>
                             </div>
                         </CardContent>
@@ -618,7 +670,7 @@ export default function MarketingDashboard({
                                                     {segment.label}
                                                 </span>
                                                 <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                                                    {segment.count.toLocaleString('id-ID')} unit ({segment.percentage}%)
+                                                    {segment.count.toLocaleString('id-ID')} unit
                                                 </span>
                                             </div>
                                             <div className="h-2 w-full rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
@@ -647,7 +699,7 @@ export default function MarketingDashboard({
                                             <span className="font-medium text-neutral-900 dark:text-neutral-100 mr-1.5">
                                                 {item.guna}:
                                             </span>
-                                            {item.count.toLocaleString('id-ID')} ({item.percentage}%)
+                                            {item.count.toLocaleString('id-ID')} unit
                                         </Badge>
                                     ))}
                                 </div>
@@ -665,10 +717,10 @@ export default function MarketingDashboard({
                                 <div>
                                     <CardTitle className="text-base font-bold flex items-center gap-2">
                                         <MapPin className="size-4 text-emerald-600" />
-                                        Pangsa Pasar Honda Per Kabupaten / Kota
+                                        Distribusi Unit Honda Per Kabupaten / Kota
                                     </CardTitle>
                                     <CardDescription className="text-xs">
-                                        Tingkat penetrasi dan volume unit Honda dibanding kompetitor di setiap wilayah NTB.
+                                        Perbandingan volume unit Honda dibanding kompetitor di setiap wilayah NTB.
                                     </CardDescription>
                                 </div>
                                 <Badge variant="outline" className="text-xs">
@@ -685,7 +737,7 @@ export default function MarketingDashboard({
                                             <TableHead className="font-semibold text-right">Total Unit</TableHead>
                                             <TableHead className="font-semibold text-right">Unit Honda</TableHead>
                                             <TableHead className="font-semibold text-right">Kompetitor</TableHead>
-                                            <TableHead className="font-semibold w-48">Pangsa Honda</TableHead>
+                                            <TableHead className="font-semibold w-48">Proporsi Unit</TableHead>
                                             <TableHead className="font-semibold text-center">Status</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -720,17 +772,17 @@ export default function MarketingDashboard({
                                                                 <div className="h-2 flex-1 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden flex">
                                                                     <div
                                                                         className="bg-red-600 h-full transition-all"
-                                                                        style={{ width: `${Math.min(100, item.honda_share)}%` }}
-                                                                        title={`Honda: ${item.honda_share}%`}
+                                                                        style={{ width: `${item.total > 0 ? (item.honda_count / item.total) * 100 : 0}%` }}
+                                                                        title={`Honda: ${item.honda_count.toLocaleString('id-ID')} unit`}
                                                                     />
                                                                     <div
                                                                         className="bg-neutral-400 dark:bg-neutral-600 h-full transition-all"
-                                                                        style={{ width: `${Math.max(0, 100 - item.honda_share)}%` }}
-                                                                        title={`Kompetitor: ${(100 - item.honda_share).toFixed(1)}%`}
+                                                                        style={{ width: `${item.total > 0 ? (item.competitor_count / item.total) * 100 : 0}%` }}
+                                                                        title={`Kompetitor: ${item.competitor_count.toLocaleString('id-ID')} unit`}
                                                                     />
                                                                 </div>
-                                                                <span className="w-12 text-right font-bold text-neutral-800 dark:text-neutral-200">
-                                                                    {item.honda_share}%
+                                                                <span className="w-20 text-right font-medium text-neutral-800 dark:text-neutral-200 text-xs">
+                                                                    {item.honda_count.toLocaleString('id-ID')} unit
                                                                 </span>
                                                             </div>
                                                         </TableCell>
@@ -799,7 +851,7 @@ export default function MarketingDashboard({
                                                 {kec.total.toLocaleString('id-ID')} unit
                                             </div>
                                             <div className="text-[11px] text-red-600 font-medium dark:text-red-400">
-                                                Honda {kec.honda_share}%
+                                                Honda: {kec.honda_count.toLocaleString('id-ID')} unit
                                             </div>
                                         </div>
                                     </div>

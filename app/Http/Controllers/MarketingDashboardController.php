@@ -22,6 +22,15 @@ class MarketingDashboardController extends Controller
         $startDate = $request->string('start_date')->toString();
         $endDate = $request->string('end_date')->toString();
 
+        $segmentsInput = $request->input('segments', []);
+        if (is_string($segmentsInput)) {
+            $segments = array_values(array_filter(explode(',', $segmentsInput)));
+        } elseif (is_array($segmentsInput)) {
+            $segments = array_values(array_filter($segmentsInput));
+        } else {
+            $segments = [];
+        }
+
         // Base query with filters
         $baseQuery = R2::query()
             ->when($kabupaten !== '' && $kabupaten !== 'all', function (Builder $query) use ($kabupaten) {
@@ -29,6 +38,9 @@ class MarketingDashboardController extends Controller
             })
             ->when($brand !== '' && $brand !== 'all', function (Builder $query) use ($brand) {
                 $query->where('mrk_desc', $brand);
+            })
+            ->when(! empty($segments), function (Builder $query) use ($segments) {
+                $query->whereIn('segment', $segments);
             })
             ->when($year !== '' && $year !== 'all', function (Builder $query) use ($year) {
                 $query->where('knd_thn_buat', $year);
@@ -458,6 +470,13 @@ class MarketingDashboardController extends Controller
                 ->distinct()
                 ->orderByDesc('knd_thn_buat')
                 ->pluck('knd_thn_buat'),
+            'segments' => R2::query()
+                ->whereNotNull('segment')
+                ->where('segment', '!=', '')
+                ->distinct()
+                ->orderBy('segment')
+                ->pluck('segment')
+                ->all(),
         ];
 
         return Inertia::render('marketing/dashboard', [
@@ -484,6 +503,7 @@ class MarketingDashboardController extends Controller
                 'year' => $year,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
+                'segments' => $segments,
             ],
         ]);
     }
@@ -519,9 +539,21 @@ class MarketingDashboardController extends Controller
         }
 
         $cleaned = trim(preg_replace('/^(KAB\.?|KOTA)\s+/i', '', $upper));
+        // 1. Exact match on cleaned key
         foreach (self::KABUPATEN_COORDINATES as $key => $coords) {
             $keyCleaned = trim(preg_replace('/^(KAB\.?|KOTA)\s+/i', '', $key));
-            if ($cleaned === $keyCleaned || str_contains($upper, $keyCleaned) || str_contains($key, $cleaned)) {
+            if ($cleaned === $keyCleaned) {
+                return $coords;
+            }
+        }
+
+        // 2. Substring matching: longest key first to avoid partial collisions
+        $keys = array_keys(self::KABUPATEN_COORDINATES);
+        usort($keys, fn ($a, $b) => strlen($b) <=> strlen($a));
+        foreach ($keys as $key) {
+            $coords = self::KABUPATEN_COORDINATES[$key];
+            $keyCleaned = trim(preg_replace('/^(KAB\.?|KOTA)\s+/i', '', $key));
+            if (str_contains($upper, $keyCleaned) || str_contains($cleaned, $keyCleaned)) {
                 return $coords;
             }
         }
@@ -683,10 +715,36 @@ class MarketingDashboardController extends Controller
     protected function getKecamatanCoordinates(string $kabupatenName, string $kecamatanName, int $index = 0, ?array $kabCoords = null): array
     {
         $cleaned = strtoupper(trim(preg_replace('/^(KEC\.?|KECAMATAN)\s+/i', '', $kecamatanName)));
-        $cleaned = trim(str_replace('.', '', $cleaned));
+        $cleaned = trim(preg_replace('/[.\-_]+/', ' ', $cleaned));
+        $cleaned = trim(preg_replace('/\s+/', ' ', $cleaned));
 
+        // 1. Direct exact match
+        if (isset(self::KECAMATAN_COORDINATES[$cleaned])) {
+            return self::KECAMATAN_COORDINATES[$cleaned];
+        }
+
+        // 2. Normalized exact match (ignoring whitespace differences)
+        $normalizedCleaned = str_replace(' ', '', $cleaned);
         foreach (self::KECAMATAN_COORDINATES as $key => $coords) {
-            if ($cleaned === $key || str_contains($cleaned, $key) || str_contains($key, $cleaned)) {
+            $normKey = str_replace(' ', '', $key);
+            if ($normalizedCleaned === $normKey) {
+                return $coords;
+            }
+        }
+
+        // 3. Substring match, sorted by key length DESCENDING
+        // so specific names (e.g. "PRAYA TIMUR", "PALIBELO") match before generic ones ("PRAYA", "BELO")
+        $sortedKeys = array_keys(self::KECAMATAN_COORDINATES);
+        usort($sortedKeys, fn ($a, $b) => strlen($b) <=> strlen($a));
+
+        foreach ($sortedKeys as $key) {
+            $coords = self::KECAMATAN_COORDINATES[$key];
+            $normKey = trim(preg_replace('/\s+/', ' ', str_replace(['.', '-'], ' ', $key)));
+
+            if (preg_match('/\b'.preg_quote($normKey, '/').'\b/i', $cleaned)) {
+                return $coords;
+            }
+            if (str_contains($cleaned, $normKey)) {
                 return $coords;
             }
         }
