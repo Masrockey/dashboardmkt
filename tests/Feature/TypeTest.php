@@ -6,7 +6,10 @@ use App\Models\Segment;
 use App\Models\Series;
 use App\Models\Type;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Inertia\Testing\AssertableInertia;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 test('guests are redirected to the login page when visiting types', function () {
     $response = $this->get(route('types.index'));
@@ -150,4 +153,93 @@ test('types can be searched by series name', function () {
             ->where('types.total', 1)
             ->where('types.data.0.nama_type', 'SCOOPY PRESTIGE')
         );
+});
+
+test('authorized users can export types to excel', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+    Type::create(['nama_type' => 'VARIO 160']);
+
+    $response = $this->actingAs($user)->get(route('types.export'));
+
+    $response->assertOk();
+    $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+});
+
+test('authorized users can download import template', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+
+    $response = $this->actingAs($user)->get(route('types.template'));
+
+    $response->assertOk();
+    $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+});
+
+test('authorized users can import types from csv file', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+
+    $csvContent = "TYPE,KATEGORI,SEGMENT,SERIES,NAMA PASAR\n";
+    $csvContent .= "PCX 160,HONDA,AT HIGH,PCX Series,PCX 160 CBS\n";
+    $csvContent .= "AEROX 155,YAMAHA,AT HIGH,MAXI Series,AEROX CONNECTED\n";
+
+    $file = UploadedFile::fake()->createWithContent('types.csv', $csvContent);
+
+    $response = $this->actingAs($user)->post(route('types.import'), [
+        'file' => $file,
+    ]);
+
+    $response->assertRedirect(route('types.index'));
+
+    $this->assertDatabaseHas('types', [
+        'nama_type' => 'PCX 160',
+        'nama_pasar' => 'PCX 160 CBS',
+    ]);
+    $this->assertDatabaseHas('categories', [
+        'nama_kategori' => 'HONDA',
+    ]);
+    $this->assertDatabaseHas('segments', [
+        'nama_segment' => 'AT HIGH',
+    ]);
+    $this->assertDatabaseHas('series', [
+        'nama' => 'PCX Series',
+    ]);
+});
+
+test('authorized users can import types from real xlsx file', function () {
+    $user = User::factory()->create(['role' => UserRole::Superadmin]);
+
+    $spreadsheet = new Spreadsheet;
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setCellValue('A1', 'TYPE');
+    $sheet->setCellValue('B1', 'KATEGORI');
+    $sheet->setCellValue('C1', 'SEGMENT');
+    $sheet->setCellValue('D1', 'SERIES');
+    $sheet->setCellValue('E1', 'NAMA PASAR');
+
+    $sheet->setCellValue('A2', 'ADV 160');
+    $sheet->setCellValue('B2', 'HONDA');
+    $sheet->setCellValue('C2', 'AT HIGH');
+    $sheet->setCellValue('D2', 'ADV Series');
+    $sheet->setCellValue('E2', 'ADV 160 ABS');
+
+    $tempFile = tempnam(sys_get_temp_dir(), 'test_type_').'.xlsx';
+    $writer = new Xlsx($spreadsheet);
+    $writer->save($tempFile);
+
+    $file = new UploadedFile($tempFile, 'types.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+    $response = $this->actingAs($user)->post(route('types.import'), [
+        'file' => $file,
+    ]);
+
+    $response->assertRedirect(route('types.index'));
+
+    $this->assertDatabaseHas('types', [
+        'nama_type' => 'ADV 160',
+        'nama_pasar' => 'ADV 160 ABS',
+    ]);
+    $this->assertDatabaseHas('series', [
+        'nama' => 'ADV Series',
+    ]);
+
+    @unlink($tempFile);
 });

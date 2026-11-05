@@ -2,11 +2,14 @@ import { Head, router, useForm } from '@inertiajs/react';
 import {
     ChevronLeft,
     ChevronRight,
+    Download,
+    FileSpreadsheet,
     Pencil,
     Plus,
     Search,
     Tag,
     Trash2,
+    Upload,
     X,
 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
@@ -59,6 +62,7 @@ export default function TypesIndex({ types, segments, categories, allSeries = []
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isImportOpen, setIsImportOpen] = useState(false);
     const [selectedType, setSelectedType] = useState<TypeItem | null>(null);
 
     // Create Form
@@ -93,6 +97,13 @@ export default function TypesIndex({ types, segments, categories, allSeries = []
 
     // Delete Form
     const deleteForm = useForm({});
+
+    // Import Form
+    const importForm = useForm<{
+        file: File | null;
+    }>({
+        file: null,
+    });
 
     const handleSearchSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -193,6 +204,25 @@ export default function TypesIndex({ types, segments, categories, allSeries = []
         });
     };
 
+    const handleOpenImport = () => {
+        importForm.reset();
+        importForm.clearErrors();
+        setIsImportOpen(true);
+    };
+
+    const handleImportSubmit = (e: FormEvent) => {
+        e.preventDefault();
+        if (!importForm.data.file) return;
+
+        importForm.post(typesRoute.import.url(), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsImportOpen(false);
+                importForm.reset();
+            },
+        });
+    };
+
     return (
         <>
             <Head title="Master Type" />
@@ -211,10 +241,26 @@ export default function TypesIndex({ types, segments, categories, allSeries = []
                             Kelola data type, kategori, segment, dan nama pasar produk.
                         </p>
                     </div>
-                    <Button onClick={handleOpenCreate} className="sm:w-auto">
-                        <Plus className="mr-2 size-4" />
-                        Tambah Type
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2 sm:w-auto">
+                        <Button variant="outline" asChild>
+                            <a
+                                href={typesRoute.export.url({
+                                    query: { search: searchQuery || undefined },
+                                })}
+                            >
+                                <Download className="mr-2 size-4 text-emerald-600 dark:text-emerald-400" />
+                                Export Excel
+                            </a>
+                        </Button>
+                        <Button variant="outline" onClick={handleOpenImport}>
+                            <FileSpreadsheet className="mr-2 size-4 text-emerald-600 dark:text-emerald-400" />
+                            Import Excel
+                        </Button>
+                        <Button onClick={handleOpenCreate}>
+                            <Plus className="mr-2 size-4" />
+                            Tambah Type
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filters & Actions */}
@@ -397,6 +443,84 @@ export default function TypesIndex({ types, segments, categories, allSeries = []
                     )}
                 </Card>
             </div>
+
+            {/* Modal Import Excel */}
+            <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <FileSpreadsheet className="size-5 text-emerald-600 dark:text-emerald-400" />
+                            Import Data Type dari Excel
+                        </DialogTitle>
+                        <DialogDescription>
+                            Unggah berkas Excel (.xlsx, .xls, atau .csv) untuk mengimpor atau memperbarui data type massal.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleImportSubmit} className="space-y-4 py-2">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="excel_file">File Excel (.xlsx / .xls / .csv)</Label>
+                                <a
+                                    href={typesRoute.template.url()}
+                                    className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+                                >
+                                    <Download className="size-3" />
+                                    Download Template
+                                </a>
+                            </div>
+
+                            <div className="border-2 border-dashed border-muted-foreground/30 hover:border-primary rounded-lg p-5 text-center cursor-pointer transition-colors bg-muted/20 hover:bg-muted/40 relative">
+                                <input
+                                    id="excel_file"
+                                    type="file"
+                                    accept=".xlsx, .xls, .csv"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0] || null;
+                                        importForm.setData('file', file);
+                                    }}
+                                />
+                                <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                    <Upload className="size-8 text-muted-foreground" />
+                                    {importForm.data.file ? (
+                                        <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-sm">
+                                            {importForm.data.file.name}
+                                        </span>
+                                    ) : (
+                                        <div className="text-xs text-muted-foreground">
+                                            <span className="font-medium text-foreground">Klik di sini</span> atau seret file ke area ini
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <InputError message={importForm.errors.file} />
+                        </div>
+
+                        <div className="rounded-lg bg-neutral-50 dark:bg-neutral-900/50 p-3 text-xs text-muted-foreground space-y-1 border border-neutral-200/60 dark:border-neutral-800">
+                            <p className="font-semibold text-foreground">Format Kolom Excel:</p>
+                            <p className="text-[11px]">
+                                Kolom yang didukung: <span className="font-mono text-neutral-800 dark:text-neutral-200">TYPE, KATEGORI, SEGMENT, SERIES, NAMA PASAR</span>.
+                            </p>
+                            <p className="text-[11px] text-neutral-500">
+                                Kategori, Segment, dan Series yang belum ada akan otomatis dibuatkan jika diisi pada Excel.
+                            </p>
+                        </div>
+
+                        <DialogFooter className="mt-4">
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline" disabled={importForm.processing}>
+                                    Batal
+                                </Button>
+                            </DialogClose>
+                            <Button type="submit" disabled={!importForm.data.file || importForm.processing}>
+                                {importForm.processing && <Spinner className="mr-2 size-4" />}
+                                Unggah & Import
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
             {/* Modal Tambah Type */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

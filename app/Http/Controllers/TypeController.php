@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\TypeImportRequest;
 use App\Http\Requests\TypeStoreRequest;
 use App\Http\Requests\TypeUpdateRequest;
 use App\Models\Category;
 use App\Models\Segment;
 use App\Models\Series;
 use App\Models\Type;
+use App\Services\TypeExcelService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TypeController extends Controller
 {
@@ -107,6 +110,39 @@ class TypeController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => 'Type berhasil dihapus.',
+        ]);
+
+        return to_route('types.index');
+    }
+
+    /**
+     * Export master types to an Excel file.
+     */
+    public function export(Request $request, TypeExcelService $excelService): StreamedResponse
+    {
+        $search = $request->string('search')->toString();
+
+        return $excelService->export($search !== '' ? $search : null);
+    }
+
+    /**
+     * Download template Excel for importing master types.
+     */
+    public function template(TypeExcelService $excelService): StreamedResponse
+    {
+        return $excelService->template();
+    }
+
+    /**
+     * Import master types from uploaded Excel file.
+     */
+    public function import(TypeImportRequest $request, TypeExcelService $excelService): RedirectResponse
+    {
+        $count = $excelService->import($request->file('file'));
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => "Berhasil mengimpor {$count} data Master Type dari file Excel.",
         ]);
 
         return to_route('types.index');

@@ -54,6 +54,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('brands', BrandController::class)->except(['create', 'show', 'edit']);
         Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
         Route::resource('kabupatens', KabupatenController::class)->except(['create', 'show', 'edit']);
+        Route::get('types/export', [TypeController::class, 'export'])->name('types.export');
+        Route::get('types/template', [TypeController::class, 'template'])->name('types.template');
+        Route::post('types/import', [TypeController::class, 'import'])->name('types.import');
         Route::resource('types', TypeController::class)->except(['create', 'show', 'edit']);
         Route::resource('series', SeriesController::class)->except(['create', 'show', 'edit']);
     });
