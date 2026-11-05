@@ -110,6 +110,12 @@ interface MarketingKabupatenMapProps {
     segmentOptions?: string[];
     selectedSegments?: string[];
     onSegmentsChange?: (segments: string[]) => void;
+    brandOptions?: string[];
+    selectedBrands?: string[];
+    onBrandsChange?: (brands: string[]) => void;
+    seriesOptions?: string[];
+    selectedSeries?: string[];
+    onSeriesChange?: (series: string[]) => void;
 }
 
 type MetricMode = 'share' | 'competitor' | 'volume';
@@ -123,6 +129,12 @@ export default function MarketingKabupatenMap({
     segmentOptions = [],
     selectedSegments = [],
     onSegmentsChange,
+    brandOptions = [],
+    selectedBrands = [],
+    onBrandsChange,
+    seriesOptions = [],
+    selectedSeries = [],
+    onSeriesChange,
 }: MarketingKabupatenMapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
@@ -136,6 +148,16 @@ export default function MarketingKabupatenMap({
     const [brandFilter, setBrandFilter] = useState<string>('ALL');
     const [namaPasarSearch, setNamaPasarSearch] = useState<string>('');
     const [isMapReady, setIsMapReady] = useState(false);
+
+    // Compute effective brand options
+    const effectiveBrandOptions = useMemo(() => {
+        if (brandOptions && brandOptions.length > 0) return brandOptions;
+        const set = new Set<string>();
+        kabupatenData.forEach((k) => {
+            (k.top_brands || []).forEach((b) => set.add(b.brand));
+        });
+        return Array.from(set).sort();
+    }, [brandOptions, kabupatenData]);
 
     // Filter valid kabupatens with coordinates
     const mappedKabupatens = useMemo(() => {
@@ -1204,7 +1226,29 @@ export default function MarketingKabupatenMap({
                         ).map((s) => ({ label: s, value: s }))}
                         selectedValues={selectedSegments}
                         onChange={onSegmentsChange || (() => {})}
-                        className="h-8 w-[165px] text-xs"
+                        className="h-8 w-[155px] text-xs"
+                        showSearch={true}
+                    />
+
+                    {/* Filter Brand (Dropdown Multi Select) */}
+                    <MultiSelectFilter
+                        label="Brand"
+                        placeholder="Semua Brand"
+                        options={effectiveBrandOptions.map((b) => ({ label: b, value: b }))}
+                        selectedValues={selectedBrands}
+                        onChange={onBrandsChange || (() => {})}
+                        className="h-8 w-[150px] text-xs"
+                        showSearch={true}
+                    />
+
+                    {/* Filter Series (Dropdown Multi Select) */}
+                    <MultiSelectFilter
+                        label="Series"
+                        placeholder="Semua Series"
+                        options={(seriesOptions || []).map((s) => ({ label: s, value: s }))}
+                        selectedValues={selectedSeries}
+                        onChange={onSeriesChange || (() => {})}
+                        className="h-8 w-[150px] text-xs"
                         showSearch={true}
                     />
                 </div>

@@ -19,7 +19,7 @@ import {
     TrendingUp,
     Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -134,14 +134,17 @@ interface MarketingDashboardProps {
         brands: string[];
         years: string[];
         segments?: string[];
+        series?: string[];
     };
     filters: {
         kabupaten: string;
         brand: string;
+        brands?: string[];
         year: string;
         start_date: string;
         end_date: string;
         segments?: string[];
+        series?: string[];
     };
 }
 
@@ -158,7 +161,19 @@ export default function MarketingDashboard({
     filters,
 }: MarketingDashboardProps) {
     const [selectedKabupaten, setSelectedKabupaten] = useState<string>(filters.kabupaten || 'all');
-    const [selectedBrand, setSelectedBrand] = useState<string>(filters.brand || 'all');
+    
+    const initialBrands = useMemo(() => {
+        if (filters.brands && Array.isArray(filters.brands) && filters.brands.length > 0) {
+            return filters.brands;
+        }
+        if (filters.brand && filters.brand !== 'all') {
+            return filters.brand.split(',').map((b) => b.trim()).filter(Boolean);
+        }
+        return [];
+    }, [filters.brands, filters.brand]);
+
+    const [selectedBrands, setSelectedBrands] = useState<string[]>(initialBrands);
+    const [selectedSeries, setSelectedSeries] = useState<string[]>(filters.series || []);
     const [selectedYear, setSelectedYear] = useState<string>(filters.year || 'all');
     const [selectedSegments, setSelectedSegments] = useState<string[]>(filters.segments || []);
     const [startDate, setStartDate] = useState<string>(filters.start_date || '');
@@ -167,6 +182,8 @@ export default function MarketingDashboard({
         Boolean(
             filters.kabupaten ||
             filters.brand ||
+            (filters.brands && filters.brands.length > 0) ||
+            (filters.series && filters.series.length > 0) ||
             filters.year ||
             filters.start_date ||
             filters.end_date ||
@@ -174,14 +191,73 @@ export default function MarketingDashboard({
         ),
     );
 
+    useEffect(() => {
+        const nextBrands =
+            filters.brands && Array.isArray(filters.brands) && filters.brands.length > 0
+                ? filters.brands
+                : filters.brand && filters.brand !== 'all'
+                  ? filters.brand.split(',').map((b) => b.trim()).filter(Boolean)
+                  : [];
+        setSelectedBrands(nextBrands);
+    }, [filters.brands, filters.brand]);
+
+    useEffect(() => {
+        setSelectedSegments(filters.segments || []);
+    }, [filters.segments]);
+
+    useEffect(() => {
+        setSelectedSeries(filters.series || []);
+    }, [filters.series]);
+
     const activeFilterCount = [
         filters.kabupaten && filters.kabupaten !== 'all',
-        filters.brand && filters.brand !== 'all',
+        (filters.brands && filters.brands.length > 0) || (filters.brand && filters.brand !== 'all'),
+        Boolean(filters.series && filters.series.length > 0),
         filters.year && filters.year !== 'all',
         Boolean(filters.start_date),
         Boolean(filters.end_date),
         Boolean(filters.segments && filters.segments.length > 0),
     ].filter(Boolean).length;
+
+    const handleBrandsChange = (newBrands: string[]) => {
+        setSelectedBrands(newBrands);
+        router.get(
+            marketingRoute.dashboard.url(),
+            {
+                kabupaten: selectedKabupaten === 'all' ? '' : selectedKabupaten,
+                brands: newBrands,
+                series: selectedSeries,
+                year: selectedYear === 'all' ? '' : selectedYear,
+                start_date: startDate,
+                end_date: endDate,
+                segments: selectedSegments,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const handleSeriesChange = (newSeries: string[]) => {
+        setSelectedSeries(newSeries);
+        router.get(
+            marketingRoute.dashboard.url(),
+            {
+                kabupaten: selectedKabupaten === 'all' ? '' : selectedKabupaten,
+                brands: selectedBrands,
+                series: newSeries,
+                year: selectedYear === 'all' ? '' : selectedYear,
+                start_date: startDate,
+                end_date: endDate,
+                segments: selectedSegments,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
 
     const handleSegmentsChange = (newSegments: string[]) => {
         setSelectedSegments(newSegments);
@@ -189,7 +265,8 @@ export default function MarketingDashboard({
             marketingRoute.dashboard.url(),
             {
                 kabupaten: selectedKabupaten === 'all' ? '' : selectedKabupaten,
-                brand: selectedBrand === 'all' ? '' : selectedBrand,
+                brands: selectedBrands,
+                series: selectedSeries,
                 year: selectedYear === 'all' ? '' : selectedYear,
                 start_date: startDate,
                 end_date: endDate,
@@ -207,7 +284,8 @@ export default function MarketingDashboard({
             marketingRoute.dashboard.url(),
             {
                 kabupaten: selectedKabupaten === 'all' ? '' : selectedKabupaten,
-                brand: selectedBrand === 'all' ? '' : selectedBrand,
+                brands: selectedBrands,
+                series: selectedSeries,
                 year: selectedYear === 'all' ? '' : selectedYear,
                 start_date: startDate,
                 end_date: endDate,
@@ -222,7 +300,8 @@ export default function MarketingDashboard({
 
     const handleResetFilter = () => {
         setSelectedKabupaten('all');
-        setSelectedBrand('all');
+        setSelectedBrands([]);
+        setSelectedSeries([]);
         setSelectedYear('all');
         setSelectedSegments([]);
         setStartDate('');
@@ -244,7 +323,8 @@ export default function MarketingDashboard({
             marketingRoute.dashboard.url(),
             {
                 kabupaten: kabupatenName,
-                brand: selectedBrand === 'all' ? '' : selectedBrand,
+                brands: selectedBrands,
+                series: selectedSeries,
                 year: selectedYear === 'all' ? '' : selectedYear,
                 start_date: startDate,
                 end_date: endDate,
@@ -336,7 +416,7 @@ export default function MarketingDashboard({
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
                                 {/* Filter Kabupaten */}
                                 <div className="space-y-1.5">
                                     <Label className="text-xs">Kabupaten / Kota</Label>
@@ -355,22 +435,18 @@ export default function MarketingDashboard({
                                     </Select>
                                 </div>
 
-                                {/* Filter Brand */}
+                                {/* Filter Brand (Multi-Select) */}
                                 <div className="space-y-1.5">
                                     <Label className="text-xs">Merk Kendaraan</Label>
-                                    <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-                                        <SelectTrigger className="h-9 text-xs">
-                                            <SelectValue placeholder="Semua Merk" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Semua Merk</SelectItem>
-                                            {filterOptions.brands.map((b) => (
-                                                <SelectItem key={b} value={b}>
-                                                    {b}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <MultiSelectFilter
+                                        label="Brand"
+                                        placeholder="Semua Brand"
+                                        options={(filterOptions.brands || []).map((b) => ({ label: b, value: b }))}
+                                        selectedValues={selectedBrands}
+                                        onChange={setSelectedBrands}
+                                        className="h-9 w-full text-xs"
+                                        showSearch={true}
+                                    />
                                 </div>
 
                                 {/* Filter Segment (Multi-Select) */}
@@ -382,6 +458,20 @@ export default function MarketingDashboard({
                                         options={(filterOptions.segments || []).map((s) => ({ label: s, value: s }))}
                                         selectedValues={selectedSegments}
                                         onChange={setSelectedSegments}
+                                        className="h-9 w-full text-xs"
+                                        showSearch={true}
+                                    />
+                                </div>
+
+                                {/* Filter Series (Multi-Select) */}
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Series</Label>
+                                    <MultiSelectFilter
+                                        label="Series"
+                                        placeholder="Semua Series"
+                                        options={(filterOptions.series || []).map((s) => ({ label: s, value: s }))}
+                                        selectedValues={selectedSeries}
+                                        onChange={setSelectedSeries}
                                         className="h-9 w-full text-xs"
                                         showSearch={true}
                                     />
@@ -569,6 +659,12 @@ export default function MarketingDashboard({
                     segmentOptions={filterOptions.segments || []}
                     selectedSegments={selectedSegments}
                     onSegmentsChange={handleSegmentsChange}
+                    brandOptions={filterOptions.brands || []}
+                    selectedBrands={selectedBrands}
+                    onBrandsChange={handleBrandsChange}
+                    seriesOptions={filterOptions.series || []}
+                    selectedSeries={selectedSeries}
+                    onSeriesChange={handleSeriesChange}
                     height="500px"
                 />
 

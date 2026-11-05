@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Brand;
 use App\Models\R2;
+use App\Models\Series;
+use App\Models\Type;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +25,15 @@ class MarketingDashboardController extends Controller
         $startDate = $request->string('start_date')->toString();
         $endDate = $request->string('end_date')->toString();
 
+        $brandsInput = $request->input('brands', $request->input('brand', []));
+        if (is_string($brandsInput)) {
+            $brands = ($brandsInput === 'all' || $brandsInput === '') ? [] : array_values(array_filter(explode(',', $brandsInput)));
+        } elseif (is_array($brandsInput)) {
+            $brands = array_values(array_filter($brandsInput, fn ($b) => $b !== 'all' && $b !== ''));
+        } else {
+            $brands = [];
+        }
+
         $segmentsInput = $request->input('segments', []);
         if (is_string($segmentsInput)) {
             $segments = array_values(array_filter(explode(',', $segmentsInput)));
@@ -31,16 +43,37 @@ class MarketingDashboardController extends Controller
             $segments = [];
         }
 
+        $seriesInput = $request->input('series', []);
+        if (is_string($seriesInput)) {
+            $series = ($seriesInput === 'all' || $seriesInput === '') ? [] : array_values(array_filter(explode(',', $seriesInput)));
+        } elseif (is_array($seriesInput)) {
+            $series = array_values(array_filter($seriesInput, fn ($s) => $s !== 'all' && $s !== ''));
+        } else {
+            $series = [];
+        }
+
         // Base query with filters
         $baseQuery = R2::query()
             ->when($kabupaten !== '' && $kabupaten !== 'all', function (Builder $query) use ($kabupaten) {
                 $query->where('kab_desc', $kabupaten);
             })
-            ->when($brand !== '' && $brand !== 'all', function (Builder $query) use ($brand) {
-                $query->where('mrk_desc', $brand);
+            ->when(! empty($brands), function (Builder $query) use ($brands) {
+                $query->whereIn('mrk_desc', $brands);
             })
             ->when(! empty($segments), function (Builder $query) use ($segments) {
                 $query->whereIn('segment', $segments);
+            })
+            ->when(! empty($series), function (Builder $query) use ($series) {
+                $typeNames = Type::query()
+                    ->whereHas('series', function ($q) use ($series) {
+                        $q->whereIn('nama', $series);
+                    })
+                    ->pluck('nama_type');
+
+                $query->where(function (Builder $q) use ($typeNames) {
+                    $q->whereIn('type', $typeNames)
+                        ->orWhereIn('pkb_desc', $typeNames);
+                });
             })
             ->when($year !== '' && $year !== 'all', function (Builder $query) use ($year) {
                 $query->where('knd_thn_buat', $year);
@@ -458,12 +491,15 @@ class MarketingDashboardController extends Controller
                 ->distinct()
                 ->orderBy('kab_desc')
                 ->pluck('kab_desc'),
-            'brands' => R2::query()
-                ->whereNotNull('mrk_desc')
-                ->where('mrk_desc', '!=', '')
-                ->distinct()
-                ->orderBy('mrk_desc')
-                ->pluck('mrk_desc'),
+            'brands' => collect(
+                R2::query()
+                    ->whereNotNull('mrk_desc')
+                    ->where('mrk_desc', '!=', '')
+                    ->distinct()
+                    ->pluck('mrk_desc')
+            )->merge(
+                Brand::pluck('nama_brand')
+            )->filter()->unique()->sort()->values()->all(),
             'years' => R2::query()
                 ->whereNotNull('knd_thn_buat')
                 ->where('knd_thn_buat', '!=', '')
@@ -476,6 +512,10 @@ class MarketingDashboardController extends Controller
                 ->distinct()
                 ->orderBy('segment')
                 ->pluck('segment')
+                ->all(),
+            'series' => Series::query()
+                ->orderBy('nama')
+                ->pluck('nama')
                 ->all(),
         ];
 
@@ -499,11 +539,13 @@ class MarketingDashboardController extends Controller
             'filterOptions' => $filterOptions,
             'filters' => [
                 'kabupaten' => $kabupaten,
-                'brand' => $brand,
+                'brand' => ! empty($brands) ? (count($brands) === 1 ? $brands[0] : implode(',', $brands)) : '',
+                'brands' => $brands,
                 'year' => $year,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'segments' => $segments,
+                'series' => $series,
             ],
         ]);
     }

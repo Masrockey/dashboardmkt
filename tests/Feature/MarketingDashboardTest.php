@@ -2,6 +2,8 @@
 
 use App\Enums\UserRole;
 use App\Models\R2;
+use App\Models\Series;
+use App\Models\Type;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia;
 
@@ -143,7 +145,7 @@ test('marketing dashboard filters by kabupaten and brand correctly', function ()
             ->where('filters.kabupaten', 'KAB. SUMBAWA')
         );
 
-    // Test filtering by brand
+    // Test filtering by brand (single)
     $this->actingAs($user)
         ->get(route('marketing.dashboard', ['brand' => 'YAMAHA']))
         ->assertOk()
@@ -153,6 +155,18 @@ test('marketing dashboard filters by kabupaten and brand correctly', function ()
             ->where('stats.honda_units', 0)
             ->where('stats.competitor_units', 1)
             ->where('filters.brand', 'YAMAHA')
+        );
+
+    // Test filtering by multiple brands
+    $this->actingAs($user)
+        ->get(route('marketing.dashboard', ['brands' => ['HONDA', 'YAMAHA']]))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('marketing/dashboard')
+            ->where('stats.total_units', 3)
+            ->where('stats.honda_units', 2)
+            ->where('stats.competitor_units', 1)
+            ->where('filters.brands', ['HONDA', 'YAMAHA'])
         );
 
     // Test filtering by segment
@@ -182,6 +196,33 @@ test('marketing dashboard filters by kabupaten and brand correctly', function ()
             ->component('marketing/dashboard')
             ->where('stats.total_units', 1)
             ->where('filters.segments', ['AT HIGH'])
+        );
+
+    // Test filtering by series
+    $series = Series::factory()->create(['nama' => 'Vario Series']);
+    Type::create([
+        'nama_type' => 'X1H02N32L1 A/T',
+        'series_id' => $series->id,
+    ]);
+
+    R2::create([
+        'knd_nopol' => 'DR 7777 VR',
+        'mrk_desc' => 'HONDA',
+        'type' => 'X1H02N32L1 A/T',
+        'segment' => 'AT HIGH',
+        'kab_desc' => 'KOTA MATARAM',
+        'kec_desc' => 'Mataram',
+        'knd_thn_buat' => '2024',
+        'ctk_notice_tanggal' => '2026-01-25',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('marketing.dashboard', ['series' => ['Vario Series']]))
+        ->assertOk()
+        ->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('marketing/dashboard')
+            ->where('stats.total_units', 1)
+            ->where('filters.series', ['Vario Series'])
         );
 });
 
