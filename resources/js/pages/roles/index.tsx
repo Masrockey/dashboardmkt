@@ -660,7 +660,7 @@ export default function RolesIndex({
             }
             let matchedChild = false;
             allPermissionKeys.forEach((k) => {
-                if (k === p || k.startsWith(p + '.')) {
+                if (k === p || (k.startsWith(p + '.') && !k.includes('.approval'))) {
                     expandedPermissions.add(k);
                     matchedChild = true;
                 }

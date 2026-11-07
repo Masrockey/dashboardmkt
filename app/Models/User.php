@@ -166,12 +166,17 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is strictly a dealer without admin/spv/kabag roles.
+     * Check if user is strictly a dealer without other roles.
      */
     public function isDealerOnly(): bool
     {
-        return $this->hasRole(UserRole::Dealer) &&
-            ! $this->hasAnyRole([UserRole::Superadmin, UserRole::Spv, UserRole::Kabag]);
+        if (! $this->hasRole(UserRole::Dealer)) {
+            return false;
+        }
+
+        $nonDealerRoles = array_diff($this->roles, [UserRole::Dealer->value, 'dealer']);
+
+        return empty($nonDealerRoles);
     }
 
     /**

@@ -58,7 +58,9 @@ interface AuthUser {
     id: number;
     name: string;
     email: string;
-    role: UserRole;
+    role: UserRole | string;
+    roles?: string[];
+    permissions?: string[];
     dealer_id: number | null;
 }
 
@@ -433,8 +435,17 @@ export default function PameranIndex({
         value: kec,
     }));
 
-    const canApproveSpv = currentUser.role === 'spv' || currentUser.role === 'superadmin';
-    const canReject = currentUser.role === 'spv' || currentUser.role === 'superadmin';
+    const canApproveSpv =
+        currentUser.role === 'spv' ||
+        currentUser.role === 'superadmin' ||
+        currentUser.roles?.includes('superadmin') ||
+        currentUser.roles?.includes('spv') ||
+        currentUser.permissions?.includes('pcd.channel.approval_spv') ||
+        currentUser.permissions?.includes('pcd.channel_approval_spv') ||
+        currentUser.permissions?.includes('*') ||
+        currentUser.permissions?.some((p) => p.startsWith('pcd.channel.approval'));
+
+    const canReject = canApproveSpv;
 
     return (
         <>

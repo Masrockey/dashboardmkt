@@ -70,7 +70,9 @@ class PameranPolicy
      */
     public function approveSpv(User $user, Pameran $pameran): bool
     {
-        return $user->hasAnyRole([UserRole::Spv, UserRole::Superadmin]);
+        return $user->hasPermission('pcd.channel.approval_spv')
+            || $user->hasPermission('pcd.channel_approval_spv')
+            || $user->hasAnyRole([UserRole::Spv, UserRole::Superadmin]);
     }
 
     /**
@@ -91,7 +93,11 @@ class PameranPolicy
             return true;
         }
 
-        if ($user->hasRole(UserRole::Spv) && in_array($pameran->status, [PameranStatus::MenungguSpv, PameranStatus::MenungguKabag], true)) {
+        $canApprove = $user->hasPermission('pcd.channel.approval_spv')
+            || $user->hasPermission('pcd.channel_approval_spv')
+            || $user->hasRole(UserRole::Spv);
+
+        if ($canApprove && in_array($pameran->status, [PameranStatus::MenungguSpv, PameranStatus::MenungguKabag], true)) {
             return true;
         }
 

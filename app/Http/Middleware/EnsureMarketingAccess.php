@@ -17,9 +17,26 @@ class EnsureMarketingAccess
     {
         $user = $request->user();
 
-        if (! $user?->hasPermission('marketing.dashboard') && ! $user?->hasPermission('marketing.r2') && ! $user?->hasAnyRole(['superadmin', 'spv', 'kabag'])) {
+        if (! $user) {
             abort(403, 'Anda tidak memiliki akses ke menu Marketing.');
         }
+
+        if ($user->hasAnyRole(['superadmin', 'spv', 'kabag'])) {
+            return $next($request);
+        }
+
+        if ($user->hasPermission('marketing.dashboard') || $user->hasPermission('marketing.r2') || $user->hasPermission('marketing')) {
+            return $next($request);
+        }
+
+        $userPermissions = $user->getAllPermissions();
+        foreach ($userPermissions as $p) {
+            if (str_starts_with($p, 'marketing.')) {
+                return $next($request);
+            }
+        }
+
+        abort(403, 'Anda tidak memiliki akses ke menu Marketing.');
 
         return $next($request);
     }

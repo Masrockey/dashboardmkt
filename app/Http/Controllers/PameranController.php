@@ -322,7 +322,7 @@ class PameranController extends Controller
     {
         $user = $request->user();
 
-        if (! in_array($user->role, [UserRole::Spv, UserRole::Superadmin], true)) {
+        if (! $user->hasPermission('pcd.channel.approval_spv') && ! $user->hasPermission('pcd.channel_approval_spv') && ! $user->hasAnyRole([UserRole::Spv, UserRole::Superadmin])) {
             abort(403, 'Anda tidak memiliki hak akses untuk menyetujui tahap SPV.');
         }
 
@@ -360,7 +360,7 @@ class PameranController extends Controller
     {
         $user = $request->user();
 
-        if (! in_array($user->role, [UserRole::Spv, UserRole::Superadmin], true)) {
+        if (! $user->hasPermission('pcd.channel.approval_spv') && ! $user->hasPermission('pcd.channel_approval_spv') && ! $user->hasAnyRole([UserRole::Spv, UserRole::Superadmin])) {
             abort(403, 'Anda tidak memiliki hak akses untuk menolak channel.');
         }
 

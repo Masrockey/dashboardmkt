@@ -135,24 +135,24 @@ class Role extends Model
         ],
         'promosi.btl.read' => [
             'group' => 'Promosi',
-            'feature' => 'BTL (Below The Line)',
+            'feature' => 'BTL (Form Builder)',
             'action' => 'read',
-            'label' => 'Lihat Promosi BTL',
-            'description' => 'Melihat event dan aktivasi promosi BTL',
+            'label' => 'Lihat Form Builder',
+            'description' => 'Melihat daftar form dan respon kegiatan BTL',
         ],
         'promosi.btl.write' => [
             'group' => 'Promosi',
-            'feature' => 'BTL (Below The Line)',
+            'feature' => 'BTL (Form Builder)',
             'action' => 'write',
-            'label' => 'Tambah & Edit BTL',
-            'description' => 'Membuat dan memperbarui kegiatan BTL',
+            'label' => 'Tambah & Edit Form',
+            'description' => 'Membuat dan memperbarui form survey/event BTL',
         ],
         'promosi.btl.delete' => [
             'group' => 'Promosi',
-            'feature' => 'BTL (Below The Line)',
+            'feature' => 'BTL (Form Builder)',
             'action' => 'delete',
-            'label' => 'Hapus BTL',
-            'description' => 'Menghapus data kegiatan promosi BTL',
+            'label' => 'Hapus Form',
+            'description' => 'Menghapus data form survey/event BTL',
         ],
 
         // ==================== MARKETING ====================
@@ -291,6 +291,27 @@ class Role extends Model
             'label' => 'Hapus Type',
             'description' => 'Menghapus data Type sepeda motor',
         ],
+        'master_data.series.read' => [
+            'group' => 'Master Data',
+            'feature' => 'Series',
+            'action' => 'read',
+            'label' => 'Lihat Series',
+            'description' => 'Melihat master data Series kendaraan',
+        ],
+        'master_data.series.write' => [
+            'group' => 'Master Data',
+            'feature' => 'Series',
+            'action' => 'write',
+            'label' => 'Tambah & Edit Series',
+            'description' => 'Menambah atau memperbarui Series kendaraan',
+        ],
+        'master_data.series.delete' => [
+            'group' => 'Master Data',
+            'feature' => 'Series',
+            'action' => 'delete',
+            'label' => 'Hapus Series',
+            'description' => 'Menghapus data Series kendaraan',
+        ],
 
         // ==================== MANAGEMENT ====================
         'management.dealers.read' => [
@@ -426,9 +447,23 @@ class Role extends Model
             'promosi.atl.delete',
             'promosi.atl.billboard',
             'promosi.btl',
+            'promosi.btl.read',
+            'promosi.btl.write',
+            'promosi.btl.delete',
+            'form_builder.create',
+            'form_builder.index',
+            'form_builder.read',
+            'form_builder.write',
+            'form_builder.delete',
             'marketing.dashboard',
             'marketing.r2',
             'master_data.access',
+            'master_data.segments',
+            'master_data.brands',
+            'master_data.categories',
+            'master_data.kabupatens',
+            'master_data.types',
+            'master_data.series',
             'management.dealers',
             'management.users',
             'management.roles',
@@ -450,10 +485,25 @@ class Role extends Model
             return true;
         }
 
+        // Approval alias mapping (underscore vs dot)
+        if (($permission === 'pcd.channel_approval_spv' || $permission === 'pcd.channel.approval_spv')
+            && (in_array('pcd.channel_approval_spv', $perms, true) || in_array('pcd.channel.approval_spv', $perms, true))) {
+            return true;
+        }
+
+        if (($permission === 'pcd.channel_approval_kabag' || $permission === 'pcd.channel.approval_kabag')
+            && (in_array('pcd.channel_approval_kabag', $perms, true) || in_array('pcd.channel.approval_kabag', $perms, true))) {
+            return true;
+        }
+
         // Backward compatibility:
         // 1. If role has broad permission (e.g. 'pcd.channel'), grant any child action ('pcd.channel.read', 'pcd.channel.write')
         foreach ($perms as $p) {
             if ($p !== '' && str_starts_with($permission, $p.'.')) {
+                // Do not grant approval privileges from broad 'pcd.channel' permission
+                if (str_starts_with($permission, 'pcd.channel.approval') || str_starts_with($permission, 'pcd.channel_approval')) {
+                    continue;
+                }
                 return true;
             }
         }
@@ -465,9 +515,54 @@ class Role extends Model
             }
         }
 
-        // 3. Special mapping for legacy 'master_data.access'
+        // 3. Mapping for 'master_data.access'
+        // If role has 'master_data.access', grant any master_data child action
         if (in_array('master_data.access', $perms, true) && str_starts_with($permission, 'master_data.')) {
             return true;
+        }
+        // If checking 'master_data.access', grant if role has any master_data child action
+        if ($permission === 'master_data.access') {
+            foreach ($perms as $p) {
+                if ($p !== '' && str_starts_with($p, 'master_data.')) {
+                    return true;
+                }
+            }
+        }
+
+        // 4. Form Builder <-> Promosi BTL alias mapping
+        if (str_starts_with($permission, 'form_builder.') || $permission === 'form_builder') {
+            if (in_array('promosi.btl', $perms, true)) {
+                return true;
+            }
+            if ($permission === 'form_builder.index' || $permission === 'form_builder.read') {
+                return in_array('promosi.btl.read', $perms, true) || in_array('promosi.btl.write', $perms, true);
+            }
+            if ($permission === 'form_builder.create' || $permission === 'form_builder.write') {
+                return in_array('promosi.btl.write', $perms, true);
+            }
+            if ($permission === 'form_builder.delete') {
+                return in_array('promosi.btl.delete', $perms, true);
+            }
+            foreach ($perms as $p) {
+                if (str_starts_with($p, 'promosi.btl.')) {
+                    return true;
+                }
+            }
+        }
+
+        if (str_starts_with($permission, 'promosi.btl.') || $permission === 'promosi.btl') {
+            if (in_array('form_builder', $perms, true)) {
+                return true;
+            }
+            if ($permission === 'promosi.btl.read') {
+                return in_array('form_builder.read', $perms, true) || in_array('form_builder.index', $perms, true);
+            }
+            if ($permission === 'promosi.btl.write') {
+                return in_array('form_builder.write', $perms, true) || in_array('form_builder.create', $perms, true);
+            }
+            if ($permission === 'promosi.btl.delete') {
+                return in_array('form_builder.delete', $perms, true);
+            }
         }
 
         return false;

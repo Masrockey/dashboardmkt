@@ -90,37 +90,37 @@ const masterDataNavItems: PermittedNavItem[] = [
         title: 'Segment',
         href: segments.index(),
         icon: Layers,
-        permission: 'master_data.access',
+        permission: 'master_data.segments',
     },
     {
         title: 'Brand',
         href: brands.index(),
         icon: BookmarkCheck,
-        permission: 'master_data.access',
+        permission: 'master_data.brands',
     },
     {
         title: 'Kategori',
         href: categories.index(),
         icon: FolderKanban,
-        permission: 'master_data.access',
+        permission: 'master_data.categories',
     },
     {
         title: 'Kabupaten',
         href: kabupatens.index(),
         icon: Map,
-        permission: 'master_data.access',
+        permission: 'master_data.kabupatens',
     },
     {
         title: 'Type',
         href: types.index(),
         icon: Tag,
-        permission: 'master_data.access',
+        permission: 'master_data.types',
     },
     {
         title: 'Series',
         href: series.index(),
         icon: Boxes,
-        permission: 'master_data.access',
+        permission: 'master_data.series',
     },
 ];
 
@@ -164,13 +164,13 @@ const formBuilderNavItems: PermittedNavItem[] = [
         title: 'Buat Form',
         href: forms.create(),
         icon: FilePlus2,
-        permission: 'form_builder.create',
+        permission: 'promosi.btl.write',
     },
     {
         title: 'Daftar Form',
         href: forms.index(),
         icon: FileText,
-        permission: 'form_builder.index',
+        permission: 'promosi.btl.read',
     },
 ];
 
@@ -222,11 +222,20 @@ export function AppSidebar() {
                     p === permission ||
                     p.startsWith(`${permission}.`) ||
                     permission.startsWith(`${p}.`) ||
-                    (p === 'master_data.access' && permission.startsWith('master_data.')),
+                    (p === 'master_data.access' && permission.startsWith('master_data.')) ||
+                    (permission === 'master_data.access' && p.startsWith('master_data.')) ||
+                    // Form builder & Promosi BTL bridge
+                    ((permission.startsWith('form_builder.') || permission.startsWith('promosi.btl.')) &&
+                        (p.startsWith('promosi.btl.') || p.startsWith('form_builder.') || p === 'promosi.btl' || p === 'form_builder')) ||
+                    // PCD approval bridge
+                    ((permission === 'pcd.channel.approval_spv' || permission === 'pcd.channel_approval_spv') &&
+                        (p === 'pcd.channel.approval_spv' || p === 'pcd.channel_approval_spv')) ||
+                    ((permission === 'pcd.channel.approval_kabag' || permission === 'pcd.channel_approval_kabag') &&
+                        (p === 'pcd.channel_approval_kabag' || p === 'pcd.channel.approval_kabag')),
             );
         }
         // Fallback backward compatibility
-        if (permission.startsWith('form_builder.')) {
+        if (permission.startsWith('form_builder.') || permission.startsWith('promosi.btl.')) {
             return true;
         }
         if (permission.startsWith('pcd.')) {
@@ -265,19 +274,27 @@ export function AppSidebar() {
         const visiblePromosi = promosiNavItems
             .map((item) => {
                 if (item.items && item.items.length > 0) {
+                    const filteredSub = item.items.filter((sub) => can(sub.permission));
                     return {
                         ...item,
-                        items: item.items.filter((sub) => can(sub.permission)),
+                        items: filteredSub,
                     };
                 }
                 return item;
             })
-            .filter((item) => can(item.permission));
+            .filter((item) => {
+                if (item.items) {
+                    return item.items.length > 0;
+                }
+                return can(item.permission);
+            });
 
-        groups.push({
-            title: 'Promosi',
-            items: visiblePromosi,
-        });
+        if (visiblePromosi.length > 0) {
+            groups.push({
+                title: 'Promosi',
+                items: visiblePromosi,
+            });
+        }
 
         const visibleMarketing = marketingNavItems.filter((item) => can(item.permission));
         if (visibleMarketing.length > 0) {
@@ -288,10 +305,12 @@ export function AppSidebar() {
         }
 
         const visibleFormBuilder = formBuilderNavItems.filter((item) => can(item.permission));
-        groups.push({
-            title: 'Form Builder',
-            items: visibleFormBuilder,
-        });
+        if (visibleFormBuilder.length > 0) {
+            groups.push({
+                title: 'Form Builder',
+                items: visibleFormBuilder,
+            });
+        }
 
         const visibleMasterData = masterDataNavItems.filter((item) => can(item.permission));
         if (visibleMasterData.length > 0) {
