@@ -41,4 +41,3 @@ class TypeImportRequest extends FormRequest
         ];
     }
 }
-

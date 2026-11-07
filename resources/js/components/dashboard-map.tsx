@@ -279,8 +279,11 @@ export default function DashboardMap({
             center: DEFAULT_CENTER,
             zoom: DEFAULT_ZOOM,
             attributionControl: false,
-            zoomControl: true,
+            zoomControl: false,
         });
+
+        // Add Zoom Control to bottom-right
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,

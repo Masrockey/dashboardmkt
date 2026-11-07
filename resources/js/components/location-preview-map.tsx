@@ -205,9 +205,12 @@ export default function LocationPreviewMap({
             center: [latitude, longitude],
             zoom: 14,
             attributionControl: false,
-            zoomControl: true,
+            zoomControl: false,
             scrollWheelZoom: false, // Prevent accidental scrolling when inspecting modal
         });
+
+        // Add zoom control explicitly to bottom-right to avoid overlapping top-left warning badges
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,

@@ -28,6 +28,7 @@ export interface PameranItem {
     kabag_approved_at?: string | null;
     kabag_approver?: { id: number; name: string } | null;
     catatan_penolakan?: string | null;
+    catatan_approval?: string | null;
     created_at: string;
     updated_at: string;
     is_other_dealer?: boolean;

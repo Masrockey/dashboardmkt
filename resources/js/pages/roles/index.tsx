@@ -2,6 +2,7 @@ import { Head, router, useForm } from '@inertiajs/react';
 import {
     Check,
     CheckSquare,
+    Download,
     Eye,
     Key,
     Pencil,
@@ -12,6 +13,7 @@ import {
     ShieldCheck,
     Square,
     Trash2,
+    Upload,
     Users,
     X,
 } from 'lucide-react';
@@ -90,6 +92,24 @@ function getActionMeta(actionType: string) {
                 activeCard:
                     'border-purple-300 bg-purple-50/70 dark:border-purple-800/80 dark:bg-purple-950/30',
                 icon: ShieldCheck,
+            };
+        case 'export':
+            return {
+                label: 'Export',
+                badgeBg:
+                    'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
+                activeCard:
+                    'border-amber-300 bg-amber-50/70 dark:border-amber-800/80 dark:bg-amber-950/30',
+                icon: Download,
+            };
+        case 'import':
+            return {
+                label: 'Import',
+                badgeBg:
+                    'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800',
+                activeCard:
+                    'border-indigo-300 bg-indigo-50/70 dark:border-indigo-800/80 dark:bg-indigo-950/30',
+                icon: Upload,
             };
         default:
             return {
@@ -903,7 +923,9 @@ export default function RolesIndex({
                                     const readCount = role.permissions.filter((p) => p.endsWith('.read')).length;
                                     const writeCount = role.permissions.filter((p) => p.endsWith('.write')).length;
                                     const deleteCount = role.permissions.filter((p) => p.endsWith('.delete')).length;
-                                    const hasGranular = readCount > 0 || writeCount > 0 || deleteCount > 0;
+                                    const exportCount = role.permissions.filter((p) => p.endsWith('.export')).length;
+                                    const importCount = role.permissions.filter((p) => p.endsWith('.import')).length;
+                                    const hasGranular = readCount > 0 || writeCount > 0 || deleteCount > 0 || exportCount > 0 || importCount > 0;
 
                                     return (
                                         <TableRow key={role.id}>
@@ -977,6 +999,24 @@ export default function RolesIndex({
                                                                     >
                                                                         <Trash2 className="mr-1 size-2.5" />
                                                                         {deleteCount} Delete
+                                                                    </Badge>
+                                                                )}
+                                                                {exportCount > 0 && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="border-amber-200 bg-amber-50 text-[10px] text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                                                                    >
+                                                                        <Download className="mr-1 size-2.5" />
+                                                                        {exportCount} Export
+                                                                    </Badge>
+                                                                )}
+                                                                {importCount > 0 && (
+                                                                    <Badge
+                                                                        variant="outline"
+                                                                        className="border-indigo-200 bg-indigo-50 text-[10px] text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300"
+                                                                    >
+                                                                        <Upload className="mr-1 size-2.5" />
+                                                                        {importCount} Import
                                                                     </Badge>
                                                                 )}
                                                             </div>

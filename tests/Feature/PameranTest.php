@@ -5,7 +5,10 @@ use App\Models\Dealer;
 use App\Models\JenisPameran;
 use App\Models\Pameran;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Inertia\Testing\AssertableInertia;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 test('guests are redirected to the login page when visiting pameran', function () {
     $response = $this->get(route('pameran.index'));
@@ -296,4 +299,103 @@ test('authenticated users can create a pameran with coordinates from map', funct
         'latitude' => -8.5833807,
         'longitude' => 116.1167899,
     ]);
+});
+
+test('user without pcd.channel.export permission cannot export pameran', function () {
+    $user = User::factory()->create(['role' => UserRole::Dealer]);
+
+    $this->actingAs($user)
+        ->get(route('pameran.export'))
+        ->assertForbidden();
+});
+
+test('user with pcd.channel.export permission or superadmin can export pameran', function () {
+    $superadmin = User::factory()->create(['role' => UserRole::Superadmin]);
+    Pameran::factory()->count(3)->create();
+
+    $response = $this->actingAs($superadmin)
+        ->get(route('pameran.export'));
+
+    $response->assertOk();
+    $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+});
+
+test('user without pcd.channel.import permission cannot import pameran', function () {
+    $user = User::factory()->create(['role' => UserRole::Dealer]);
+
+    $this->actingAs($user)
+        ->get(route('pameran.template'))
+        ->assertForbidden();
+
+    $this->actingAs($user)
+        ->post(route('pameran.import'), [])
+        ->assertForbidden();
+});
+
+test('user with pcd.channel.import permission can download template and import pameran excel', function () {
+    $superadmin = User::factory()->create(['role' => UserRole::Superadmin]);
+    $dealer = Dealer::factory()->create(['kode_dealer' => 'TEST01', 'nama_dealer' => 'Dealer Test']);
+    $jenis = JenisPameran::factory()->create(['kode_pameran' => 'PMR', 'jenis_pameran' => 'Pameran Reguler']);
+
+    // Template download
+    $this->actingAs($superadmin)
+        ->get(route('pameran.template'))
+        ->assertOk()
+        ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    // Create a real excel file using PhpSpreadsheet in memory / temp file
+    $spreadsheet = new Spreadsheet;
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setCellValue('A1', 'KODE DEALER');
+    $sheet->setCellValue('B1', 'NAMA DEALER');
+    $sheet->setCellValue('C1', 'KODE JENIS CHANNEL');
+    $sheet->setCellValue('D1', 'NAMA JENIS CHANNEL');
+    $sheet->setCellValue('E1', 'MULAI SEWA');
+    $sheet->setCellValue('F1', 'AKHIR SEWA');
+    $sheet->setCellValue('G1', 'KABUPATEN');
+    $sheet->setCellValue('H1', 'KECAMATAN');
+    $sheet->setCellValue('I1', 'DETAIL ALAMAT');
+    $sheet->setCellValue('J1', 'KODE CHANNEL AHM');
+    $sheet->setCellValue('K1', 'LATITUDE');
+    $sheet->setCellValue('L1', 'LONGITUDE');
+    $sheet->setCellValue('M1', 'STATUS');
+
+    $sheet->setCellValue('A2', 'TEST01');
+    $sheet->setCellValue('B2', 'Dealer Test');
+    $sheet->setCellValue('C2', 'PMR');
+    $sheet->setCellValue('D2', 'Pameran Reguler');
+    $sheet->setCellValue('E2', '2026-11-01');
+    $sheet->setCellValue('F2', '2026-11-30');
+    $sheet->setCellValue('G2', 'Lombok Barat');
+    $sheet->setCellValue('H2', 'Gerung');
+    $sheet->setCellValue('I2', 'Jl. Sukarno Hatta No. 45');
+    $sheet->setCellValue('J2', 'AHM-TEST-01');
+    $sheet->setCellValue('K2', '-8.55');
+    $sheet->setCellValue('L2', '116.12');
+    $sheet->setCellValue('M2', 'Disetujui');
+
+    $tempFile = tempnam(sys_get_temp_dir(), 'test_pameran_').'.xlsx';
+    $writer = new Xlsx($spreadsheet);
+    $writer->save($tempFile);
+
+    $file = new UploadedFile($tempFile, 'pameran.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+
+    $response = $this->actingAs($superadmin)
+        ->post(route('pameran.import'), [
+            'file' => $file,
+        ]);
+
+    $response->assertRedirect(route('pameran.index'));
+
+    $this->assertDatabaseHas('pamerans', [
+        'dealer_id' => $dealer->id,
+        'jenis_pameran_id' => $jenis->id,
+        'kecamatan' => 'Gerung',
+        'detail_alamat' => 'Jl. Sukarno Hatta No. 45',
+        'kode_pameran_ahm' => 'AHM-TEST-01',
+    ]);
+
+    if (file_exists($tempFile)) {
+        unlink($tempFile);
+    }
 });

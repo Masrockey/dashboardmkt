@@ -60,6 +60,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('types', TypeController::class)->except(['create', 'show', 'edit']);
         Route::resource('series', SeriesController::class)->except(['create', 'show', 'edit']);
     });
+    Route::get('pameran/export', [PameranController::class, 'export'])->name('pameran.export');
+    Route::get('pameran/template', [PameranController::class, 'template'])->name('pameran.template');
+    Route::post('pameran/import', [PameranController::class, 'import'])->name('pameran.import');
     Route::post('pameran/{pameran}/approve-spv', [PameranController::class, 'approveSpv'])->name('pameran.approve-spv');
     Route::post('pameran/{pameran}/approve-kabag', [PameranController::class, 'approveKabag'])->name('pameran.approve-kabag');
     Route::post('pameran/{pameran}/reject', [PameranController::class, 'reject'])->name('pameran.reject');

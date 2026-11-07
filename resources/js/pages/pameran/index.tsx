@@ -1,16 +1,24 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
+    Building2,
     Calendar,
     CalendarDays,
     Check,
     ChevronLeft,
     ChevronRight,
+    Clock,
+    Download,
     ExternalLink,
+    Eye,
+    FileSpreadsheet,
+    FileText,
     MapPin,
     Pencil,
     Plus,
     Search,
     Trash2,
+    Upload,
+    User,
     X,
     XCircle,
 } from 'lucide-react';
@@ -116,13 +124,26 @@ export default function PameranIndex({
         parseFilterArray(filters.kecamatan),
     );
 
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isApproveOpen, setIsApproveOpen] = useState(false);
     const [isRejectOpen, setIsRejectOpen] = useState(false);
+    const [isImportOpen, setIsImportOpen] = useState(false);
 
     const [selectedPameran, setSelectedPameran] = useState<PameranItem | null>(null);
-    const [isApproving, setIsApproving] = useState(false);
+
+    // Approve Form
+    const approveForm = useForm({
+        catatan_approval: '',
+    });
+
+    // Import Form
+    const importForm = useForm<{
+        file: File | null;
+    }>({
+        file: null,
+    });
 
     // Edit Form
     const editForm = useForm({
@@ -271,30 +292,33 @@ export default function PameranIndex({
         });
     };
 
+    // Detail handler
+    const handleOpenDetail = (pameran: PameranItem) => {
+        setSelectedPameran(pameran);
+        setIsDetailOpen(true);
+    };
+
     // Approval handlers
     const handleOpenApprove = (pameran: PameranItem) => {
         setSelectedPameran(pameran);
+        approveForm.reset();
+        approveForm.clearErrors();
         setIsApproveOpen(true);
     };
 
-    const handleConfirmApprove = () => {
+    const handleConfirmApprove = (e?: FormEvent) => {
+        if (e) e.preventDefault();
         if (!selectedPameran) return;
 
-        setIsApproving(true);
-        const url = pameranRoute.approveSpv.url(selectedPameran.id);
-
-        router.post(
-            url,
-            {},
-            {
-                preserveScroll: true,
-                onFinish: () => {
-                    setIsApproving(false);
-                    setIsApproveOpen(false);
-                    setSelectedPameran(null);
-                },
+        approveForm.post(pameranRoute.approveSpv.url(selectedPameran.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsApproveOpen(false);
+                setIsDetailOpen(false);
+                approveForm.reset();
+                setSelectedPameran(null);
             },
-        );
+        });
     };
 
     // Reject handlers
@@ -354,7 +378,11 @@ export default function PameranIndex({
     };
 
     // Approval status badge helper
-    const getApprovalStatusBadge = (status: PameranStatus, rejectionNote?: string | null) => {
+    const getApprovalStatusBadge = (
+        status: PameranStatus,
+        rejectionNote?: string | null,
+        approvalNote?: string | null,
+    ) => {
         switch (status) {
             case 'menunggu_spv':
                 return (
@@ -370,9 +398,16 @@ export default function PameranIndex({
                 );
             case 'disetujui':
                 return (
-                    <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                        Disetujui
-                    </Badge>
+                    <div className="flex flex-col gap-0.5">
+                        <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                            Disetujui
+                        </Badge>
+                        {approvalNote && (
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 line-clamp-1" title={approvalNote}>
+                                {approvalNote}
+                            </span>
+                        )}
+                    </div>
                 );
             case 'ditolak':
                 return (
@@ -447,6 +482,48 @@ export default function PameranIndex({
 
     const canReject = canApproveSpv;
 
+    const canExport =
+        currentUser.role === 'superadmin' ||
+        currentUser.roles?.includes('superadmin') ||
+        currentUser.permissions?.includes('pcd.channel.export') ||
+        currentUser.permissions?.includes('*');
+
+    const canImport =
+        currentUser.role === 'superadmin' ||
+        currentUser.roles?.includes('superadmin') ||
+        currentUser.permissions?.includes('pcd.channel.import') ||
+        currentUser.permissions?.includes('*');
+
+    const handleOpenImport = () => {
+        importForm.reset();
+        importForm.clearErrors();
+        setIsImportOpen(true);
+    };
+
+    const handleImportSubmit = (e: FormEvent) => {
+        e.preventDefault();
+        if (!importForm.data.file) return;
+
+        importForm.post('/pameran/import', {
+            onSuccess: () => {
+                setIsImportOpen(false);
+                importForm.reset();
+            },
+        });
+    };
+
+    const buildExportUrl = () => {
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('search', searchQuery);
+        if (selectedDealerFilter.length) params.append('dealer_id', selectedDealerFilter.join(','));
+        if (selectedJenisFilter.length) params.append('jenis_pameran_id', selectedJenisFilter.join(','));
+        if (selectedStatusFilter.length) params.append('status', selectedStatusFilter.join(','));
+        if (selectedKabupatenFilter.length) params.append('kabupaten', selectedKabupatenFilter.join(','));
+        if (selectedKecamatanFilter.length) params.append('kecamatan', selectedKecamatanFilter.join(','));
+        const qs = params.toString();
+        return `/pameran/export${qs ? `?${qs}` : ''}`;
+    };
+
     return (
         <>
             <Head title="Channel" />
@@ -463,12 +540,30 @@ export default function PameranIndex({
                         </p>
                     </div>
 
-                    <Button asChild className="gap-2 self-start sm:self-auto">
-                        <Link href={pameranRoute.create()}>
-                            <Plus className="size-4" />
-                            Tambah Channel
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                        {canExport && (
+                            <Button variant="outline" asChild className="gap-2">
+                                <a href={buildExportUrl()} target="_blank" rel="noreferrer">
+                                    <Download className="size-4" />
+                                    Export Excel
+                                </a>
+                            </Button>
+                        )}
+
+                        {canImport && (
+                            <Button variant="outline" onClick={handleOpenImport} className="gap-2">
+                                <Upload className="size-4" />
+                                Import Excel
+                            </Button>
+                        )}
+
+                        <Button asChild className="gap-2">
+                            <Link href={pameranRoute.create()}>
+                                <Plus className="size-4" />
+                                Tambah Channel
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filters */}
@@ -709,6 +804,16 @@ export default function PameranIndex({
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
+                                                            onClick={() => handleOpenDetail(item)}
+                                                            className="h-8 gap-1 border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-950/40 text-xs shrink-0"
+                                                            title="Lihat Detail Lengkap Channel"
+                                                        >
+                                                            <Eye className="size-3.5" />
+                                                            Lihat Detail
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
                                                             onClick={() => handleOpenApprove(item)}
                                                             className="h-8 gap-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/40 text-xs shrink-0"
                                                             title="Approve SPV & Terbitkan Kode MD"
@@ -728,11 +833,22 @@ export default function PameranIndex({
                                                         </Button>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs text-neutral-400 font-medium">-</span>
+                                                    <div className="flex items-center justify-center">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleOpenDetail(item)}
+                                                            className="h-8 gap-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40"
+                                                            title="Lihat Detail Channel"
+                                                        >
+                                                            <Eye className="size-3.5" />
+                                                            Lihat Detail
+                                                        </Button>
+                                                    </div>
                                                 )}
                                             </TableCell>
                                             <TableCell>
-                                                {getApprovalStatusBadge(item.status, item.catatan_penolakan)}
+                                                {getApprovalStatusBadge(item.status, item.catatan_penolakan, item.catatan_approval)}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col gap-1">
@@ -852,6 +968,18 @@ export default function PameranIndex({
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex items-center justify-end gap-1">
+                                                    {/* Detail Button */}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleOpenDetail(item)}
+                                                        className="size-8 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                                                        title="Lihat Detail Channel"
+                                                    >
+                                                        <Eye className="size-4" />
+                                                        <span className="sr-only">Detail</span>
+                                                    </Button>
+
                                                     {/* Edit Button */}
                                                     <Button
                                                         variant="ghost"
@@ -1170,6 +1298,268 @@ export default function PameranIndex({
                 </DialogContent>
             </Dialog>
 
+            {/* Dialog Lihat Detail Channel */}
+            <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                    <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                        <div className="flex items-center justify-between gap-2 pr-6">
+                            <DialogTitle className="flex items-center gap-2 text-lg">
+                                <Eye className="size-5 text-blue-600 dark:text-blue-400" />
+                                Detail Channel Pameran
+                            </DialogTitle>
+                            {selectedPameran && getApprovalStatusBadge(selectedPameran.status, selectedPameran.catatan_penolakan, selectedPameran.catatan_approval)}
+                        </div>
+                        <DialogDescription>
+                            Informasi detail jadwal sewa, jenis channel, spesifikasi lokasi, dan status persetujuan.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedPameran && (
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                            {/* Header Overview Card */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {/* Card 1: Identitas & Dealer */}
+                                <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3.5 space-y-2.5 text-xs dark:border-neutral-800 dark:bg-neutral-900/50">
+                                    <div className="flex items-center gap-1.5 font-semibold text-neutral-800 dark:text-neutral-200 border-b pb-1.5 dark:border-neutral-800">
+                                        <Building2 className="size-4 text-neutral-500" />
+                                        Informasi Dealer & Channel
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-neutral-500">Nama Dealer:</span>
+                                        <span className="font-semibold text-neutral-900 dark:text-neutral-100 text-right">
+                                            {selectedPameran.dealer?.nama_dealer || '-'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-neutral-500">Kode Dealer:</span>
+                                        <Badge variant="outline" className="font-mono text-[11px] py-0">
+                                            {selectedPameran.dealer?.kode_dealer || '-'}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-neutral-500">Jenis Channel:</span>
+                                        <div className="flex items-center gap-1.5">
+                                            {selectedPameran.jenis_pameran?.icon_map_url && (
+                                                <img
+                                                    src={selectedPameran.jenis_pameran.icon_map_url}
+                                                    alt={selectedPameran.jenis_pameran.jenis_pameran}
+                                                    className="size-4 object-contain"
+                                                />
+                                            )}
+                                            <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                                {selectedPameran.jenis_pameran?.jenis_pameran || '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-neutral-500">Kode Jenis / Radius:</span>
+                                        <span className="text-neutral-700 dark:text-neutral-300">
+                                            {selectedPameran.jenis_pameran?.kode_pameran || '-'} ({selectedPameran.jenis_pameran?.radius_km ? `${selectedPameran.jenis_pameran.radius_km} km` : 'Tanpa radius'})
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Card 2: Periode & Kode Channel */}
+                                <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3.5 space-y-2.5 text-xs dark:border-neutral-800 dark:bg-neutral-900/50">
+                                    <div className="flex items-center gap-1.5 font-semibold text-neutral-800 dark:text-neutral-200 border-b pb-1.5 dark:border-neutral-800">
+                                        <Calendar className="size-4 text-neutral-500" />
+                                        Periode & Kode Channel
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-neutral-500">Kode Channel MD:</span>
+                                        {selectedPameran.kode_pameran_md ? (
+                                            <span className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                                {selectedPameran.kode_pameran_md}
+                                            </span>
+                                        ) : (
+                                            <span className="text-[11px] italic text-amber-600 dark:text-amber-400">
+                                                Menunggu Approval
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-neutral-500">Kode Channel AHM:</span>
+                                        <span className="font-mono text-neutral-700 dark:text-neutral-300">
+                                            {selectedPameran.kode_pameran_ahm || '-'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-neutral-500">Periode Sewa:</span>
+                                        <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                                            {formatDate(selectedPameran.mulai_tanggal_sewa)} s/d {formatDate(selectedPameran.tanggal_sewa_berakhir)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-neutral-500">Status Sewa:</span>
+                                        <div>
+                                            {getRentalStatus(selectedPameran.mulai_tanggal_sewa, selectedPameran.tanggal_sewa_berakhir)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Lokasi & Alamat */}
+                            <div className="rounded-xl border border-neutral-200 bg-white p-3.5 text-xs space-y-2 dark:border-neutral-800 dark:bg-neutral-900">
+                                <div className="flex items-center justify-between border-b pb-1.5 dark:border-neutral-800">
+                                    <span className="font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                                        <MapPin className="size-4 text-red-500" />
+                                        Wilayah & Lokasi Pameran
+                                    </span>
+                                    {selectedPameran.latitude != null && selectedPameran.longitude != null && (
+                                        <a
+                                            href={`https://www.google.com/maps?q=${selectedPameran.latitude},${selectedPameran.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[11px] text-blue-600 hover:underline dark:text-blue-400 inline-flex items-center gap-1"
+                                        >
+                                            <ExternalLink className="size-3" />
+                                            Buka di Google Maps
+                                        </a>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div>
+                                        <span className="text-neutral-500">Kabupaten / Kota: </span>
+                                        <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                            {selectedPameran.kabupaten || '-'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-neutral-500">Kecamatan: </span>
+                                        <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                            {selectedPameran.kecamatan || '-'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <span className="text-neutral-500">Detail Alamat: </span>
+                                    <span className="text-neutral-800 dark:text-neutral-200">
+                                        {selectedPameran.detail_alamat || '-'}
+                                    </span>
+                                </div>
+
+                                {selectedPameran.latitude != null && selectedPameran.longitude != null && (
+                                    <div className="pt-1">
+                                        <Badge variant="outline" className="font-mono text-[10px] py-0 px-2 text-neutral-600 dark:text-neutral-300">
+                                            Koordinat: {Number(selectedPameran.latitude).toFixed(6)}, {Number(selectedPameran.longitude).toFixed(6)}
+                                        </Badge>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Map Preview */}
+                            <div className="space-y-1.5">
+                                <div className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-1">
+                                    <MapPin className="size-3.5 text-neutral-500" />
+                                    Peta Lokasi Channel
+                                </div>
+                                {selectedPameran.latitude != null && selectedPameran.longitude != null ? (
+                                    <LocationPreviewMap
+                                        key={`detail-preview-${selectedPameran.id}`}
+                                        latitude={Number(selectedPameran.latitude)}
+                                        longitude={Number(selectedPameran.longitude)}
+                                        customIconUrl={selectedPameran.jenis_pameran?.icon_map_url || null}
+                                        popupText={`${selectedPameran.dealer?.nama_dealer || ''} - ${selectedPameran.kecamatan}`}
+                                        otherChannels={mapPamerans}
+                                        currentChannelId={selectedPameran.id}
+                                        isDealer={currentUser.role === 'dealer'}
+                                        height="220px"
+                                    />
+                                ) : (
+                                    <div className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-6 text-xs text-neutral-400 dark:border-neutral-700">
+                                        <MapPin className="mr-1.5 size-4 text-neutral-400" />
+                                        Titik koordinat peta belum ditentukan untuk channel ini.
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Catatan Penolakan / Catatan Approval Banner */}
+                            {selectedPameran.status === 'ditolak' && selectedPameran.catatan_penolakan && (
+                                <div className="rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs space-y-1 dark:border-rose-900/60 dark:bg-rose-950/40">
+                                    <div className="font-semibold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
+                                        <XCircle className="size-4 text-rose-600 dark:text-rose-400" />
+                                        Alasan Penolakan:
+                                    </div>
+                                    <p className="text-rose-700 dark:text-rose-300 pl-5 whitespace-pre-line">
+                                        {selectedPameran.catatan_penolakan}
+                                    </p>
+                                </div>
+                            )}
+
+                            {selectedPameran.catatan_approval && (
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs space-y-1 dark:border-emerald-900/60 dark:bg-emerald-950/40">
+                                    <div className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                                        <Check className="size-4 text-emerald-600 dark:text-emerald-400" />
+                                        Catatan Persetujuan (Approval):
+                                    </div>
+                                    <p className="text-emerald-700 dark:text-emerald-300 pl-5 whitespace-pre-line">
+                                        {selectedPameran.catatan_approval}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Info Pengajuan & Approval */}
+                            <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3 text-xs space-y-1 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-400">
+                                <div className="flex justify-between items-center">
+                                    <span>Diajukan Oleh:</span>
+                                    <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                                        {selectedPameran.creator?.name || 'User'} ({formatDate(selectedPameran.created_at)})
+                                    </span>
+                                </div>
+                                {selectedPameran.spv_approved_at && (
+                                    <div className="flex justify-between items-center">
+                                        <span>Disetujui SPV Oleh:</span>
+                                        <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                                            {selectedPameran.spv_approver?.name || 'SPV'} ({formatDate(selectedPameran.spv_approved_at)})
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter className="px-6 py-4 border-t bg-neutral-50 dark:bg-neutral-900/50 flex items-center justify-between sm:justify-between w-full">
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Tutup
+                            </Button>
+                        </DialogClose>
+
+                        {selectedPameran && canApproveSpv && (selectedPameran.status === 'menunggu_spv' || selectedPameran.status === 'menunggu_kabag') && (
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setIsDetailOpen(false);
+                                        handleOpenReject(selectedPameran);
+                                    }}
+                                    className="border-rose-300 text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40 gap-1.5"
+                                >
+                                    <XCircle className="size-4" />
+                                    Tolak Channel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsDetailOpen(false);
+                                        handleOpenApprove(selectedPameran);
+                                    }}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                                >
+                                    <Check className="size-4" />
+                                    Approve SPV
+                                </Button>
+                            </div>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Dialog Konfirmasi Approval (SPV) */}
             <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
                 <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
@@ -1251,21 +1641,37 @@ export default function PameranIndex({
                                 </div>
                             )}
                         </div>
+
+                        {/* Catatan Approval Opsional */}
+                        <div className="space-y-1.5 pt-1">
+                            <Label htmlFor="catatan_approval" className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                                Catatan Persetujuan (Opsional)
+                            </Label>
+                            <Textarea
+                                id="catatan_approval"
+                                rows={2}
+                                placeholder="Tambahkan catatan khusus untuk persetujuan ini (opsional)..."
+                                value={approveForm.data.catatan_approval}
+                                onChange={(e) => approveForm.setData('catatan_approval', e.target.value)}
+                                disabled={approveForm.processing}
+                            />
+                            <InputError message={approveForm.errors.catatan_approval} />
+                        </div>
                     </div>
 
                     <DialogFooter className="px-6 py-4 border-t bg-neutral-50 dark:bg-neutral-900/50">
                         <DialogClose asChild>
-                            <Button type="button" variant="outline" disabled={isApproving}>
+                            <Button type="button" variant="outline" disabled={approveForm.processing}>
                                 Batal
                             </Button>
                         </DialogClose>
                         <Button
                             type="button"
                             onClick={handleConfirmApprove}
-                            disabled={isApproving}
+                            disabled={approveForm.processing}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
-                            {isApproving && <Spinner className="mr-2 size-4" />}
+                            {approveForm.processing && <Spinner className="mr-2 size-4" />}
                             Setujui & Terbitkan Kode MD
                         </Button>
                     </DialogFooter>
@@ -1363,6 +1769,84 @@ export default function PameranIndex({
                             Hapus
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal Import Excel */}
+            <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <FileSpreadsheet className="size-5 text-emerald-600 dark:text-emerald-400" />
+                            Import Data Channel dari Excel
+                        </DialogTitle>
+                        <DialogDescription>
+                            Unggah berkas Excel (.xlsx, .xls, atau .csv) untuk mengimpor jadwal channel pameran secara massal.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleImportSubmit} className="space-y-4 py-2">
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="channel_excel_file">File Excel (.xlsx / .xls / .csv)</Label>
+                                <a
+                                    href="/pameran/template"
+                                    className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+                                >
+                                    <Download className="size-3" />
+                                    Download Template
+                                </a>
+                            </div>
+
+                            <div className="border-2 border-dashed border-muted-foreground/30 hover:border-primary rounded-lg p-5 text-center cursor-pointer transition-colors bg-muted/20 hover:bg-muted/40 relative">
+                                <input
+                                    id="channel_excel_file"
+                                    type="file"
+                                    accept=".xlsx, .xls, .csv"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0] || null;
+                                        importForm.setData('file', file);
+                                    }}
+                                />
+                                <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                    <Upload className="size-8 text-muted-foreground" />
+                                    {importForm.data.file ? (
+                                        <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-sm">
+                                            {importForm.data.file.name}
+                                        </span>
+                                    ) : (
+                                        <div className="text-xs text-muted-foreground">
+                                            <span className="font-medium text-foreground">Klik di sini</span> atau seret file ke area ini
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <InputError message={importForm.errors.file} />
+                        </div>
+
+                        <div className="rounded-lg bg-neutral-50 dark:bg-neutral-900/50 p-3 text-xs text-muted-foreground space-y-1 border border-neutral-200/60 dark:border-neutral-800">
+                            <p className="font-semibold text-foreground">Format & Referensi Kolom:</p>
+                            <p className="text-[11px]">
+                                Kolom wajib: <span className="font-mono text-neutral-800 dark:text-neutral-200">KODE DEALER, KODE JENIS CHANNEL, MULAI SEWA, AKHIR SEWA, KECAMATAN, DETAIL ALAMAT</span>.
+                            </p>
+                            <p className="text-[11px] text-neutral-500">
+                                Gunakan template resmi untuk melihat daftar Kode Dealer dan Kode Jenis Channel yang tersedia.
+                            </p>
+                        </div>
+
+                        <DialogFooter className="mt-4">
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline" disabled={importForm.processing}>
+                                    Batal
+                                </Button>
+                            </DialogClose>
+                            <Button type="submit" disabled={!importForm.data.file || importForm.processing}>
+                                {importForm.processing && <Spinner className="mr-2 size-4" />}
+                                Unggah & Import
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </>

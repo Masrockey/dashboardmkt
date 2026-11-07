@@ -249,3 +249,21 @@ test('kabag cannot reject pameran', function () {
         ])
         ->assertForbidden();
 });
+
+test('SPV can approve pameran with optional note', function () {
+    $spvUser = User::factory()->create(['role' => UserRole::Spv]);
+    $pameran = Pameran::factory()->create([
+        'status' => PameranStatus::MenungguSpv,
+    ]);
+
+    $response = $this->actingAs($spvUser)
+        ->post(route('pameran.approve-spv', $pameran), [
+            'catatan_approval' => 'Disetujui dengan catatan lokasi harus bersih.',
+        ]);
+
+    $response->assertRedirect();
+
+    $pameran->refresh();
+    expect($pameran->status)->toBe(PameranStatus::Disetujui);
+    expect($pameran->catatan_approval)->toBe('Disetujui dengan catatan lokasi harus bersih.');
+});

@@ -743,7 +743,10 @@ export default function LocationPickerMap({
                 center: [centerLat, centerLng],
                 zoom: initialZoom,
                 attributionControl: false,
+                zoomControl: false,
             });
+
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,

@@ -4,16 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Enums\PameranStatus;
 use App\Enums\UserRole;
+use App\Http\Requests\PameranImportRequest;
 use App\Http\Requests\PameranStoreRequest;
 use App\Http\Requests\PameranUpdateRequest;
 use App\Models\Dealer;
 use App\Models\JenisPameran;
 use App\Models\Pameran;
+use App\Services\PameranExcelService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PameranController extends Controller
 {
@@ -335,7 +338,11 @@ class PameranController extends Controller
             return back();
         }
 
-        $pameran->approveBySpv($user);
+        $validated = $request->validate([
+            'catatan_approval' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $pameran->approveBySpv($user, $validated['catatan_approval'] ?? null);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -380,5 +387,69 @@ class PameranController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * Export channel data to Excel file.
+     */
+    public function export(Request $request, PameranExcelService $excelService): StreamedResponse
+    {
+        $user = $request->user();
+
+        if (! $user->hasPermission('pcd.channel.export') && ! $user->hasRole(UserRole::Superadmin)) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengekspor data channel.');
+        }
+
+        return $excelService->export($request->all(), $user);
+    }
+
+    /**
+     * Download template Excel for importing channel data.
+     */
+    public function template(Request $request, PameranExcelService $excelService): StreamedResponse
+    {
+        $user = $request->user();
+
+        if (! $user->hasPermission('pcd.channel.import') && ! $user->hasRole(UserRole::Superadmin)) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengunduh template import channel.');
+        }
+
+        return $excelService->template();
+    }
+
+    /**
+     * Import channel data from uploaded Excel file.
+     */
+    public function import(PameranImportRequest $request, PameranExcelService $excelService): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user->hasPermission('pcd.channel.import') && ! $user->hasRole(UserRole::Superadmin)) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengimpor data channel.');
+        }
+
+        $result = $excelService->import($request->file('file'), $user);
+
+        if ($result['imported'] > 0) {
+            $msg = "Berhasil mengimpor {$result['imported']} data channel.";
+            if ($result['skipped'] > 0) {
+                $msg .= " ({$result['skipped']} data dilewati).";
+            }
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => $msg,
+            ]);
+        } else {
+            $msg = 'Tidak ada data channel yang berhasil diimpor.';
+            if (! empty($result['errors'])) {
+                $msg .= ' Alasan: '.$result['errors'][0];
+            }
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => $msg,
+            ]);
+        }
+
+        return to_route('pameran.index');
     }
 }

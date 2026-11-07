@@ -54,6 +54,20 @@ class Role extends Model
             'label' => 'Hapus Channel',
             'description' => 'Menghapus data pameran channel',
         ],
+        'pcd.channel.export' => [
+            'group' => 'PCD',
+            'feature' => 'Channel (Pameran)',
+            'action' => 'export',
+            'label' => 'Export Channel',
+            'description' => 'Mengekspor data pameran channel ke file Excel (XLSX)',
+        ],
+        'pcd.channel.import' => [
+            'group' => 'PCD',
+            'feature' => 'Channel (Pameran)',
+            'action' => 'import',
+            'label' => 'Import Channel',
+            'description' => 'Mengimpor data pameran channel dari file Excel (XLSX)',
+        ],
         'pcd.channel.approval_spv' => [
             'group' => 'PCD',
             'feature' => 'Channel (Pameran)',
@@ -500,10 +514,11 @@ class Role extends Model
         // 1. If role has broad permission (e.g. 'pcd.channel'), grant any child action ('pcd.channel.read', 'pcd.channel.write')
         foreach ($perms as $p) {
             if ($p !== '' && str_starts_with($permission, $p.'.')) {
-                // Do not grant approval privileges from broad 'pcd.channel' permission
-                if (str_starts_with($permission, 'pcd.channel.approval') || str_starts_with($permission, 'pcd.channel_approval')) {
+                // Do not grant approval, export, or import privileges from broad 'pcd.channel' permission
+                if (str_starts_with($permission, 'pcd.channel.approval') || str_starts_with($permission, 'pcd.channel_approval') || $permission === 'pcd.channel.export' || $permission === 'pcd.channel.import') {
                     continue;
                 }
+
                 return true;
             }
         }

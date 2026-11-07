@@ -54,6 +54,24 @@ class PameranPolicy
     }
 
     /**
+     * Determine whether the user can export channels.
+     */
+    public function export(User $user): bool
+    {
+        return $user->hasPermission('pcd.channel.export')
+            || $user->hasRole(UserRole::Superadmin);
+    }
+
+    /**
+     * Determine whether the user can import channels.
+     */
+    public function import(User $user): bool
+    {
+        return $user->hasPermission('pcd.channel.import')
+            || $user->hasRole(UserRole::Superadmin);
+    }
+
+    /**
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, Pameran $pameran): bool
