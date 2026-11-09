@@ -751,13 +751,14 @@ export default function PameranIndex({
                                 <TableHead>Kabupaten / Kota</TableHead>
                                 <TableHead>Kecamatan</TableHead>
                                 <TableHead>Detail Alamat & Peta</TableHead>
+                                <TableHead className="whitespace-nowrap">Tanggal Dibuat</TableHead>
                                 <TableHead className="w-20 text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {pamerans.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={11} className="py-12 text-center">
+                                    <TableCell colSpan={12} className="py-12 text-center">
                                         <div className="flex flex-col items-center justify-center gap-2">
                                             <div className="rounded-full bg-neutral-100 p-3 dark:bg-neutral-800">
                                                 <CalendarDays className="size-6 text-neutral-500 dark:text-neutral-400" />
@@ -962,6 +963,22 @@ export default function PameranIndex({
                                                     ) : (
                                                         <span className="text-[10px] italic text-neutral-400">
                                                             Koordinat belum diset
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="whitespace-nowrap text-xs text-neutral-600 dark:text-neutral-400">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                                                        {formatDate(item.created_at)}
+                                                    </span>
+                                                    {item.created_at && (
+                                                        <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                                                            {new Date(item.created_at).toLocaleTimeString('id-ID', {
+                                                                hour: '2-digit',
+                                                                minute: '2-digit',
+                                                            })}{' '}
+                                                            WITA
                                                         </span>
                                                     )}
                                                 </div>
@@ -1467,7 +1484,8 @@ export default function PameranIndex({
                                         otherChannels={mapPamerans}
                                         currentChannelId={selectedPameran.id}
                                         isDealer={currentUser.role === 'dealer'}
-                                        height="220px"
+                                        currentPameran={selectedPameran}
+                                        height="240px"
                                     />
                                 ) : (
                                     <div className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-6 text-xs text-neutral-400 dark:border-neutral-700">
@@ -1562,7 +1580,7 @@ export default function PameranIndex({
 
             {/* Dialog Konfirmasi Approval (SPV) */}
             <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
-                <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
                     <DialogHeader className="px-6 pt-6 pb-4 border-b">
                         <DialogTitle>
                             Persetujuan SPV
@@ -1632,6 +1650,7 @@ export default function PameranIndex({
                                     otherChannels={mapPamerans}
                                     currentChannelId={selectedPameran.id}
                                     isDealer={currentUser.role === 'dealer'}
+                                    currentPameran={selectedPameran}
                                     height="240px"
                                 />
                             ) : (

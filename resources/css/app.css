@@ -216,3 +216,11 @@
     background-color: #374151 !important;
     color: #ffffff !important;
 }
+
+/* Leaflet Compare Distance Marker Badge */
+.compare-distance-badge-wrapper,
+.preview-compare-distance-badge-wrapper {
+    background: transparent !important;
+    border: none !important;
+}
+

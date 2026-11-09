@@ -96,7 +96,7 @@ class PameranExcelService
             ->setTitle('Data Channel Pameran');
 
         // Document Title Banner (Rows 1 & 2)
-        $sheet->mergeCells('A1:Q1');
+        $sheet->mergeCells('A1:R1');
         $sheet->setCellValue('A1', 'DATA JADWAL CHANNEL & PAMERAN PCD');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->setColor(new Color('CC0000'));
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -105,7 +105,7 @@ class PameranExcelService
         if ($search !== '') {
             $subtitle .= ' | Pencarian: '.$search;
         }
-        $sheet->mergeCells('A2:Q2');
+        $sheet->mergeCells('A2:R2');
         $sheet->setCellValue('A2', $subtitle);
         $sheet->getStyle('A2')->getFont()->setItalic(true)->setSize(10)->setColor(new Color('666666'));
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -129,6 +129,7 @@ class PameranExcelService
             'O' => 'LONGITUDE',
             'P' => 'CATATAN PENOLAKAN',
             'Q' => 'CATATAN APPROVAL',
+            'R' => 'TANGGAL DIBUAT',
         ];
 
         foreach ($headers as $col => $text) {
@@ -156,7 +157,7 @@ class PameranExcelService
                 ],
             ],
         ];
-        $sheet->getStyle('A4:Q4')->applyFromArray($headerStyle);
+        $sheet->getStyle('A4:R4')->applyFromArray($headerStyle);
         $sheet->getRowDimension(4)->setRowHeight(26);
 
         // Data Rows
@@ -187,9 +188,10 @@ class PameranExcelService
             $sheet->setCellValue('O'.$row, $item->longitude ?? '-');
             $sheet->setCellValue('P'.$row, $item->catatan_penolakan ?? '-');
             $sheet->setCellValue('Q'.$row, $item->catatan_approval ?? '-');
+            $sheet->setCellValue('R'.$row, $item->created_at ? Carbon::parse($item->created_at)->format('Y-m-d H:i') : '-');
 
             if ($index % 2 === 1) {
-                $sheet->getStyle('A'.$row.':Q'.$row)->getFill()
+                $sheet->getStyle('A'.$row.':R'.$row)->getFill()
                     ->setFillType(Fill::FILL_SOLID)
                     ->getStartColor()->setARGB('FFF9FAFB');
             }
@@ -210,15 +212,16 @@ class PameranExcelService
                 'vertical' => Alignment::VERTICAL_CENTER,
             ],
         ];
-        $sheet->getStyle('A5:Q'.$lastRow)->applyFromArray($dataBorderStyle);
+        $sheet->getStyle('A5:R'.$lastRow)->applyFromArray($dataBorderStyle);
 
         $sheet->getStyle('A5:A'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('B5:E'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('G5:G'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('I5:J'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('N5:O'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('R5:R'.$lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        foreach (range('A', 'Q') as $col) {
+        foreach (range('A', 'R') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
