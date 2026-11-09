@@ -391,6 +391,27 @@ class Role extends Model
             'label' => 'Hapus Role',
             'description' => 'Menghapus role kustom',
         ],
+        'management.wa_server.read' => [
+            'group' => 'Management',
+            'feature' => 'WA Server',
+            'action' => 'read',
+            'label' => 'Lihat WA Server',
+            'description' => 'Melihat status koneksi WhatsApp dan grup notifikasi aktif',
+        ],
+        'management.wa_server.connect' => [
+            'group' => 'Management',
+            'feature' => 'WA Server',
+            'action' => 'connect',
+            'label' => 'Koneksi WA & Tentukan Grup',
+            'description' => 'Mengkoneksikan WhatsApp (QR / Pairing), kirim pesan uji coba, dan menentukan target grup notifikasi',
+        ],
+        'management.wa_server.write' => [
+            'group' => 'Management',
+            'feature' => 'WA Server',
+            'action' => 'write',
+            'label' => 'Pengaturan Server API',
+            'description' => 'Mengatur endpoint URL server, kredensial Basic Auth, reconnect, dan melihat status server health',
+        ],
     ];
 
     /**
@@ -481,6 +502,7 @@ class Role extends Model
             'management.dealers',
             'management.users',
             'management.roles',
+            'management.wa_server',
         ])));
     }
 

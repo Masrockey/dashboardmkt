@@ -17,6 +17,7 @@ import {
     Map,
     MapPin,
     Megaphone,
+    MessageSquare,
     Presentation,
     ShieldCheck,
     Tag,
@@ -192,6 +193,12 @@ const managementNavItems: PermittedNavItem[] = [
         href: roles.index(),
         icon: ShieldCheck,
         permission: 'management.roles',
+    },
+    {
+        title: 'WA Server',
+        href: '/wa-server',
+        icon: MessageSquare,
+        permission: 'management.wa_server',
     },
 ];
 

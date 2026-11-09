@@ -11,9 +11,11 @@ use App\Models\Dealer;
 use App\Models\JenisPameran;
 use App\Models\Pameran;
 use App\Services\PameranExcelService;
+use App\Services\WhatsAppService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -259,7 +261,17 @@ class PameranController extends Controller
         $data['created_by_user_id'] = $user->id;
         $data['status'] = PameranStatus::MenungguSpv;
 
-        Pameran::create($data);
+        $pameran = Pameran::create($data);
+
+        // Kirim notifikasi WhatsApp pengajuan channel baru ke grup yang sudah ditentukan
+        try {
+            WhatsAppService::sendChannelCreatedNotification(
+                $pameran->fresh(['dealer', 'jenisPameran', 'creator']),
+                $user
+            );
+        } catch (\Throwable $e) {
+            Log::error('Failed to trigger WA channel creation notification: '.$e->getMessage());
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -344,6 +356,17 @@ class PameranController extends Controller
 
         $pameran->approveBySpv($user, $validated['catatan_approval'] ?? null);
 
+        // Kirim notifikasi WhatsApp ke grup yang sudah ditentukan
+        try {
+            WhatsAppService::sendChannelApprovalNotification(
+                $pameran->fresh(['dealer', 'jenisPameran', 'creator', 'spvApprover']),
+                $user,
+                $validated['catatan_approval'] ?? null
+            );
+        } catch (\Throwable $e) {
+            Log::error('Gagal mengirim notifikasi WA approval SPV: '.$e->getMessage());
+        }
+
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => "Channel berhasil disetujui oleh SPV. Kode Channel MD ({$pameran->kode_pameran_md}) telah diterbitkan.",
@@ -380,6 +403,17 @@ class PameranController extends Controller
         ]);
 
         $pameran->reject($user, $validated['catatan_penolakan'] ?? null);
+
+        // Kirim notifikasi WhatsApp penolakan channel ke grup yang sudah ditentukan
+        try {
+            WhatsAppService::sendChannelRejectionNotification(
+                $pameran->fresh(['dealer', 'jenisPameran', 'creator', 'spvApprover']),
+                $user,
+                $validated['catatan_penolakan'] ?? null
+            );
+        } catch (\Throwable $e) {
+            Log::error('Failed to trigger WA channel rejection notification: '.$e->getMessage());
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',

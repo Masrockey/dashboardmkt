@@ -20,6 +20,7 @@ use App\Http\Controllers\SegmentController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\TypeController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WaServerController;
 use App\Http\Middleware\EnsureMarketingAccess;
 use App\Http\Middleware\EnsureMasterDataAccess;
 use Illuminate\Support\Facades\Route;
@@ -86,6 +87,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('billboards', BillboardController::class)->except(['create', 'show', 'edit']);
     Route::get('api/geocode/search', [GeocodeController::class, 'search'])->name('geocode.search');
     Route::get('api/geocode/reverse', [GeocodeController::class, 'reverse'])->name('geocode.reverse');
+
+    // WA Server Integration
+    Route::get('wa-server', [WaServerController::class, 'index'])->name('wa-server.index');
+    Route::post('wa-server/settings', [WaServerController::class, 'updateSettings'])->name('wa-server.settings');
+    Route::get('wa-server/qr', [WaServerController::class, 'getQr'])->name('wa-server.qr');
+    Route::post('wa-server/pair-code', [WaServerController::class, 'getPairingCode'])->name('wa-server.pair-code');
+    Route::get('wa-server/status', [WaServerController::class, 'checkStatus'])->name('wa-server.status');
+    Route::post('wa-server/reconnect', [WaServerController::class, 'reconnect'])->name('wa-server.reconnect');
+    Route::post('wa-server/logout', [WaServerController::class, 'logout'])->name('wa-server.logout');
+    Route::post('wa-server/devices', [WaServerController::class, 'addDevice'])->name('wa-server.devices.store');
+    Route::delete('wa-server/devices/{deviceId}', [WaServerController::class, 'deleteDevice'])->name('wa-server.devices.destroy');
+    Route::get('wa-server/groups', [WaServerController::class, 'getGroups'])->name('wa-server.groups');
+    Route::post('wa-server/target-group', [WaServerController::class, 'setTargetGroup'])->name('wa-server.target-group');
+    Route::post('wa-server/test-message', [WaServerController::class, 'sendTestMessage'])->name('wa-server.test-message');
 });
 
 require __DIR__.'/settings.php';

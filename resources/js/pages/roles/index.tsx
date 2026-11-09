@@ -11,6 +11,7 @@ import {
     Shield,
     ShieldAlert,
     ShieldCheck,
+    Smartphone,
     Square,
     Trash2,
     Upload,
@@ -65,6 +66,15 @@ function getActionMeta(actionType: string) {
                 activeCard:
                     'border-emerald-300 bg-emerald-50/70 dark:border-emerald-800/80 dark:bg-emerald-950/30',
                 icon: Eye,
+            };
+        case 'connect':
+            return {
+                label: 'Connect',
+                badgeBg:
+                    'bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-950/60 dark:text-cyan-300 dark:border-cyan-800',
+                activeCard:
+                    'border-cyan-300 bg-cyan-50/70 dark:border-cyan-800/80 dark:bg-cyan-950/30',
+                icon: Smartphone,
             };
         case 'write':
             return {
@@ -150,7 +160,7 @@ function PermissionControlMatrix({
             grp.features.forEach((feat) => {
                 feat.actions.forEach((act) => {
                     if (act.action === 'read') reads.push(act.key);
-                    if (act.action === 'write') writes.push(act.key);
+                    if (act.action === 'write' || act.action === 'connect') writes.push(act.key);
                     if (act.action === 'delete') deletes.push(act.key);
                 });
             });
@@ -1182,6 +1192,10 @@ export default function RolesIndex({
                                                                     if (act.action === 'read') {
                                                                         colorClass = isGranted
                                                                             ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300'
+                                                                            : 'bg-neutral-100 text-neutral-400 opacity-50 dark:bg-neutral-800';
+                                                                    } else if (act.action === 'connect') {
+                                                                        colorClass = isGranted
+                                                                            ? 'bg-cyan-100 text-cyan-800 border-cyan-300 dark:bg-cyan-950 dark:text-cyan-300'
                                                                             : 'bg-neutral-100 text-neutral-400 opacity-50 dark:bg-neutral-800';
                                                                     } else if (act.action === 'write') {
                                                                         colorClass = isGranted
